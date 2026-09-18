@@ -1,0 +1,190 @@
+/* CUD Mental Health Week — design tokens and base layer.
+   Every value here traces to a section of BRIEF.md. Do not add colours,
+   fonts, radii or durations that are not listed there. */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Colour (§4). These 14 are the whole palette. ---- */
+  --paper: #F1F2F4;       /* page background */
+  --ink: #1B2B5E;         /* body text, primary fill, outlines, strokes */
+  --ink-soft: #46507A;    /* secondary text, dates, descriptions */
+  --ink-muted: #5A6386;   /* footer */
+  --riso-pink: #FF48B0;   /* shapes, current progress segment, focus ring */
+  --riso-blue: #0078BF;   /* shapes, answer icons */
+  --sunflower: #FFB511;   /* festival accent — Loy Krathong only */
+  --pink-tint: #FFDDEC;   /* CUD Care block, selected answer */
+  --sun-tint: #FFF1CC;    /* booth ticket */
+  --note-pink: #B0155F;   /* handwritten notes, link hover */
+  --line: #C9CEDC;        /* unselected answer border, dividers */
+  --track: #D3D7E2;       /* upcoming progress segments */
+  --pill-line: #9AA2BE;   /* small "next booth" pills */
+  --white: #FFFFFF;
+
+  /* The festival accent is the ONLY colour a theme may swap (§8). */
+  --accent: var(--sunflower);
+
+  /* ---- Type (§5) ---- */
+  --font-heading: 'Mitr', 'Noto Sans Thai', 'Leelawadee UI', Thonburi, sans-serif;
+  --font-body: 'IBM Plex Sans Thai Looped', 'Noto Sans Thai', 'Leelawadee UI', Thonburi, sans-serif;
+  --font-note: 'Itim', 'Noto Sans Thai', 'Leelawadee UI', Thonburi, sans-serif;
+
+  /* ---- Radii: the one-sharp-corner rule (§6) ----
+     Three round corners, one tight one, and which corner is tight varies.
+     Do not normalise these to a single value. */
+  --r-primary: 20px 20px 20px 6px;      /* primary button */
+  --r-secondary: 20px 20px 6px 20px;    /* secondary button */
+  --r-care-home: 26px 26px 8px 26px;    /* CUD Care block on home */
+  --r-care-result: 8px 26px 26px 26px;  /* CUD Care block on result */
+  --r-answer: 18px;                     /* answer cards — evenly rounded */
+  --r-ticket: 22px;                     /* booth ticket */
+  --r-pill: 999px;
+
+  /* ---- Motion (§9) ---- */
+  --d-tap: 90ms;        /* press feedback */
+  --d-color: 140ms;     /* state colour change */
+  --d-badge: 180ms;     /* check badge, collapse */
+  --d-question: 240ms;  /* question transition */
+  --d-reveal: 450ms;    /* one-time result reveal */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.4, 0.64, 1); /* check badge only */
+
+  /* ---- Layout (§6) ---- */
+  --page-max: 440px;    /* single centred column above 480px wide */
+  --page-pad: 24px;
+}
+
+/* ---- Reset ---- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  /* The visible :active scale replaces what the tap highlight was doing (§9). */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  /* Stops iOS inflating text when the phone is rotated. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  /* 100dvh, never 100vh — iOS Safari's collapsing toolbar overflows 100vh. */
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  /* Thai headings never go below 1.3 (§5). */
+  line-height: 1.3;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  /* Removes the 300ms tap delay so presses register within one frame (§9). */
+  touch-action: manipulation;
+}
+
+a {
+  color: var(--ink);
+  touch-action: manipulation;
+}
+
+a:hover {
+  color: var(--note-pink);
+}
+
+svg {
+  display: block;
+}
+
+/* ---- Focus (§13) ---- */
+
+:focus-visible {
+  outline: 3px solid var(--riso-pink);
+  outline-offset: 3px;
+}
+
+/* ---- Riso illustration primitives (§6) ----
+   Shared by every inline SVG, mirroring reference/screens.html. Stroke widths
+   stay on the 2.5 / 1.5 system at every icon size — never scale an SVG in a
+   way that thins them. */
+
+.ln {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ln-thin {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ln-dot {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 7;
+}
+
+.ck {
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Overlapping inks make a third colour: pink over blue is purple, pink over
+   yellow is orange. This one property carries the whole risograph concept —
+   verify it on real iOS Safari, where blend modes interact with stacking
+   contexts. */
+.mul {
+  mix-blend-mode: multiply;
+}
+
+/* ---- Reduced motion (§9) ----
+   Movement off, colour changes kept under 100ms. No exceptions for the
+   result and booth reveals. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 60ms !important;
+    scroll-behavior: auto !important;
+  }
+}
