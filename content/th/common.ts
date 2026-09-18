@@ -29,6 +29,8 @@ export const common = {
     home: 'กลับหน้าแรก',
     startCheckin: 'เช็กอินความรู้สึก',
     checkinAgain: 'เช็กอินอีกครั้ง',
+    /** The soft nudge under the booth result's button (§8). */
+    tryCheckin: 'ลองเช็กอินความรู้สึกด้วยไหม?',
     seeResult: 'มาดูผลกัน',
     playBooth: 'เล่นเลย',
     back: 'ย้อนกลับ',

@@ -1,0 +1,67 @@
+/* Pink-tint block with one sharp corner, whose position differs between the
+   home and result versions (BRIEF §6). Text on pink-tint is always ink. */
+
+.block {
+  padding: 20px;
+  background: var(--pink-tint);
+  color: var(--ink);
+}
+
+.home {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 36px;
+  border-radius: var(--r-care-home);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  margin-top: 32px;
+  border-radius: var(--r-care-result);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.body {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Underlined so it reads as a link, and 44px tall so it is a real target. */
+.homeLink {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.resultBody {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* A flex row, so the pill sizes to its label and sits left. In a plain block
+   wrapper the pill's own display:flex stretched it to the full width. */
+.resultLink {
+  display: flex;
+  margin-top: 14px;
+}

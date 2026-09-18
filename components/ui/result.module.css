@@ -1,0 +1,75 @@
+/* Result-screen pieces: topic pills and suggestion rows (BRIEF §7). */
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Strongest topic: filled ink, white text. */
+.primary {
+  background: var(--ink);
+  color: var(--white);
+}
+
+/* Second topic: 2px ink outline. */
+.secondary {
+  border: 2px solid var(--ink);
+  color: var(--ink);
+}
+
+/* Suggestions are open rows, not cards, and are never numbered — they are not
+   steps. */
+.list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 40px;
+}
+
+.heading {
+  margin-bottom: 12px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.row {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1.5px solid var(--line);
+}
+
+/* Only the last row also closes off the bottom edge. */
+.row:last-child {
+  border-bottom: 1.5px solid var(--line);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowTitle {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.rowBody {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}

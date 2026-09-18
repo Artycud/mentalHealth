@@ -43,8 +43,12 @@ export interface Choice {
 
 export interface Question {
   id: string;
-  /** The primary topic this question probes. */
+  /** The topic this question mainly probes. A choice may still count toward a
+   *  different topic — "นอนดึกเพราะงานเยอะ" sits in a sleep question but is
+   *  about study — so scoring reads each choice's own topic. */
   topic: Topic;
   headline: string;
   choices: Choice[];
+  /** 'reference' = written in the brief. 'draft' = ours, awaiting council review. */
+  status: 'reference' | 'draft';
 }

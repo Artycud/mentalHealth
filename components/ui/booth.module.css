@@ -1,0 +1,51 @@
+/* Booth-screen pieces (BRIEF §7). */
+
+.label {
+  position: relative;
+  align-self: flex-start;
+  margin-top: 36px;
+  padding: 4px 14px;
+  border: 2px solid var(--ink);
+  border-radius: var(--r-pill);
+  background: var(--white);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Sun-tint with a dashed border, so it reads as a ticket to hand over. */
+.ticket {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 24px;
+  padding: 20px;
+  border: 2px dashed var(--ink);
+  border-radius: var(--r-ticket);
+  background: var(--sun-tint);
+  color: var(--ink);
+}
+
+.ticketTitle {
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.ticketBody {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.where {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.whereText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}

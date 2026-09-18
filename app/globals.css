@@ -92,10 +92,17 @@ h3 {
   font-family: var(--font-heading);
   /* Thai headings never go below 1.3 (§5). */
   line-height: 1.3;
+  /* Thai has no spaces, so a browser breaks at dictionary words and can strand
+     one ("บ้าง?" alone) or split a compound (ยัง|ไง). Balancing evens the lines.
+     This is how §16's "fix bad breaks with copy, not <br>" is met for copy we
+     were given and cannot reword. Unsupported browsers just wrap normally. */
+  text-wrap: balance;
 }
 
 p {
   margin: 0;
+  /* Avoids a lone short word on the last line. */
+  text-wrap: pretty;
 }
 
 button {
@@ -134,12 +141,18 @@ svg {
    stay on the 2.5 / 1.5 system at every icon size — never scale an SVG in a
    way that thins them. */
 
+/* non-scaling-stroke keeps these at exactly 2.5 / 1.5 device pixels however the
+   illustration is scaled to the column. Without it a 320px phone would render
+   the "2.5" strokes at 1.99 and thin the whole drawing, which §9 forbids. It
+   also matches the rest of the UI, where borders are fixed 2px and 1.5px. */
+
 .ln {
   fill: none;
   stroke: var(--ink);
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .ln-thin {
@@ -148,6 +161,7 @@ svg {
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .ln-dot {
@@ -156,6 +170,7 @@ svg {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-dasharray: 1 7;
+  vector-effect: non-scaling-stroke;
 }
 
 .ck {
@@ -164,6 +179,7 @@ svg {
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 /* Overlapping inks make a third colour: pink over blue is purple, pink over

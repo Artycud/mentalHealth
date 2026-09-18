@@ -1,0 +1,44 @@
+.scene {
+  padding-top: 8px;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  padding-top: 12px;
+}
+
+.headline {
+  font-size: 42px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.lead {
+  margin-top: 10px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.cta {
+  display: flex;
+  margin-top: 24px;
+}
+
+.privacy {
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* Pinned to the bottom of a short screen; on a tall one the padding keeps a
+   28px minimum gap above it. */
+.footer {
+  margin-top: auto;
+  padding-top: 28px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}

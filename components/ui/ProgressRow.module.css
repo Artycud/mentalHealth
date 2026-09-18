@@ -1,0 +1,54 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 24px chevron inside a 44px target (§9). The negative margin pulls the glyph
+   back into the 24px gutter so it lines up with the text edge below. */
+.back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  border-radius: 12px;
+  color: var(--ink);
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.back:active {
+  transform: scale(0.94);
+}
+
+.segments {
+  display: flex;
+  flex-grow: 1;
+  gap: 5px;
+}
+
+.segment {
+  flex-grow: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--track);
+  transition: background-color var(--d-color) var(--ease);
+}
+
+.done {
+  background: var(--ink);
+}
+
+.current {
+  background: var(--riso-pink);
+}
+
+.counter {
+  min-width: 28px;
+  text-align: right;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+}

@@ -1,0 +1,28 @@
+/* The single column every student screen sits in.
+   Design width 390 with 24px side padding; above 480px it centres at 440px on
+   the same paper background. There is no separate desktop layout (BRIEF §6). */
+
+.screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  /* Older iOS ignores dvh, so the vh line is the fallback. */
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  /* env() keeps content clear of the notch in landscape, where the inset is
+     horizontal. In portrait these resolve to 0 and the 24px floor applies. */
+  padding-left: max(var(--page-pad), env(safe-area-inset-left));
+  padding-right: max(var(--page-pad), env(safe-area-inset-right));
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+
+  /* Clips the booth moon where it bleeds off the top-right corner. `hidden` is
+     the fallback for iOS < 16; browsers that know `clip` use it instead, which
+     creates no scroll container. Either way the box grows to fit its content,
+     so only negatively-offset decoration is ever cut. */
+  overflow: hidden;
+  overflow: clip;
+}

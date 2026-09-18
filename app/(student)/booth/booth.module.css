@@ -1,0 +1,68 @@
+/* Full viewport width, unlike the 440px column inside it. The moon is anchored
+   here so it bleeds off the corner of the actual SCREEN (BRIEF §6). Anchored to
+   the column instead, it was sliced by a hard vertical line in the middle of the
+   paper on iPad. On a phone the column and the viewport are the same width, so
+   nothing changes there. `hidden` is the fallback for iOS < 16, which lacks
+   `clip`. */
+.page {
+  position: relative;
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* The header and label paint above it because the Screen is position: relative
+   and comes later in the DOM. It must never intercept a tap. */
+.moon {
+  position: absolute;
+  top: -84px;
+  right: -70px;
+  pointer-events: none;
+}
+
+.note {
+  position: relative;
+  margin-top: 18px;
+  font-family: var(--font-note);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--note-pink);
+}
+
+.flower {
+  position: relative;
+  font-size: 64px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.scene {
+  margin-top: 8px;
+}
+
+.body {
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+/* Closed state: plain ink on paper, no alarm colours (BRIEF §8). */
+.closedTitle {
+  margin-top: 36px;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.closedBody {
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.6;
+}

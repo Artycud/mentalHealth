@@ -1,0 +1,40 @@
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Brand and note at opposite ends. Where both cannot fit on one row (320px:
+   ~294px of content in 272px) the note drops to its own row, right-aligned,
+   rather than overflowing into the screen edge. */
+.spread {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Neither piece may wrap: at 320px the note broke mid-word into "เสร็จ / แล้ว"
+   and the wordmark spilled onto two lines. Both are short enough to fit. */
+.name {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* The one Itim note on the result screen (§5: at most one per screen). */
+.note {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-family: var(--font-note);
+  font-size: 17px;
+  color: var(--note-pink);
+  white-space: nowrap;
+}
