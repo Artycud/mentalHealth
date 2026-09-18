@@ -54,6 +54,35 @@ export default function FontSmokeTest() {
         </p>
       </section>
 
+      {/* Every weight rendered, so the visual check covers all 7 faces and not
+          just the ones the real screens happen to use. Mitr 400 is notable:
+          §2 says to self-host it, but no role in §5's type table uses it. */}
+      <section
+        style={{
+          padding: 16,
+          border: `1.5px solid var(--line)`,
+          borderRadius: 'var(--r-answer)',
+          marginBottom: 32,
+        }}
+      >
+        <p style={{ fontFamily: BODY, fontSize: 13, color: 'var(--ink-soft)', marginBottom: 8 }}>
+          every weight
+        </p>
+        {[400, 500, 600].map((w) => (
+          <p key={`mitr-${w}`} style={{ fontFamily: HEAD, fontWeight: w, fontSize: 26, lineHeight: 1.3 }}>
+            Mitr {w} · ช่วงนี้เป็นยังไงบ้าง
+          </p>
+        ))}
+        {[400, 500, 600].map((w) => (
+          <p key={`plex-${w}`} style={{ fontFamily: BODY, fontWeight: w, fontSize: 17, lineHeight: 1.6 }}>
+            Plex {w} · ช่วงนี้เป็นยังไงบ้าง
+          </p>
+        ))}
+        <p style={{ fontFamily: NOTE, fontWeight: 400, fontSize: 18, lineHeight: 1.5, color: 'var(--note-pink)' }}>
+          Itim 400 · ช่วงนี้เป็นยังไงบ้าง
+        </p>
+      </section>
+
       {/* Real copy at the real sizes from §5, so the scale is verified too. */}
       <h1 style={{ fontFamily: HEAD, fontWeight: 600, fontSize: 64, lineHeight: 1.2 }}>ดาวเรือง</h1>
       <h1 style={{ fontFamily: HEAD, fontWeight: 600, fontSize: 42, lineHeight: 1.3, marginTop: 20 }}>
