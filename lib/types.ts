@@ -27,6 +27,14 @@ export type Mode = 'checkin' | 'booth';
 /** Which of the six ink pairings draws a flower on the booth screens. */
 export type Tint = 0 | 1 | 2 | 3 | 4 | 5;
 
+/**
+ * The picture beside a booth answer. A shape carries no meaning — deliberately,
+ * unlike the check-in's moon phases, which run full to empty and so read as
+ * "better to worse". A game answer has no better or worse. A colour is a
+ * swatch, for the question that asks about colour.
+ */
+export type ChoiceMark = 'circle' | 'square' | 'leaf' | 'drop' | 'pink' | 'blue' | 'yellow' | 'navy';
+
 export type FestivalId = 'loykrathong' | 'christmas' | 'cny-valentine';
 
 /** What `setting.active_festival` may hold — a festival, or no booth running. */

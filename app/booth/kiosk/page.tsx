@@ -1,5 +1,6 @@
 import { festivals } from '@/content/th/booth';
 import { errors } from '@/content/th/common';
+import { getEventText } from '@/lib/events';
 import { getActiveFestival } from '@/lib/festival';
 
 import { Kiosk } from './Kiosk';
@@ -16,7 +17,7 @@ export default function BoothKioskPage() {
   const active = getActiveFestival();
   const theme = active === 'none' ? undefined : festivals[active];
 
-  if (!theme?.ready) {
+  if (active === 'none' || !theme?.ready) {
     return (
       <main className={styles.stage}>
         <div className={styles.body}>
@@ -27,5 +28,5 @@ export default function BoothKioskPage() {
     );
   }
 
-  return <Kiosk theme={theme} />;
+  return <Kiosk theme={theme} event={getEventText(active)} />;
 }

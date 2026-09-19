@@ -10,7 +10,9 @@
     "dev:lan": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:dates": "node --experimental-strip-types --no-warnings scripts/test-thai-date.mjs",
+    "check:booth": "node --experimental-strip-types --no-warnings scripts/check-booth-scoring.mjs"
   },
   "dependencies": {
     "next": "16.3.5",

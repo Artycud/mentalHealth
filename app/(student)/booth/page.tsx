@@ -5,6 +5,7 @@ import { Screen } from '@/components/ui/Screen';
 import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
 import { festivals, loykrathongFlowers } from '@/content/th/booth';
 import { common, errors } from '@/content/th/common';
+import { getEventText } from '@/lib/events';
 import { getActiveFestival } from '@/lib/festival';
 
 import styles from './booth.module.css';
@@ -21,7 +22,7 @@ export default function BoothPage() {
   const active = getActiveFestival();
   const theme = active === 'none' ? undefined : festivals[active];
 
-  if (!theme?.ready || !theme.ticket) {
+  if (active === 'none' || !theme?.ready || !theme.ticket) {
     return (
       <Screen>
         <WordmarkHeader />
@@ -35,6 +36,7 @@ export default function BoothPage() {
   // copy BRIEF §8 wrote, and the list's order is the council's to change.
   const flower =
     loykrathongFlowers.find((f) => f.id === 'marigold') ?? loykrathongFlowers[0];
+  const event = getEventText(active);
 
   return (
     <div className={styles.page}>
@@ -53,7 +55,11 @@ export default function BoothPage() {
 
         <p className={styles.body}>{flower.body}</p>
 
-        <BoothTicket title={theme.ticket.title} body={theme.ticket.body} where={theme.ticket.where} />
+        <BoothTicket
+          title={theme.ticket.title}
+          body={theme.ticket.body}
+          where={`ที่${event.place} ${event.date}`}
+        />
 
         <div className={styles.actions}>
           <SecondaryButton href="/">{common.actions.home}</SecondaryButton>

@@ -106,14 +106,24 @@ export function FestivalMoonIcon() {
 }
 
 /** One per suggestion row, and each row gets a different one (§7). */
-export function SuggestionMarker({ variant }: { variant: 0 | 1 | 2 }) {
+export function SuggestionMarker({
+  variant,
+  size = 18,
+  style,
+}: {
+  variant: 0 | 1 | 2;
+  /** Pixels. The viewBox scales, so the drawing stays intact at any size. */
+  size?: number;
+  /** Merged over the defaults, e.g. to drop the baseline nudge. */
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
-      width="18"
-      height="18"
+      width={size}
+      height={size}
       viewBox="0 0 18 18"
       aria-hidden="true"
-      style={{ flexShrink: 0, marginTop: 5 }}
+      style={{ flexShrink: 0, marginTop: 5, ...style }}
     >
       {variant === 0 && <circle cx="9" cy="9" r="7" fill="var(--riso-pink)" className="mul" />}
       {variant === 1 && (

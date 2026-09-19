@@ -1,16 +1,10 @@
 /**
  * Festival themes for booth mode.
  *
- * Dates, times, place and activities come from the approved project document
- * (โครงการ CUD Mental Health Week). All three booths run 11.10–12.50 น. in
- * โถงโรงอาหาร.
- *
- * NOTE — two dates to confirm with the council. The document's schedule section
- * and its Gantt table disagree:
- *   ลอยกระทง          schedule 19–20 พ.ย. 2569   · Gantt 19–24 พ.ย. 2569
- *   ตรุษจีน & วาเลนไทน์  schedule 10–11 ก.พ. 2570   · Gantt 10–12 ก.พ. 2570
- * The schedule section is used here because it also carries the time and place.
- * คริสต์มาส agrees in both (8–9 ธ.ค. 2569).
+ * Dates, times and places are NOT here. They live in lib/events.ts so the
+ * admin panel's กิจกรรม (Events) section can change them without touching
+ * copy. What the project document says about each booth's activities and
+ * wellbeing theme stays here, because that is wording, not schedule.
  *
  * Only one festival is active at a time and the admin panel chooses it (§8).
  * A theme changes ONLY four things: the accent colour that replaces sunflower,
@@ -20,17 +14,13 @@
  * new font, a gradient, or snow or heart animations.
  */
 
-import type { FestivalId, Tint } from '@/lib/types';
-
-import { eventFacts } from './common';
+import type { ChoiceMark, FestivalId, Tint } from '@/lib/types';
 
 export interface FestivalTheme {
   id: FestivalId;
   name: string;
   /** Replaces --sunflower. The only colour a theme may swap. */
   accent: string;
-  /** e.g. "19–20 พ.ย. 2569". */
-  date: string;
   /** The wellbeing theme this booth carries, from the project document. */
   theme: string;
   /** False until the festival has a quiz and results written. */
@@ -41,7 +31,6 @@ export interface FestivalTheme {
     resultNote: string;
     title: string;
     body: string;
-    where: string;
   };
 }
 
@@ -50,7 +39,6 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
     id: 'loykrathong',
     name: 'ลอยกระทง',
     accent: '#FFB511',
-    date: '19–20 พ.ย. 2569',
     theme: 'การปล่อยวางความทุกข์ และการจัดการความรู้สึกเชิงลบ',
     ready: true,
     home: {
@@ -61,14 +49,12 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
       resultNote: 'ดอกไม้ของคุณคือ',
       title: 'เอาหน้านี้ไปโชว์ที่บูธ',
       body: 'รับดอกดาวเรืองไปแต่งกระทงของคุณได้เลย',
-      where: `ที่${eventFacts.boothPlace} 19–20 พ.ย. 2569`,
     },
   },
   christmas: {
     id: 'christmas',
     name: 'คริสต์มาส',
     accent: '#FFB511', // TODO: awaiting council — placeholder accent
-    date: '8–9 ธ.ค. 2569',
     theme: 'การสร้างความหวังในชีวิต และการจัดการความรู้สึกเมื่อเกิดความผิดหวัง',
     ready: false,
     // TODO: awaiting council content. Booth activities are known from the
@@ -79,7 +65,6 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
     id: 'cny-valentine',
     name: 'ตรุษจีน & วาเลนไทน์',
     accent: '#FFB511', // TODO: awaiting council — placeholder accent
-    date: '10–11 ก.พ. 2570',
     theme: 'การให้ความรู้สึกรัก และการปรับตัวให้เข้ากับทุกรูปแบบความสัมพันธ์',
     ready: false,
     // TODO: awaiting council content. Activities known (บูธขายสินค้า,
@@ -94,22 +79,32 @@ export const festivalOrder: FestivalId[] = ['loykrathong', 'christmas', 'cny-val
 export const boothQuizTitle = 'คุณเป็นดอกไม้แบบไหน?';
 
 /**
+ * "ดอก" + name, unless the name already starts with it. ดาวเรือง and กล้วยไม้ and
+ * จำปี need the prefix to read naturally in a sentence ("รับดอกดาวเรือง");
+ * ดอกบัว and ดอกรัก already have it and would come out as "ดอกดอกบัว".
+ */
+export const withDok = (name: string) => (name.startsWith('ดอก') ? name : `ดอก${name}`);
+
+/**
  * Loy Krathong flower results.
  *
  * The six the booth actually stocks, given by the student council. ดาวเรือง's
- * body line is written in BRIEF §8. The other five are DRAFTS awaiting council
- * review: each is built on one plainly true thing about the flower (the
- * meaning of its name, its scent, how long it lasts) rather than an invented
- * trait, then closed with the same "เหมือนคำตอบเมื่อกี้" hook so it points at
- * the student's actual answers (§10). Order and names may still change before
- * the booth — the council said so directly — so nothing else in the codebase
- * should assume this order or count beyond `loykrathongFlowers.length` and
- * lookup-by-`id`.
+ * body line is written in BRIEF §8. Everything else about the five others —
+ * `body` and `wish` — is a DRAFT awaiting council review: each `body` rests on
+ * one plainly true thing about the flower (the meaning of its name, its scent,
+ * how long it lasts) rather than an invented trait, and each `wish` is a warm
+ * line in the booth's own theme of letting go. Order and names may still change
+ * before the booth — the council said so directly — so nothing else in the
+ * codebase should assume this order or count beyond `loykrathongFlowers.length`
+ * and lookup-by-`id`.
  */
 export interface Flower {
   id: string;
   name: string;
+  /** One line on the flower, closing on the "เหมือนคำตอบเมื่อกี้" hook (§10). */
   body: string;
+  /** A short wish for the student, shown on the result. Draft — never advice. */
+  wish: string;
   /** False while the name is a placeholder rather than a real flower. */
   named: boolean;
   /**
@@ -127,6 +122,7 @@ export const loykrathongFlowers: Flower[] = [
     tint: 3, // pink with a yellow centre, like the real thing
     name: 'ดอกบัว',
     body: 'ขึ้นจากโคลนแต่ยังสะอาด เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    wish: 'ขอให้เรื่องที่หนักใจ ไหลผ่านไปเหมือนน้ำบนใบบัว',
     named: true,
   },
   {
@@ -134,6 +130,7 @@ export const loykrathongFlowers: Flower[] = [
     tint: 5, // blue over pink reads as the lilac of the common variety
     name: 'ดอกรัก',
     body: 'ชื่อแปลว่ารักตรง ๆ เลย เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    wish: 'ขอให้วันนี้ได้รักตัวเองเพิ่มอีกนิด',
     named: true,
   },
   {
@@ -141,6 +138,7 @@ export const loykrathongFlowers: Flower[] = [
     tint: 1, // magenta-purple, the usual colour of the globe
     name: 'ดอกบานไม่รู้โรย',
     body: 'เก็บไว้นานแค่ไหนก็ยังสีเดิม เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    wish: 'ขอให้ความรู้สึกดี ๆ ของวันนี้อยู่กับคุณไปนาน ๆ',
     named: true,
   },
   {
@@ -150,6 +148,7 @@ export const loykrathongFlowers: Flower[] = [
     tint: 0, // the yellow-and-orange of the hand-drawn marigold
     name: 'ดาวเรือง',
     body: 'สีสด ทนแดด อยู่ได้นาน เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    wish: 'ขอให้มีแรงใจสู้แดดสู้ฝนไปได้อีกนาน',
     named: true,
   },
   {
@@ -157,6 +156,7 @@ export const loykrathongFlowers: Flower[] = [
     tint: 2,
     name: 'กล้วยไม้',
     body: 'บานอยู่ได้นานกว่าดอกไม้ทั่วไป เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    wish: 'ขอให้ได้เป็นตัวเองในแบบที่ไม่เหมือนใคร',
     named: true,
   },
   {
@@ -164,6 +164,7 @@ export const loykrathongFlowers: Flower[] = [
     tint: 4, // yellow-orange, as champak is
     name: 'จำปี',
     body: 'หอมไกลจนได้กลิ่นก่อนเห็นดอก เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    wish: 'ขอให้มีเรื่องดี ๆ ให้จำ มากกว่าเรื่องที่อยากลืม',
     named: true,
   },
 ];
@@ -171,10 +172,16 @@ export const loykrathongFlowers: Flower[] = [
 /**
  * The 3-question booth quiz. DRAFT — awaiting council review.
  *
- * Lighter than the check-in: this is a game in a queue at a noisy canteen, not
- * a wellbeing check. It still carries the booth's theme (ปล่อยวางความทุกข์)
- * but never asks anything a student would mind answering with people watching
- * over their shoulder, which rules out the check-in's register entirely.
+ * Written to be answered on instinct. It is a game in a queue at a noisy
+ * canteen, usually with someone standing behind you, so every question is a
+ * concrete everyday choice ("what would you do?", "which colour?") with short
+ * answers and no right one. Nothing here asks how a student is feeling — that
+ * is the check-in's job, on their own phone — and nothing should ever drift
+ * back toward it, because the answer can be read over a shoulder.
+ *
+ * The first draft asked "if you could float one thing away, what?" and "what
+ * does your krathong look like?". Those are lovely but they make you stop and
+ * think, and the queue is watching.
  *
  * Each choice adds points; the total, modulo the number of flowers, picks the
  * result. It is deterministic and recomputable on the server (§3).
@@ -188,14 +195,19 @@ export const loykrathongFlowers: Flower[] = [
  * three answers and lands every flower between 14% and 19% (ideal 16.7%).
  * Verified by enumerating all 64 answer combinations, not estimated.
  *
- * The points below (Q1 0–3, Q2 {4,5,0,1}, Q3 {2,3,4,5}) are what produce that
- * spread. Re-check the distribution before changing any of them.
+ * The points below (Q1 0–3, Q2 {4,5,0,1}, Q3 {2,3,4,5}, by position a–d) are
+ * what produce that spread. Rewording a choice is safe; moving its points is
+ * not. After ANY edit to this quiz, run `npm run check:booth`: it enumerates all
+ * 64 answer sets against this file and fails if a flower is too rare or too
+ * common, or if two answers to one question count the same.
  */
 export interface BoothChoice {
   id: string;
   label: string;
   /** Added to the running total. See the note above before changing. */
   points: number;
+  /** The picture beside the answer: a shape, or a colour swatch. */
+  mark: ChoiceMark;
 }
 
 export interface BoothQuestion {
@@ -208,38 +220,56 @@ export interface BoothQuestion {
 export const loykrathongQuiz: BoothQuestion[] = [
   {
     id: 'b1',
-    note: 'เลือกอันที่ใช่ที่สุด',
-    headline: 'ถ้าลอยอะไรทิ้งไปได้สักอย่าง จะลอยอะไร?',
+    note: 'ไม่มีถูกผิด เลือกตามใจเลย',
+    headline: 'วันหยุดยาว อยากทำอะไรที่สุด?',
     choices: [
-      { id: 'a', label: 'เรื่องที่คิดมากเกินไป', points: 0 },
-      { id: 'b', label: 'ความเหนื่อยที่สะสมไว้', points: 1 },
-      { id: 'c', label: 'เรื่องที่ยังปล่อยไม่ได้', points: 2 },
-      { id: 'd', label: 'ไม่มีอะไรอยากทิ้ง', points: 3 },
+      { id: 'a', label: 'นอนให้เต็มอิ่ม', points: 0, mark: 'circle' },
+      { id: 'b', label: 'ไปเที่ยวกับเพื่อน', points: 1, mark: 'square' },
+      { id: 'c', label: 'ดูซีรีส์ทั้งวัน', points: 2, mark: 'leaf' },
+      { id: 'd', label: 'ออกไปเดินเล่น', points: 3, mark: 'drop' },
     ],
   },
   {
     id: 'b2',
-    note: 'ตอบเร็ว ๆ ได้เลย',
-    headline: 'กระทงของคุณหน้าตาเป็นยังไง?',
+    note: 'เลือกสีแรกที่เห็นแล้วชอบ',
+    headline: 'ชอบสีไหนที่สุด?',
     choices: [
-      { id: 'a', label: 'เรียบ ๆ แต่ดูดี', points: 4 },
-      { id: 'b', label: 'แต่งเต็มที่ สีจัดเต็ม', points: 5 },
-      { id: 'c', label: 'ทำเอง ไม่เหมือนใคร', points: 0 },
-      { id: 'd', label: 'ขอแบบง่าย ๆ เร็ว ๆ', points: 1 },
+      { id: 'a', label: 'ชมพู', points: 4, mark: 'pink' },
+      { id: 'b', label: 'ฟ้า', points: 5, mark: 'blue' },
+      { id: 'c', label: 'เหลือง', points: 0, mark: 'yellow' },
+      { id: 'd', label: 'น้ำเงินเข้ม', points: 1, mark: 'navy' },
     ],
   },
   {
     id: 'b3',
     note: 'ข้อสุดท้ายแล้ว',
-    headline: 'ลอยกระทงเสร็จแล้วอยากทำอะไรต่อ?',
+    headline: 'ไปงานลอยกระทง อยากทำอะไรก่อน?',
     choices: [
-      { id: 'a', label: 'ยืนดูน้ำเงียบ ๆ', points: 2 },
-      { id: 'b', label: 'ถ่ายรูปกับเพื่อน', points: 3 },
-      { id: 'c', label: 'เดินกินของในงาน', points: 4 },
-      { id: 'd', label: 'กลับบ้านไปนอน', points: 5 },
+      { id: 'a', label: 'ลอยกระทง', points: 2, mark: 'circle' },
+      { id: 'b', label: 'กินของอร่อย', points: 3, mark: 'square' },
+      { id: 'c', label: 'ถ่ายรูปสวย ๆ', points: 4, mark: 'leaf' },
+      { id: 'd', label: 'เดินดูของ', points: 5, mark: 'drop' },
     ],
   },
 ];
+
+/**
+ * What to do at the booth after getting a flower.
+ *
+ * Titles only, and only names the project document gives for the Loy Krathong
+ * booth (โซน Mini ลอยกระทง, กิจกรรมแปะดอกไม้แทนความรู้สึก, Workshop พับกระดาษ
+ * โอริกามิเป็นดอกบัว). The document names them but says nothing about how they
+ * run, so no detail is invented here. The council should confirm which run on
+ * which day before this goes on a screen students believe.
+ */
+export const boothNext = {
+  title: 'ต่อไปที่บูธ',
+  items: [
+    'ลอยกระทงที่โซน Mini ลอยกระทง',
+    'แปะดอกไม้แทนความรู้สึก',
+    'พับกระดาษเป็นดอกบัวที่เวิร์กช็อป',
+  ],
+} as const;
 
 /** Copy for the kiosk, which is read standing up by a queue. */
 export const kiosk = {
@@ -247,11 +277,16 @@ export const kiosk = {
   idleBody: 'ตอบ 3 ข้อ แล้วรับดอกไม้ไปแต่งกระทง',
   idleAction: 'เริ่มเลย',
   resultNote: 'ดอกไม้ของคุณคือ',
-  ticketTitle: 'รับดอกไม้ที่บูธได้เลย',
-  ticketBody: 'บอกชื่อดอกไม้นี้กับพี่ ๆ ที่บูธ',
+  wishLabel: 'คำอวยพรจากดอกไม้',
+  ticketTitle: 'โชว์หน้านี้ที่บูธ',
   again: 'เล่นอีกครั้ง',
-  /** Seconds of inactivity on the result before it resets for the next student. */
-  resetSeconds: 20,
+  back: 'ย้อนกลับ',
+  /**
+   * Seconds of no touching on the result before it resets for the next student.
+   * Long enough to read everything now on it, and any touch starts it over — a
+   * student mid-read is never cut off.
+   */
+  resetSeconds: 45,
   resetHint: 'จะกลับหน้าแรกใน',
 } as const;
 

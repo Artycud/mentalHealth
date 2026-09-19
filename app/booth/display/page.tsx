@@ -1,8 +1,9 @@
 import { Wordmark } from '@/components/illustrations/icons';
 import { WallFlower } from '@/components/booth/WallFlower';
 import { boothQuizTitle, festivals } from '@/content/th/booth';
-import { common, eventFacts } from '@/content/th/common';
+import { common } from '@/content/th/common';
 import { getWallData } from '@/lib/booth-wall';
+import { getEventText } from '@/lib/events';
 import { getActiveFestival } from '@/lib/festival';
 
 import styles from './display.module.css';
@@ -23,7 +24,7 @@ export default function BoothDisplayPage() {
   const theme = active === 'none' ? undefined : festivals[active];
   const wall = getWallData();
 
-  if (!theme?.ready) {
+  if (active === 'none' || !theme?.ready) {
     return (
       <main className={styles.stage}>
         <div className={styles.head}>
@@ -39,6 +40,7 @@ export default function BoothDisplayPage() {
     );
   }
 
+  const event = getEventText(active);
   const max = Math.max(...wall.flowers.map((f) => f.count), 1);
 
   return (
@@ -51,9 +53,9 @@ export default function BoothDisplayPage() {
         <span className={styles.when}>
           บูธ{theme.name}
           <span className={styles.dot}>·</span>
-          {theme.date}
+          {event.date}
           <span className={styles.dot}>·</span>
-          {eventFacts.boothTime}
+          {event.time}
         </span>
       </div>
 
@@ -106,7 +108,7 @@ export default function BoothDisplayPage() {
 
       <div className={styles.foot}>
         <span>
-          {eventFacts.boothPlace} · รวมทั้งหมด {wall.total} คน
+          {event.place} · รวมทั้งหมด {wall.total} คน
         </span>
         {wall.sample && <span className={styles.sample}>ตัวอย่าง — ยังไม่ใช่ข้อมูลจริง</span>}
       </div>

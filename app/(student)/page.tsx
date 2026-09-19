@@ -6,6 +6,7 @@ import { Screen } from '@/components/ui/Screen';
 import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
 import { festivalOrder, festivals } from '@/content/th/booth';
 import { common, home } from '@/content/th/common';
+import { getEventText } from '@/lib/events';
 import { getActiveFestival } from '@/lib/festival';
 
 import styles from './home.module.css';
@@ -17,11 +18,11 @@ export default function HomePage() {
 
   // A festival with no content yet shows only the next-booth pills (§8).
   const live =
-    theme?.ready && theme.home
+    active !== 'none' && theme?.ready && theme.home
       ? {
           name: theme.name,
           blurb: theme.home.blurb,
-          date: theme.date,
+          date: getEventText(active).date,
           playLabel: common.actions.playBooth,
           href: '/booth',
         }

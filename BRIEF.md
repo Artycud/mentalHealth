@@ -102,6 +102,22 @@ CREATE TABLE setting (
 );
 ```
 
+```sql
+CREATE TABLE event (
+  festival    TEXT PRIMARY KEY,   -- 'loykrathong' | 'christmas' | 'cny-valentine'
+  start_date  TEXT NOT NULL,      -- 'YYYY-MM-DD', first booth day
+  end_date    TEXT NOT NULL,      -- 'YYYY-MM-DD', last booth day, inclusive
+  time_text   TEXT NOT NULL,      -- free text as on a school notice: '11.10–12.50 น.'
+  place_text  TEXT NOT NULL,      -- 'โถงโรงอาหาร'
+  updated_at  TEXT NOT NULL
+);
+```
+
+`event` holds the booth schedule, one row per festival. A festival with no row
+falls back to the defaults in `lib/events.ts`, so a fresh database still shows
+sensible dates. Dates are stored as ISO calendar dates and formatted for display
+(Buddhist Era, e.g. `19–20 พ.ย. 2569`) by `lib/thai-date.ts`.
+
 `active_festival` defaults to `loykrathong`. It is read server-side on every student page load, and its value at that moment is written into `session.festival`, so statistics stay separable per booth.
 
 Never store: names, student IDs, classes, IP addresses, user-agent strings, cookies that identify a student, or free text. `device_bucket` comes from viewport width, not fingerprinting, and it is optional.
@@ -362,6 +378,22 @@ One account, used by the student council to pull statistics for the school. Thai
 
 **Theme control (top of the panel, above the summary).** A single clear control showing which festival is live — ลอยกระทง / คริสต์มาส / ตรุษจีน & วาเลนไทน์ / ไม่มีบูธ — with the current one marked. Changing it asks for confirmation, writes `setting.active_festival`, and takes effect on the next student page load. If the chosen festival still has no content, show a plain warning beside it: ยังไม่มีเนื้อหาของบูธนี้ นักเรียนจะเห็นหน้า "ยังไม่มีบูธ". Only an authenticated admin can change it, and the change is never exposed through a public route.
 
+**Events (กิจกรรม).** Where the council changes when and where each booth runs.
+(Build note for phase 4: the student and booth pages are prerendered static
+today. Once `getEvent()` reads the database they must render per request, or an
+edit would not show until the next rebuild.)
+One row per festival — ลอยกระทง, คริสต์มาส, ตรุษจีน & วาเลนไทน์ — each with a
+start date, an end date, a time and a place, edited with plain date pickers and
+text fields. Saving writes the `event` table and takes effect on the next page
+load of the home screen, the kiosk, the TV and the booth ticket, all of which
+read `getEvent()` in `lib/events.ts`. This is separate from the theme control:
+changing a date does not switch which festival is live, and switching the live
+festival does not touch any dates. Past sessions are never affected, because a
+session records the festival it ran under and not its dates. An end date before
+the start date is treated as a single day rather than rejected, so a typo can
+never blank a public screen. Verified: changing the one source moves all four
+screens.
+
 **Charts.** Plain CSS bars built from divs, no chart library:
 - sessions per day,
 - result states,
@@ -482,6 +514,9 @@ Recorded here so they are not re-litigated later.
 | Booth devices | **Two**, not one: a kiosk for answering and a TV for live visualisation. Both landscape, both behind a booth account. See §11. | 2026-09-19 |
 | Booth password | Set and reset from the admin panel, stored hashed, shown once on generation. | 2026-09-19 |
 | Loy Krathong flowers | Six, given by the council: ดอกบัว ดอกรัก ดอกบานไม่รู้โรย ดาวเรือง กล้วยไม้ จำปี. **Names may still change.** ("จำไป" in the original message was confirmed a typo for จำปี.) | 2026-09-19 |
+| Booth dates | Loy Krathong is **19–20 พ.ย. 2569** — the schedule section of the project document, which the council confirmed as "probably" right. The Gantt table's 19–24 พ.ย. is dropped. Dates are **editable later in the admin panel's Events section**, so a wrong guess is a two-minute fix, not a deploy. | 2026-09-19 |
+| Booth quiz style | Easier, on instinct: concrete everyday choices with short answers and no right one (a holiday, a colour, a festival), instead of "what would you float away?". Answer pictures are neutral shapes and colour swatches, not the check-in's full-to-empty moons, which read as better-to-worse. Every question can be undone with a back button. | 2026-09-19 |
+| Booth result | A moment, not a label: the flower blooms in, with a wish from the flower, the ticket to show staff, and what to do next at the booth. Reset is 45 seconds, restarted by any touch, so nobody is cut off mid-read. | 2026-09-19 |
 | Booth scoring | Sum of answer points modulo six, **not** most-votes-wins. Plurality was rejected after enumerating all 64 answer combinations: 62.5% of students would be decided by question 1 alone, and กล้วยไม้ / จำปี would each get only 6% against 22% for the rest — a real problem for a booth that hands out physical flowers. The sum gives 14–19% per flower. | 2026-09-19 |
 
 ## Event facts
@@ -501,9 +536,11 @@ the Loy Krathong activities it belongs to: a mini-krathong zone, a post-it wall,
 the flower quiz, แปะดอกไม้แทนความรู้สึก, and an origami workshop. The TV river of
 flowers is built to mirror แปะดอกไม้แทนความรู้สึก on screen.
 
-**Two dates need confirming.** The document's schedule section and its Gantt
-table disagree, and the schedule section is used because it also carries the
-time and place:
+**Dates.** The document's schedule section and its Gantt table disagree. The
+council confirmed Loy Krathong as **19–20 พ.ย.** (the schedule section), so that
+is settled, and every date is editable later in the admin panel's Events
+section. ตรุษจีน & วาเลนไทน์ is still unconfirmed, but no longer blocks
+anything — it is a one-field edit when the council decides:
 
 | Booth | Schedule section | Gantt table |
 |---|---|---|
@@ -512,7 +549,7 @@ time and place:
 
 ## Still needed from the student council
 
-- **Confirm the two contradictory dates above.**
+- ตรุษจีน & วาเลนไทน์ dates: 10–11 or 10–12 ก.พ. (editable in the admin Events section, so not a blocker).
 - CUD Care's real contact channels (the `#cud-care` link).
 - **Review of the five drafted flower descriptions.** Only ดาวเรือง's line is
   written in this brief. The other five each rest on one true fact about the
@@ -520,6 +557,7 @@ time and place:
 - **A real illustration for each of the five other flowers.** Only the marigold
   is hand-drawn. The rest use a tinted rosette as an interim stand-in, which
   must not be mistaken for a lotus or an orchid.
-- Review of the 7 drafted check-in questions and the 3 drafted booth questions.
+- Review of the 7 drafted check-in questions and the 3 drafted booth questions (rewritten this pass to be easier to answer).
+- **Which booth activities run on which day.** The result screen's "ต่อไปที่บูธ" lists three things named in the project document — the mini krathong zone, แปะดอกไม้แทนความรู้สึก, and the origami-lotus workshop. The document names them but not their days or how they run, so nothing more is claimed; confirm before students rely on it.
 - Quiz content for the Christmas and ตรุษจีน & วาเลนไทน์ booths. Their
   activities are known from the project document, but no quiz or results exist.
