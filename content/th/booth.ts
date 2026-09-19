@@ -88,15 +88,15 @@ export const withDok = (name: string) => (name.startsWith('ดอก') ? name : 
 /**
  * Loy Krathong flower results.
  *
- * The six the booth actually stocks, given by the student council. ดาวเรือง's
- * `body` line is written in BRIEF §8. Everything else — the other `body` lines,
- * every `fact` and every `wish` — is a DRAFT awaiting council review.
+ * The six the booth actually stocks, given by the student council. Every
+ * `body`, `fact` and `wish` is a DRAFT awaiting council review. (ดาวเรือง's
+ * `body` began as the line written in BRIEF §8; the council later asked for its
+ * closing phrase "เหมือนคำตอบเมื่อกี้ของคุณเลย" to be removed from all six.)
  *
  * Each flower is a personality (see the quiz below), so `body` describes it in
- * three or four plain words and closes on the "เหมือนคำตอบเมื่อกี้" hook (§10).
- * That hook is now earned: the quiz really does measure the two things each
- * description talks about. `fact` is one plainly true thing about the real
- * flower, and `wish` is a warm line in the booth's theme of letting go.
+ * three or four plain words. It is earned: the quiz really does measure the two
+ * things each description talks about. `fact` is one plainly true thing about
+ * the real flower, and `wish` is a warm line in the booth's theme of letting go.
  *
  * Order and names may still change before the booth — the council said so
  * directly — so nothing else in the codebase should assume this order or count
@@ -127,7 +127,7 @@ export const loykrathongFlowers: Flower[] = [
     id: 'lotus',
     tint: 3, // pink with a yellow centre, like the real thing
     name: 'ดอกบัว',
-    body: 'นิ่ง สงบ ปล่อยวางเก่ง เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'นิ่ง สงบ ปล่อยวางเก่ง',
     fact: 'น้ำกลิ้งหลุดจากใบบัวได้ ไม่เปียกติด',
     wish: 'ขอให้เรื่องที่หนักใจ ไหลผ่านไปเหมือนน้ำบนใบบัว',
     named: true,
@@ -136,7 +136,7 @@ export const loykrathongFlowers: Flower[] = [
     id: 'crown-flower',
     tint: 5, // blue over pink reads as the lilac of the common variety
     name: 'ดอกรัก',
-    body: 'ใจดี ห่วงใยคนรอบตัว เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'ใจดี ห่วงใยคนรอบตัว',
     fact: 'ชื่อแปลว่า "รัก" ตรง ๆ เลย',
     wish: 'ขอให้วันนี้ได้รักตัวเองเพิ่มอีกนิด',
     named: true,
@@ -145,7 +145,7 @@ export const loykrathongFlowers: Flower[] = [
     id: 'globe-amaranth',
     tint: 1, // magenta-purple, the usual colour of the globe
     name: 'ดอกบานไม่รู้โรย',
-    body: 'ยิ้มง่าย อยู่กับเพื่อนได้นาน ไม่จางไปไหน เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'ยิ้มง่าย อยู่กับเพื่อนได้นาน ไม่จางไปไหน',
     fact: 'ตากแห้งเก็บไว้นานแค่ไหนก็ยังสีเดิม',
     wish: 'ขอให้ความรู้สึกดี ๆ ของวันนี้อยู่กับคุณไปนาน ๆ',
     named: true,
@@ -156,7 +156,7 @@ export const loykrathongFlowers: Flower[] = [
     id: 'marigold',
     tint: 0, // the yellow-and-orange of the hand-drawn marigold
     name: 'ดาวเรือง',
-    body: 'สีสด ทนแดด อยู่ได้นาน เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'สีสด ทนแดด อยู่ได้นาน',
     fact: 'ปลูกง่าย ชอบแดดจัด ๆ',
     wish: 'ขอให้มีแรงใจสู้แดดสู้ฝนไปได้อีกนาน',
     named: true,
@@ -165,7 +165,7 @@ export const loykrathongFlowers: Flower[] = [
     id: 'orchid',
     tint: 2,
     name: 'กล้วยไม้',
-    body: 'ไม่เหมือนใคร มีสไตล์เป็นของตัวเอง เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'ไม่เหมือนใคร มีสไตล์เป็นของตัวเอง',
     fact: 'ดอกบานอยู่ได้นานหลายวัน บางชนิดหลายสัปดาห์',
     wish: 'ขอให้ได้เป็นตัวเองในแบบที่ไม่เหมือนใคร',
     named: true,
@@ -174,7 +174,7 @@ export const loykrathongFlowers: Flower[] = [
     id: 'champak',
     tint: 4, // yellow-orange, as champak is
     name: 'จำปี',
-    body: 'เงียบ ๆ แต่อบอุ่น อยู่ตรงไหนก็หอมไกล เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'เงียบ ๆ แต่อบอุ่น อยู่ตรงไหนก็หอมไกล',
     fact: 'หอมแรง ได้กลิ่นตั้งแต่ไกล',
     wish: 'ขอให้มีเรื่องดี ๆ ให้จำ มากกว่าเรื่องที่อยากลืม',
     named: true,

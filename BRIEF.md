@@ -286,7 +286,7 @@ Three short festival questions, then the result:
 4. Itim note: ดอกไม้ของคุณคือ
 5. H1 at 64px: **ดาวเรือง**
 6. Marigold illustration.
-7. Body: สีสด ทนแดด อยู่ได้นาน เหมือนคำตอบเมื่อกี้ของคุณเลย
+7. Body: สีสด ทนแดด อยู่ได้นาน (the closing "เหมือนคำตอบเมื่อกี้ของคุณเลย" was removed at the council's request)
 8. Booth ticket: เอาหน้านี้ไปโชว์ที่บูธ / รับดอกดาวเรืองไปแต่งกระทงของคุณได้เลย / pin ที่โรงอาหาร [วันที่จัดบูธ]
 9. Secondary button **กลับหน้าแรก**, with the link ลองเช็กอินความรู้สึกด้วยไหม? below.
 
