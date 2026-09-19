@@ -347,6 +347,9 @@ export const boothNext = {
 export const tv = {
   /** On the water before anyone has played today. */
   empty: 'ยังไม่มีใครเล่นวันนี้ มาเป็นคนแรกเลย',
+  /** The quiet screen for a new flower: the note above it, and the line below. */
+  newNote: 'ดอกไม้ดอกใหม่',
+  newLine: 'มีคนเพิ่งได้ดอกนี้ ลอยลงแม่น้ำแล้ว',
 } as const;
 
 /** Copy for the kiosk, which is read standing up by a queue. */

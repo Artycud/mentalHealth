@@ -2,6 +2,7 @@ import { connection } from 'next/server';
 
 import { CountBlob, Waves } from '@/components/booth/art';
 import { AutoRefresh } from '@/components/booth/AutoRefresh';
+import { NewFlowerMoment } from '@/components/booth/NewFlowerMoment';
 import { tintInk, WallFlower } from '@/components/booth/WallFlower';
 import { Wordmark } from '@/components/illustrations/icons';
 import { boothQuizTitle, festivals, tv } from '@/content/th/booth';
@@ -69,6 +70,9 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
     <main className={styles.stage}>
       {/* Polls the server so the numbers stay current. */}
       <AutoRefresh />
+      {/* A quiet screen for each new flower. In demo mode it pretends one arrives
+          every few seconds, so the design can be reviewed. */}
+      <NewFlowerMoment total={wall.total} recent={wall.recent} demo={showDemo} />
       <div className={styles.head}>
         <span className={styles.brand}>
           <Wordmark />

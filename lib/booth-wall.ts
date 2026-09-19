@@ -1,6 +1,7 @@
 import { loykrathongFlowers } from '../content/th/booth.ts';
 
 import { db } from './db.ts';
+import type { Arrival } from './new-flowers.ts';
 import type { FestivalId, Tint } from './types';
 
 /**
@@ -31,8 +32,12 @@ export interface WallData {
   total: number;
   /** One per flower, in the content's order, counting today. */
   flowers: WallFlower[];
-  /** The latest results, newest first: these are the flowers on the river. */
-  recent: { tint: Tint }[];
+  /**
+   * The latest results, newest first: the flowers on the river, and where the
+   * TV finds the new ones to celebrate. A flower's own id and name only (they are
+   * public), never anything about who got it.
+   */
+  recent: Arrival[];
   /** True only for the demo numbers, so the screen can say they are invented. */
   sample: boolean;
 }
@@ -94,7 +99,7 @@ export async function getWallData(festival: FestivalId, nowMs = Date.now()): Pro
     });
     data.recent = recent.rows.flatMap((r) => {
       const f = loykrathongFlowers.find((x) => x.id === r.flower);
-      return f ? [{ tint: f.tint }] : [];
+      return f ? [{ flowerId: f.id, name: f.name, tint: f.tint }] : [];
     });
   } catch (error) {
     console.error('getWallData: showing an empty wall', error);
@@ -112,9 +117,10 @@ export function demoWallData(): WallData {
     today: counts.reduce((a, b) => a + b, 0),
     total: 213,
     flowers: loykrathongFlowers.map((f, i) => ({ id: f.id, name: f.name, tint: f.tint, count: counts[i] })),
-    recent: Array.from({ length: RIVER_LENGTH }, (_, i) => ({
-      tint: loykrathongFlowers[i % loykrathongFlowers.length].tint,
-    })),
+    recent: Array.from({ length: RIVER_LENGTH }, (_, i) => {
+      const f = loykrathongFlowers[i % loykrathongFlowers.length];
+      return { flowerId: f.id, name: f.name, tint: f.tint };
+    }),
     sample: true,
   };
 }

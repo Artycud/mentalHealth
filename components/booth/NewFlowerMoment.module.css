@@ -1,0 +1,124 @@
+/* The quiet screen for a new flower on the TV. Sizes are in vh, like the TV.
+
+   Restraint is the design. The page behind stays exactly as it is; this covers it
+   with plain paper and shows one flower in its own colour. The only saturated
+   colour on screen is that flower. Everything else is ink on paper, and the one
+   ring is a thin line that swells once and is gone. */
+
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4vh;
+  padding: 4vh 4vw;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: center;
+  /* In, hold, out — as one animation on the clock the timer also uses, so the
+     screen is never still showing when the component has already left. */
+  animation: veil var(--moment-ms, 5500ms) ease-in-out both;
+}
+
+/* The one Itim note on this screen (BRIEF §5). */
+.note {
+  font-family: var(--font-note);
+  font-size: 3.6vh;
+  line-height: 1.4;
+  color: var(--note-pink);
+  animation: rise 500ms var(--ease) 250ms backwards;
+}
+
+/* Square, so the disc stays round. The FlowerArt fills it, and brings its own
+   bloom (petals opening one after another) and, later, its slow breath. */
+.art {
+  position: relative;
+  width: 44vh;
+  height: 44vh;
+  animation: fade 400ms var(--ease) 200ms backwards;
+}
+
+/* A single thin ring that swells past the flower and fades: the whole of the
+   "celebration". A line, not a burst. Transform and opacity only. */
+.ring {
+  position: absolute;
+  inset: 4%;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: ring 1800ms ease-out 700ms both;
+}
+
+.name {
+  font-size: 12vh;
+  font-weight: 600;
+  line-height: 1.15;
+  animation: rise 500ms var(--ease) 500ms backwards;
+}
+
+.line {
+  font-size: 3vh;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  animation: rise 500ms var(--ease) 650ms backwards;
+}
+
+/* Fade in over the first 6%, hold, fade out over the last 9%. */
+@keyframes veil {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  91% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(1.4vh);
+    opacity: 0;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ring {
+  from {
+    transform: scale(0.85);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: it still appears and leaves — that is information — but with no
+   movement. The component's own timer removes it, so nothing is left behind. */
+@media (prefers-reduced-motion: reduce) {
+  .veil,
+  .note,
+  .art,
+  .ring,
+  .name,
+  .line {
+    animation: none;
+  }
+
+  .ring {
+    display: none;
+  }
+}

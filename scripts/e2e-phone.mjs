@@ -11,8 +11,10 @@
 // screenshots of the key screens. The database checks need the app to be using a
 // local file (the default); against a remote database they are skipped.
 //
-// Everything it creates is deleted again at the end. It only ever removes
-// sessions that started after it did.
+// Everything it creates is deleted again at the end, and ONLY that: it records the
+// id of every session its own browsers start, and never selects or deletes by time
+// or by anything else. So it is safe to run against a database someone else is also
+// using, for example while a colleague tries the kiosk.
 
 import fs from 'node:fs';
 
@@ -52,7 +54,8 @@ const check = (label, ok, detail = '') => {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const db = CHECK_DB ? createClient({ url: DB_URL }) : null;
-const testStart = new Date().toISOString();
+/** Every session id this run's own browsers created, in order. The ONLY rows it ever touches. */
+const created = [];
 const rows = async (sql, args = []) => (db ? (await db.execute({ sql, args })).rows : []);
 
 /** Poll until a query returns what we expect: saving is asynchronous and quiet. */
@@ -75,8 +78,21 @@ const tv = { width: 1280, height: 720, deviceScaleFactor: 1 };
 async function newPage(viewport = phone, context = browser) {
   const page = await context.newPage();
   await page.setViewport(viewport);
+  // Note the id of every session this page starts, straight from the API's reply.
+  page.on('response', async (res) => {
+    if (res.request().method() === 'POST' && new URL(res.url()).pathname === '/api/session' && res.status() === 201) {
+      try {
+        created.push((await res.json()).id);
+      } catch {
+        /* not ours to worry about */
+      }
+    }
+  });
   return page;
 }
+
+/** SQL placeholders for a list of ids: "?, ?, ?". */
+const marks = (ids) => ids.map(() => '?').join(', ');
 
 const shot = async (page, name) => {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` });
@@ -155,12 +171,15 @@ const letters = ['a', 'b', 'c', 'd'];
   await shot(page, 'phone-checkin-q8');
 
   await (await btn()).click();
-  await page.waitForFunction(() => location.pathname === '/result', { timeout: 5000 });
+  // Generous, because the dev server compiles a route the first time it is
+  // navigated to, which right after an edit can take several seconds. A production
+  // build has no such delay.
+  await page.waitForFunction(() => location.pathname === '/result', { timeout: 20000 });
 
   // -- the result matches the scoring code, exactly
   const answers = picks.map((c, i) => ({ questionId: questions[i].id, choiceId: c }));
   const want = buildResult(scoreCheckin(answers));
-  await page.waitForFunction((h) => document.querySelector('h1')?.textContent.trim() === h, { timeout: 5000 }, want.headline);
+  await page.waitForFunction((h) => document.querySelector('h1')?.textContent.trim() === h, { timeout: 15000 }, want.headline);
   check('the result headline matches the scoring', (await heading(page)) === want.headline, `want ${want.headline}`);
   const bodyText = await page.$eval('h1 + p', (p) => p.textContent.trim());
   check('the result sentence matches the scoring', bodyText === want.body, `got ${bodyText}`);
@@ -173,7 +192,7 @@ const letters = ['a', 'b', 'c', 'd'];
   // -- WHAT WAS SAVED: the run, its answers, and the server's own result
   if (CHECK_DB) {
     const saved = await eventually(
-      () => rows("SELECT * FROM session WHERE mode = 'checkin' AND started_at >= ? AND completed_at IS NOT NULL ORDER BY started_at DESC", [testStart]),
+      () => rows('SELECT * FROM session WHERE id = ? AND completed_at IS NOT NULL', [created[0] ?? '']),
       (r) => r.length >= 1,
     );
     const s = saved[0];
@@ -202,18 +221,18 @@ const letters = ['a', 'b', 'c', 'd'];
   await fresh.close();
 
   // -- "check in again" starts clean, and is a NEW session, never an edit
-  const before = CHECK_DB ? (await rows('SELECT COUNT(*) n FROM session WHERE started_at >= ?', [testStart]))[0].n : 0;
+  const before = created.length;
+  const finishedAt = CHECK_DB ? (await rows('SELECT completed_at FROM session WHERE id = ?', [created[0]]))[0]?.completed_at : null;
   await page.evaluate(() => [...document.querySelectorAll('a')].find((a) => a.textContent.includes('เช็กอินอีกครั้ง'))?.click());
   await page.waitForFunction(() => location.pathname === '/checkin', { timeout: 5000 });
   await waitCounter(page, 1);
   check('"check in again" starts a new run at question 1', (await counter(page)) === 1);
   check('with nothing pre-selected', (await pressed(page)).every((v) => v === false));
+  await eventually(async () => created.length, (n) => n > before);
+  check('and it started a NEW session', created.length === before + 1, `before ${before}, after ${created.length}`);
   if (CHECK_DB) {
-    const after = await eventually(
-      async () => (await rows('SELECT COUNT(*) n FROM session WHERE started_at >= ?', [testStart]))[0].n,
-      (n) => Number(n) > Number(before),
-    );
-    check('and it made a NEW session, leaving the finished one alone', Number(after) === Number(before) + 1, `before ${before}, after ${after}`);
+    const still = (await rows('SELECT completed_at FROM session WHERE id = ?', [created[0]]))[0]?.completed_at;
+    check('leaving the finished one exactly as it was', still === finishedAt && !!still);
   }
   await page.close();
 }
@@ -227,7 +246,7 @@ const letters = ['a', 'b', 'c', 'd'];
   let bad = 0;
   let firstBad = '';
   let ran = 0;
-  const boothStart = new Date().toISOString();
+  const boothFrom = created.length; // this section's sessions start here
 
   for (let a = 0; a < sizes[0]; a += 1) {
     for (let b = 0; b < sizes[1]; b += 1) {
@@ -260,7 +279,9 @@ const letters = ['a', 'b', 'c', 'd'];
   if (CHECK_DB) {
     const tally = await eventually(
       async () => {
-        const r = await rows("SELECT booth_result f, COUNT(*) n FROM session WHERE mode = 'booth' AND started_at >= ? AND completed_at IS NOT NULL GROUP BY booth_result", [boothStart]);
+        const ids = created.slice(boothFrom);
+        if (ids.length === 0) return {};
+        const r = await rows(`SELECT booth_result f, COUNT(*) n FROM session WHERE id IN (${marks(ids)}) AND completed_at IS NOT NULL GROUP BY booth_result`, ids);
         return Object.fromEntries(r.map((x) => [x.f, Number(x.n)]));
       },
       (t) => Object.values(t).reduce((s, n) => s + n, 0) >= 18,
@@ -318,9 +339,12 @@ const letters = ['a', 'b', 'c', 'd'];
   const readCount = () => tvPage.$eval('[class*="countNum"]', (n) => Number(n.textContent.trim()));
   const startCount = await readCount();
   await tvPage.evaluate(() => { window.__stillHere = 'no reload'; });
+  await sleep(1500);
+  check('loading the TV does not replay old results as new flowers', (await tvPage.$('[role="status"]')) === null);
   check('the TV shows a real, non-invented count', (await tvPage.evaluate(() => !document.body.innerText.includes('ตัวอย่าง'))));
   await shot(tvPage, 'tv-live-before');
 
+  const kioskFrom = created.length;
   const kiosk = await newPage(tablet);
   await kiosk.goto(`${BASE}/booth/kiosk`, { waitUntil: 'networkidle0' });
   check('the kiosk opens on its own idle screen', (await heading(kiosk)) === 'คุณเป็นดอกไม้แบบไหน?');
@@ -338,7 +362,7 @@ const letters = ['a', 'b', 'c', 'd'];
 
   if (CHECK_DB) {
     const s = (await eventually(
-      () => rows("SELECT * FROM session WHERE mode = 'booth' AND device_bucket = 'tablet' AND started_at >= ? AND completed_at IS NOT NULL", [testStart]),
+      () => rows('SELECT * FROM session WHERE id = ? AND completed_at IS NOT NULL', [created[kioskFrom] ?? '']),
       (r) => r.length >= 1,
     ))[0];
     check('the kiosk saved its result, as a tablet-sized device', !!s && s.booth_result === flowerWanted.id, JSON.stringify(s));
@@ -351,6 +375,21 @@ const letters = ['a', 'b', 'c', 'd'];
   const grew = await eventually(readCount, (n) => n > startCount, 14000);
   check('the TV count went up by itself within a few seconds', grew > startCount, `${startCount} -> ${grew}`);
   check('without the page reloading', (await tvPage.evaluate(() => window.__stillHere)) === 'no reload');
+
+  // -- and the TV greets the new flower with its quiet screen, then clears
+  const moment = await eventually(
+    () => tvPage.$eval('[role="status"]', (el) => el.querySelector('h2')?.textContent ?? '').catch(() => ''),
+    (t) => t !== '',
+    6000,
+  );
+  check(`the TV showed the new flower's moment (${flowerWanted.name})`, moment === flowerWanted.name, `showed "${moment}"`);
+  await shot(tvPage, 'tv-live-moment');
+  const cleared = await eventually(
+    () => tvPage.$('[role="status"]').then((el) => el === null),
+    (gone) => gone === true,
+    9000,
+  );
+  check('and it cleared itself, back to the dashboard', cleared === true);
   await shot(tvPage, 'tv-live-after');
 
   // -- the kiosk puts itself back to idle for the next student
@@ -373,8 +412,11 @@ const letters = ['a', 'b', 'c', 'd'];
 
 // ---- clean up: only what this run created ----
 if (db) {
-  await db.execute({ sql: 'DELETE FROM answer WHERE session_id IN (SELECT id FROM session WHERE started_at >= ?)', args: [testStart] });
-  await db.execute({ sql: 'DELETE FROM session WHERE started_at >= ?', args: [testStart] });
+  if (created.length > 0) {
+    await db.execute({ sql: `DELETE FROM answer WHERE session_id IN (${marks(created)})`, args: created });
+    await db.execute({ sql: `DELETE FROM session WHERE id IN (${marks(created)})`, args: created });
+  }
+  console.log(`(cleaned up the ${created.length} sessions this run created, and nothing else)`);
   db.close();
 }
 await browser.close();

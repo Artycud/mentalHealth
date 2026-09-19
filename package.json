@@ -16,7 +16,8 @@
     "test:scoring": "node --experimental-strip-types --no-warnings scripts/test-scoring.mjs",
     "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e-phone.mjs",
     "test:db": "node --experimental-strip-types --no-warnings scripts/test-db.mjs",
-    "db:reset": "node -e \"for(const f of ['app.db','app.db-journal','app.db-wal','app.db-shm'])require('fs').rmSync('data/'+f,{force:true});console.log('data/app.db removed')\""
+    "db:reset": "node -e \"for(const f of ['app.db','app.db-journal','app.db-wal','app.db-shm'])require('fs').rmSync('data/'+f,{force:true});console.log('data/app.db removed')\"",
+    "test:moment": "node --experimental-strip-types --no-warnings scripts/test-new-flowers.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
