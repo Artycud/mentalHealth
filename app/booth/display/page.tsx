@@ -1,8 +1,9 @@
 import { connection } from 'next/server';
 
-import { CountBlob, Waves } from '@/components/booth/art';
+import { CountBlob } from '@/components/booth/art';
 import { AutoRefresh } from '@/components/booth/AutoRefresh';
 import { NewFlowerMoment } from '@/components/booth/NewFlowerMoment';
+import { FestivalRiver } from '@/components/festival/registry';
 import { tintInk, WallFlower } from '@/components/booth/WallFlower';
 import { Wordmark } from '@/components/illustrations/icons';
 import { boothQuizTitle, festivals, tv } from '@/content/th/booth';
@@ -68,7 +69,7 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
   const river = [0, 1];
 
   return (
-    <main className={styles.stage}>
+    <main className={styles.stage} data-festival={active}>
       {/* Polls the server so the numbers stay current. */}
       <AutoRefresh />
       {/* A quiet screen for each new flower. In demo mode it pretends one arrives
@@ -141,12 +142,12 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
         </div>
       </div>
 
-      {/* The river. Each flower is one student's result, floating away —
-          ปล่อยวางความทุกข์, the booth's own theme. */}
+      {/* The river band. The water is the festival's (an empty slot if it has none);
+          the flowers on it are the base's: each one is a student's result, floating
+          away. ปล่อยวางความทุกข์, the booth's own theme. Text on the water is paper
+          coloured, so the footer lives inside the band. */}
       <div className={styles.river}>
-        <div className={styles.water}>
-          <Waves />
-        </div>
+        <FestivalRiver id={active} />
         {empty && <p className={styles.emptyRiver}>{tv.empty}</p>}
         <div className={styles.track}>
           {river.map((copy) => (
@@ -163,19 +164,18 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
                     } as React.CSSProperties
                   }
                 >
-                  <WallFlower tint={r.tint} />
+                  <WallFlower tint={r.tint} plate />
                 </span>
               ))}
             </div>
           ))}
         </div>
-      </div>
-
-      <div className={styles.foot}>
-        <span>
-          {event.place} · รวมทั้งหมด {wall.total} คน
-        </span>
-        {wall.sample && <span className={styles.sample}>ตัวอย่าง — ยังไม่ใช่ข้อมูลจริง</span>}
+        <div className={styles.foot}>
+          <span>
+            {event.place} · รวมทั้งหมด {wall.total} คน
+          </span>
+          {wall.sample && <span className={styles.sample}>ตัวอย่าง — ยังไม่ใช่ข้อมูลจริง</span>}
+        </div>
       </div>
     </main>
   );

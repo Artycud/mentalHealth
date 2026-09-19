@@ -5,9 +5,9 @@
   align-self: flex-start;
   margin-top: 36px;
   padding: 4px 14px;
-  border: 2px solid var(--ink);
   border-radius: var(--r-pill);
-  background: var(--white);
+  background: var(--paper-raised);
+  box-shadow: var(--slab-shadow);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.5;

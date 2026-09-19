@@ -8,6 +8,16 @@
   height: 100%;
 }
 
+/* The poster's own light: a soft pool behind the disc, in the festival's colour.
+   A festival with no light of its own leaves it transparent. */
+.stack::before {
+  content: '';
+  position: absolute;
+  inset: -16%;
+  background: radial-gradient(circle, var(--fest-glow, transparent) 0%, transparent 65%);
+  pointer-events: none;
+}
+
 .layer {
   position: absolute;
   inset: 0;

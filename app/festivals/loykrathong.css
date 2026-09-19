@@ -1,0 +1,19 @@
+/* Loy Krathong: water, floating light, the quiet of a night by the river.
+
+   A festival is only this: a scene, and the few colours the scene needs. This file
+   may set ONLY the variables below. It never touches paper, text colours, fonts,
+   sizes, radii, spacing or motion timing; those are the base identity and are the
+   same for every festival (`npm run check:theme` fails if this file, or any other
+   festival file, sets anything else).
+
+   The scene lives in reserved bands, never behind text: the reading happens on
+   paper, and where text does sit on the water it is paper-coloured. */
+
+[data-festival='loykrathong'] {
+  --accent: var(--sunflower);          /* the ink this festival leads with */
+  --fest-far: var(--riso-blue);        /* the far layer of water */
+  --fest-near: var(--ink);             /* the near layer of water */
+  --fest-light: var(--sunflower);      /* the moon, and its reflection */
+  --fest-glow: rgba(255, 181, 17, 0.6); /* the pool of light under a floating flower */
+  --fest-on-water: var(--paper);       /* text that sits on the near layer */
+}

@@ -10,10 +10,35 @@
   height: 100dvh;
   padding: 3.5vh max(4vw, env(safe-area-inset-left)) max(3.5vh, env(safe-area-inset-bottom))
     max(4vw, env(safe-area-inset-right));
-  background: var(--paper);
+  background: var(--paper-surface);
   color: var(--ink);
   overflow: hidden;
   overflow: clip;
+}
+
+/* The idle screen ends in a slim river, so the stage keeps the room for it. */
+.withShore {
+  position: relative;
+  padding-bottom: 15vh;
+}
+
+/* The water is the festival's (components/festival/); this only sizes its band and
+   sets the footer on it, in paper colour, because it sits on the water. */
+.shore {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 13vh;
+}
+
+.foot.footOnWater {
+  position: absolute;
+  left: max(4vw, env(safe-area-inset-left));
+  right: max(4vw, env(safe-area-inset-right));
+  bottom: 2.2vh;
+  padding-top: 0;
+  color: var(--fest-on-water, var(--ink-muted));
 }
 
 .head {
@@ -307,9 +332,15 @@
   min-height: 13vh;
   max-height: 22vh;
   padding: 2vh 2.2vw;
-  border: 3px solid var(--line);
+  border: none;
   border-radius: 3vh;
-  background: var(--white);
+  background: var(--paper-raised);
+  /* A slab of paper on the paper. Its shadow is never animated (BRIEF §9): the
+     picked ring is drawn on ::after and faded by opacity. */
+  position: relative;
+  box-shadow:
+    0 0.4vh 0 var(--line),
+    0 2vh 3vh -2vh rgba(27, 43, 94, 0.32);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 3.6vh;
@@ -318,8 +349,18 @@
   text-align: left;
   transition:
     background-color var(--d-color) var(--ease),
-    border-color var(--d-color) var(--ease),
     transform var(--d-tap) var(--ease);
+}
+
+.answer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--d-color) var(--ease);
 }
 
 .answer:active {
@@ -329,8 +370,11 @@
 /* The tapped answer holds on screen for a beat before the question moves on, so
    a tap always visibly lands. Border and fill fade together (§9). */
 .picked {
-  border-color: var(--ink);
   background: var(--pink-tint);
+}
+
+.picked::after {
+  opacity: 1;
 }
 
 /* The marker is the first thing the eye lands on, so it is bigger than the

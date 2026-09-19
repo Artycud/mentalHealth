@@ -1,5 +1,5 @@
-/* Open section, not a card: a 2px dashed ink rule on top and nothing else
-   (BRIEF §7). */
+/* Open section, not a card: a small hand-drawn wave on top and nothing else
+   (BRIEF §7). The wave is the base identity's water line, not a festival mark. */
 
 .section {
   display: flex;
@@ -7,7 +7,14 @@
   gap: 6px;
   margin-top: 44px;
   padding-top: 24px;
-  border-top: 2px dashed var(--ink);
+}
+
+.section::before {
+  content: '';
+  height: 10px;
+  margin-bottom: 14px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='10' viewBox='0 0 40 10'><path d='M0 5 Q10 -1 20 5 T40 5' fill='none' stroke='%231B2B5E' stroke-opacity='.4' stroke-width='2' stroke-linecap='round'/></svg>")
+    repeat-x left center;
 }
 
 .head {
@@ -68,8 +75,8 @@
 }
 
 .chip {
-  padding: 3px 12px;
-  border: 1.5px solid var(--pill-line);
+  padding: 3px 14px;
+  background: var(--track);
   border-radius: var(--r-pill);
   font-size: 14px;
   line-height: 1.5;

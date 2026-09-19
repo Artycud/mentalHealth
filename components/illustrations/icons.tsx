@@ -94,17 +94,6 @@ export function LocationPin() {
   );
 }
 
-/** A yellow moon over a wavy water line — the Loy Krathong festival mark. */
-export function FestivalMoonIcon() {
-  return (
-    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style={{ flexShrink: 0 }}>
-      <circle cx="36" cy="26" r="20" fill="var(--accent)" className="mul" />
-      <circle cx="31" cy="29" r="20" className="ln-thin" />
-      <path d="M6 54 C14 48 22 60 30 54 C38 48 46 60 58 52" className="ln" />
-    </svg>
-  );
-}
-
 /** One per suggestion row, and each row gets a different one (§7). */
 export function SuggestionMarker({
   variant,

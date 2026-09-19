@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { IdleBackdrop, QuizArt } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
 import { FlowerArt } from '@/components/booth/FlowerArt';
+import { FestivalRiver } from '@/components/festival/registry';
 import {
   BackChevron,
   CheckBadge,
@@ -146,8 +147,8 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
     </div>
   );
 
-  const foot = (right: React.ReactNode) => (
-    <div className={styles.foot}>
+  const foot = (right: React.ReactNode, onWater = false) => (
+    <div className={`${styles.foot} ${onWater ? styles.footOnWater : ''}`}>
       <span>
         บูธ{theme.name} · {event.place}
       </span>
@@ -157,7 +158,7 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
 
   if (stage.kind === 'idle') {
     return (
-      <main className={styles.stage}>
+      <main className={`${styles.stage} ${styles.withShore}`} data-festival={theme.id}>
         {head}
         <div className={styles.idle}>
           <div className={styles.idleText}>
@@ -188,7 +189,11 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
             </div>
           </div>
         </div>
-        {foot(<span>{event.date}</span>)}
+        {/* A slim river along the bottom: the festival's water, with no moon. */}
+        <div className={styles.shore}>
+          <FestivalRiver id={theme.id} moon={false} />
+        </div>
+        {foot(<span>{event.date}</span>, true)}
       </main>
     );
   }
@@ -196,7 +201,7 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
   if (stage.kind === 'quiz') {
     const question = loykrathongQuiz[stage.step];
     return (
-      <main className={styles.stage}>
+      <main className={styles.stage} data-festival={theme.id}>
         {head}
         {/* Re-keyed per question so each one slides in from the side it came. */}
         <div className={styles.quiz} key={question.id} data-dir={stage.dir}>
@@ -257,7 +262,11 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
   return (
     // Any touch on the result restarts the countdown: a student still reading
     // is never cut off, only one who has walked away.
-    <main className={styles.stage} onPointerDown={() => setRemaining(kiosk.resetSeconds)}>
+    <main
+      className={styles.stage}
+      data-festival={theme.id}
+      onPointerDown={() => setRemaining(kiosk.resetSeconds)}
+    >
       {head}
       <div className={styles.result}>
         <div className={styles.resultText}>

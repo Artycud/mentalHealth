@@ -1,28 +1,51 @@
-/* CUD Mental Health Week — design tokens and base layer.
-   Every value here traces to a section of BRIEF.md. Do not add colours,
-   fonts, radii or durations that are not listed there. */
+/* CUD Mental Health Week — the base identity: design tokens and base layer.
+
+   The base is warm paper printed with four inks (navy, hot pink, cobalt, marigold),
+   cut by hand: soft shapes, no technical marks. It belongs to Mental Health Week,
+   never to one festival. A festival adds only a scene on top of it, through the
+   --fest-* variables set in app/festivals/*.css; nothing in this file or in the
+   base components names a festival. `npm run check:theme` enforces that, and
+   checks the contrast of every text/paper pairing below.
+
+   Do not add colours, fonts, radii or durations that are not listed here. */
 
 :root {
   color-scheme: light;
 
-  /* ---- Colour (§4). These 14 are the whole palette. ---- */
-  --paper: #F1F2F4;       /* page background */
-  --ink: #1B2B5E;         /* body text, primary fill, outlines, strokes */
-  --ink-soft: #46507A;    /* secondary text, dates, descriptions */
-  --ink-muted: #5A6386;   /* footer */
-  --riso-pink: #FF48B0;   /* shapes, current progress segment, focus ring */
-  --riso-blue: #0078BF;   /* shapes, answer icons */
-  --sunflower: #FFB511;   /* festival accent — Loy Krathong only */
-  --pink-tint: #FFDDEC;   /* CUD Care block, selected answer */
-  --sun-tint: #FFF1CC;    /* booth ticket */
-  --note-pink: #B0155F;   /* handwritten notes, link hover */
-  --line: #C9CEDC;        /* unselected answer border, dividers */
-  --track: #D3D7E2;       /* upcoming progress segments */
-  --pill-line: #9AA2BE;   /* small "next booth" pills */
-  --white: #FFFFFF;
+  /* ---- Colour: the four inks ---- */
+  --ink: #1B2B5E;         /* navy: text, primary fill, strokes */
+  --riso-pink: #FF48B0;   /* hot pink: shapes, current progress, focus ring */
+  --riso-blue: #0078BF;   /* cobalt: shapes, answer icons */
+  --sunflower: #FFB511;   /* marigold: light, warmth */
 
-  /* The festival accent is the ONLY colour a theme may swap (§8). */
+  /* ---- Colour: paper and its relatives (all warm) ---- */
+  --paper: #FCF1E6;       /* the page: a peach cream, between marigold and pink */
+  --paper-raised: #FEF9F5; /* slabs that sit on the paper (answer cards, plates) */
+  --track: #EDE1D1;       /* empty bars, upcoming progress segments */
+  --line: #E2D5C2;        /* dividers and the paper-thickness edge of a slab */
+  --pill-line: #A8977A;   /* small "next booth" pills */
+  --pink-tint: #FFD9E6;   /* CUD Care block, selected answer */
+  --sun-tint: #FFE9B0;    /* booth ticket */
+
+  /* ---- Colour: text ---- */
+  --ink-soft: #46507A;    /* secondary text, dates, descriptions */
+  --ink-muted: #565F82;   /* footer */
+  --note-pink: #B0155F;   /* handwritten notes, link hover */
+  --white: #FFFFFF;       /* text on navy */
+
+  /* The accent is the ink a festival leads with. Marigold unless a festival's own
+     file says otherwise (app/festivals/*.css). */
   --accent: var(--sunflower);
+
+  /* ---- Texture: grain, not noise ----
+     The paper has a near-invisible fibre; solid inks carry sparse flecks of bare
+     paper, like an uneven print. Both are small seamless tiles made by
+     `npm run textures`. Grain never sits behind text. */
+  --paper-surface: var(--paper) url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
+  --ink-speckle: url('/textures/ink-speckle.png');
+
+  /* A slab is paper laid on paper: a thin edge below it, and a soft shadow. */
+  --slab-shadow: 0 2px 0 var(--line), 0 10px 18px -12px rgba(27, 43, 94, 0.3);
 
   /* ---- Type (§5) ---- */
   --font-heading: 'Mitr', 'Noto Sans Thai', 'Leelawadee UI', Thonburi, sans-serif;
@@ -77,7 +100,7 @@ body {
   margin: 0;
   /* 100dvh, never 100vh — iOS Safari's collapsing toolbar overflows 100vh. */
   min-height: 100dvh;
-  background: var(--paper);
+  background: var(--paper-surface);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 17px;
@@ -202,5 +225,24 @@ svg {
     animation-iteration-count: 1 !important;
     transition-duration: 60ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Print and forced colours ----
+   Grain is decoration: drop it where the reader has asked for plain colour or ink
+   is being spent. */
+@media print, (forced-colors: active) {
+  :root {
+    --paper-surface: var(--paper);
+    --ink-speckle: none;
+  }
+}
+
+/* High-density screens get the same grain sampled twice as finely (see
+   scripts/make-textures.mjs), so it stays crisp instead of stretched. */
+@media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 1.5dppx) {
+  :root {
+    --paper-surface: var(--paper) url('/textures/paper-grain-2x.png') 0 0 / 192px 192px repeat;
+    --ink-speckle: url('/textures/ink-speckle-2x.png');
   }
 }

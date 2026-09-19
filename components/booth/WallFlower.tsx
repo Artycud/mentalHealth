@@ -36,10 +36,30 @@ const INNER = Array.from({ length: 6 }, (_, i) => {
   return [50 + Math.cos(a) * 14, 50 + Math.sin(a) * 14] as const;
 });
 
-export function WallFlower({ tint, size = 72 }: { tint: Tint; size?: number }) {
+/**
+ * `plate` sets the flower on a small disc of cream paper, like a krathong: the
+ * petals still multiply, but onto the plate, so the flower keeps its own colours on
+ * any water and reads as a lit thing floating, however dark the scene behind it.
+ */
+export function WallFlower({
+  tint,
+  size = 72,
+  plate = false,
+}: {
+  tint: Tint;
+  size?: number;
+  plate?: boolean;
+}) {
   const { outer, inner } = TINTS[tint];
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      style={plate ? { isolation: 'isolate' } : undefined}
+    >
+      {plate && <circle cx="50" cy="50" r="47" fill="var(--paper-raised)" />}
       {OUTER.map(([cx, cy]) => (
         <circle key={`o${cx}${cy}`} cx={cx} cy={cy} r="17" fill={outer} className="mul" />
       ))}
@@ -54,7 +74,7 @@ export function WallFlower({ tint, size = 72 }: { tint: Tint; size?: number }) {
           className="mul"
         />
       ))}
-      <circle cx="50" cy="50" r="44" className="ln-dot" />
+      <circle cx="50" cy="50" r="44" className="ln-dot" opacity={plate ? 0.5 : 1} />
       <path d="M46 48 L46.1 48 M52 53 L52.1 53 M54 45 L54.1 45" className="ln" />
     </svg>
   );

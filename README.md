@@ -61,7 +61,9 @@ made-up figures can never appear on the real wall).
 | `npm run check:booth` | That every flower gets an equal share of the booth quiz, every question matters, and no two answers count the same. Run it after editing any booth question. |
 | `npm run test:db` | The data layer, against a throwaway database: answers must exist in the content, results are recomputed on the server, finished sessions are immutable, "today" is Thailand time. |
 | `npm run test:dates` | Thai date formatting, including bad input. |
-| `npm run test:moment` | Detecting new flowers for the TV. |
+| `npm run test:moment` | Detecting new flowers for the TV, and how the river's flowers recede with age. |
+| `npm run check:theme` | The look's guard rails, computed from the real files: contrast of every text/paper pairing, that a festival file sets only its scene variables, that the base names no festival, and that no crosshair or halftone marks creep back. |
+| `npm run test:look` | In a real browser: the private screens carry no festival layer, the festival appears where it should, the TV never scrolls, and reduced motion really stops everything. Needs `npm run dev` running. Writes nothing to the database. |
 | `npm run test:e2e` | Drives a **real Chrome** through the check-in, the booth quiz on all 18 paths, the kiosk and the TV, then reads the database to check what was saved. Needs `npm run dev` running and Chrome or Edge installed. It deletes only the sessions it creates. |
 
 ## Configuration
@@ -106,16 +108,41 @@ and copying it is the whole backup plan.
 domain points at Vercel now and at the school server later, every code already on
 a poster keeps working. Do not print any until that domain exists.
 
+## The look: a base and a festival layer
+
+The **base identity** belongs to Mental Health Week: warm peach-cream paper printed with
+four inks (navy, hot pink, cobalt, marigold), hand-cut shapes with a soft paper edge,
+slab cards, and a faint grain. It is defined in `app/globals.css` and is the same for
+every festival.
+
+A **festival** is only a scene laid on top: for Loy Krathong, a night river with a
+marigold moon, and each result floating as a lit flower. It lives in
+`components/festival/<id>/` with one token file, `app/festivals/<id>.css`, and one line
+in `components/festival/registry.tsx`. A festival may set only the `--fest-*` scene
+variables and never touches paper, text colours, type, sizes or motion, so it cannot make
+anything illegible. The private screens (`/checkin`, `/result`) never carry it.
+
+To add a festival, copy the Loy Krathong folder and token file, change them, and add the
+line to the registry. `npm run check:theme` tells you if you broke a rule.
+
+The grain is two small pre-rendered image tiles (plus retina versions) in
+`public/textures/`. They are committed; `npm run textures` re-makes them if you want to
+tune the grain. See BRIEF section 4 for why it is tiles and not a live filter.
+
 ## How it is organised
 
 ```
 app/            pages and API routes (student pages, /booth/*, /api/session/*)
+app/festivals/  one CSS file per festival: only its scene variables
 components/     illustrations, UI, the quiz, the booth screens
+components/festival/  the festival layer: each festival's scene, and the registry
 content/th/     ALL Thai copy: questions, results, flowers, dates. Never in components.
 lib/            scoring, the database, sessions, events, the TV's data
-scripts/        the tests
+scripts/        the tests, and the texture generator
 public/fonts/   the fonts, self-hosted (nothing loads from Google at runtime)
-reference/      the approved visual design; the build must match it
+public/textures/  the grain tiles
+reference/      the ORIGINAL design (screens.html, kept as history) and the current
+                direction (reference/direction/)
 BRIEF.md        the specification and every decision, with the reasons
 ```
 

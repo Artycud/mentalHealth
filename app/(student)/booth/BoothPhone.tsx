@@ -13,10 +13,13 @@ import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
 import { flowerFromChoices, loykrathongQuiz, withDok, type Flower } from '@/content/th/booth';
 import { common } from '@/content/th/common';
 import { createTracker } from '@/lib/track';
+import type { FestivalId } from '@/lib/types';
 
 import styles from './booth.module.css';
 
 interface BoothPhoneProps {
+  /** Which festival's booth this is, so its colours are in reach. */
+  festival: FestivalId;
   label: string;
   resultNote: string;
   ticketTitle: string;
@@ -33,7 +36,7 @@ interface BoothPhoneProps {
  * Booth mode runs on trust — staff just look at the screen — so there is no code
  * or token here, and nothing to check (§12).
  */
-export function BoothPhone({ label, resultNote, ticketTitle, where }: BoothPhoneProps) {
+export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: BoothPhoneProps) {
   const router = useRouter();
   const [flower, setFlower] = useState<Flower | null>(null);
   // One per run. Going back from a result to play again makes a new one.
@@ -83,7 +86,7 @@ export function BoothPhone({ label, resultNote, ticketTitle, where }: BoothPhone
   }
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-festival={festival}>
       <BoothMoon className={styles.moon} />
 
       <Screen>

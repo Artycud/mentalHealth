@@ -1,5 +1,6 @@
-import { FestivalMoonIcon } from '@/components/illustrations/icons';
+import { FestivalIcon } from '@/components/festival/registry';
 import { home } from '@/content/th/common';
+import type { FestivalId } from '@/lib/types';
 
 import { PillLink } from './buttons';
 import styles from './FestivalSection.module.css';
@@ -7,6 +8,8 @@ import styles from './FestivalSection.module.css';
 interface FestivalSectionProps {
   /** The live booth. Omitted when none is running, leaving only the next-booth row. */
   live?: {
+    /** Which festival, so it can draw its own small mark. */
+    id: FestivalId;
     name: string;
     blurb: string;
     date: string;
@@ -27,7 +30,7 @@ export function FestivalSection({ live, upcoming }: FestivalSectionProps) {
               <span className={styles.note}>{home.festivalNote}</span>
               <h2 className={styles.title}>{live.name}</h2>
             </div>
-            <FestivalMoonIcon />
+            <FestivalIcon id={live.id} />
           </div>
           <p className={styles.body}>{live.blurb}</p>
           <p className={styles.date}>{live.date}</p>

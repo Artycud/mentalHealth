@@ -7,11 +7,12 @@
  * wellbeing theme stays here, because that is wording, not schedule.
  *
  * Only one festival is active at a time and the admin panel chooses it (§8).
- * A theme changes ONLY four things: the accent colour that replaces sunflower,
- * the small home festival icon, the booth illustration, and the booth copy and
- * result set. Paper, ink, pink, blue, typography, components, spacing and
- * motion are identical across every festival. A theme must never introduce a
- * new font, a gradient, or snow or heart animations.
+ * A festival is a scene on top of the base identity, and changes only: its scene
+ * and the few colours the scene needs (app/festivals/<id>.css, drawn by
+ * components/festival/), its small home icon, and this copy and result set. Paper,
+ * text colours, typography, components, spacing and motion are identical across
+ * every festival. A festival must never introduce a new font, or snow or heart
+ * animations. Its colours are not here: they are CSS, so the theme is one file.
  */
 
 import type { ChoiceMark, FestivalId, Tint } from '@/lib/types';
@@ -19,8 +20,6 @@ import type { ChoiceMark, FestivalId, Tint } from '@/lib/types';
 export interface FestivalTheme {
   id: FestivalId;
   name: string;
-  /** Replaces --sunflower. The only colour a theme may swap. */
-  accent: string;
   /** The wellbeing theme this booth carries, from the project document. */
   theme: string;
   /** False until the festival has a quiz and results written. */
@@ -37,7 +36,6 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
   loykrathong: {
     id: 'loykrathong',
     name: 'ลอยกระทง',
-    accent: '#FFB511',
     theme: 'การปล่อยวางความทุกข์ และการจัดการความรู้สึกเชิงลบ',
     ready: true,
     home: {
@@ -52,7 +50,6 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
   christmas: {
     id: 'christmas',
     name: 'คริสต์มาส',
-    accent: '#FFB511', // TODO: awaiting council — placeholder accent
     theme: 'การสร้างความหวังในชีวิต และการจัดการความรู้สึกเมื่อเกิดความผิดหวัง',
     ready: false,
     // TODO: awaiting council content. Booth activities are known from the
@@ -62,7 +59,6 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
   'cny-valentine': {
     id: 'cny-valentine',
     name: 'ตรุษจีน & วาเลนไทน์',
-    accent: '#FFB511', // TODO: awaiting council — placeholder accent
     theme: 'การให้ความรู้สึกรัก และการปรับตัวให้เข้ากับทุกรูปแบบความสัมพันธ์',
     ready: false,
     // TODO: awaiting council content. Activities known (บูธขายสินค้า,
@@ -243,7 +239,7 @@ export const loykrathongQuiz: BoothQuestion[] = [
     note: 'ไม่มีถูกผิด เลือกตามใจเลย',
     headline: 'เช้าวันหยุด อยากทำอะไร?',
     choices: [
-      { id: 'a', label: 'นอนต่อ ไม่ต้องรีบไหน', value: 0, mark: 'circle' },
+      { id: 'a', label: 'นอนต่อ ไม่ต้องรีบไปไหน', value: 0, mark: 'circle' },
       { id: 'b', label: 'ค่อย ๆ ตื่น หาของกิน', value: 1, mark: 'square' },
       { id: 'c', label: 'ลุกเลย มีแผนแล้ว', value: 2, mark: 'leaf' },
     ],

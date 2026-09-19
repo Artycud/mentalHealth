@@ -27,6 +27,7 @@ export default async function HomePage() {
   const live =
     active !== 'none' && theme?.ready && theme.home
       ? {
+          id: theme.id,
           name: theme.name,
           blurb: theme.home.blurb,
           date: event?.date ?? '',
@@ -40,7 +41,7 @@ export default async function HomePage() {
   const upcoming = festivalOrder.slice(activeIndex + 1).map((id) => festivals[id].name);
 
   return (
-    <Screen>
+    <Screen festival={live ? theme?.id : undefined}>
       <WordmarkHeader />
 
       <div className={styles.scene}>

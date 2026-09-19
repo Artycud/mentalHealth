@@ -1,0 +1,105 @@
+/* The night river. Everything is sized in vh (and vw for the sideways position), like
+   the TV it fills, and everything that moves is a transform.
+
+   The band it fills is 30vh tall; the far layer's edge is about 17% down it and the
+   near layer's about 38%, so the moon (centred on the horizon) sits half above the
+   far water. */
+
+.scene {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* A square around the moon and its glow, centred on the horizon. */
+.moon {
+  position: absolute;
+  top: -9.9vh;
+  right: 8vw;
+  width: 30vh;
+  height: 30vh;
+}
+
+.moon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Two periods wide, slid by exactly one (half of itself), so the loop has no seam.
+   will-change so it is painted once and only moved: the layers are large. */
+.layer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 200%;
+  height: 100%;
+  will-change: transform;
+  animation: drift var(--drift, 120s) linear infinite;
+}
+
+.layer svg {
+  width: 100%;
+  height: 100%;
+}
+
+.far {
+  --drift: 140s;
+}
+
+.near {
+  --drift: 90s;
+}
+
+/* The moon's reflection: short bars that narrow and fade as they go down, each
+   shivering a little on its own clock so the water never looks still. */
+.reflection {
+  position: absolute;
+  top: 8.4vh;
+  right: 8vw;
+  width: 30vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.2vh;
+}
+
+.reflection span {
+  display: block;
+  height: 0.8vh;
+  border-radius: 999px;
+  background: var(--fest-light);
+  animation: shiver 7s ease-in-out infinite;
+}
+
+.reflection span:nth-child(1) { width: 11vh; opacity: 0.9; }
+.reflection span:nth-child(2) { width: 8.4vh; opacity: 0.72; animation-delay: -1.6s; }
+.reflection span:nth-child(3) { width: 6vh; opacity: 0.54; animation-delay: -3.2s; }
+.reflection span:nth-child(4) { width: 4vh; opacity: 0.38; animation-delay: -4.8s; }
+.reflection span:nth-child(5) { width: 2.6vh; opacity: 0.24; animation-delay: -6.2s; }
+
+@keyframes drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes shiver {
+  0%,
+  100% {
+    transform: translateX(-0.7vh);
+  }
+  50% {
+    transform: translateX(0.7vh);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer,
+  .reflection span {
+    animation: none;
+  }
+}

@@ -2,8 +2,8 @@
    BRIEF §9 keeps the phone screens still on purpose: there, motion has to mean
    "you touched something". The booth kiosk and TV are different — a screen with
    no life at all reads as frozen or broken, and the kiosk has to invite someone
-   over from across a canteen. So these loop, but gently: a few slow drifts and
-   a twinkle, nothing that competes with the words.
+   over from across a canteen. So these loop, but gently: a few slow drifts,
+   nothing that competes with the words.
 
    Transform and opacity only, per §9. Every rule is switched off under
    prefers-reduced-motion, in one place, at the bottom. */
@@ -28,30 +28,6 @@
   animation: float 13s ease-in-out -7s infinite;
 }
 
-/* "+" sparkles breathe in and out. They are scaled about their own centre. */
-.twinkle {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: twinkle 3.4s ease-in-out infinite;
-}
-
-.twinkleB {
-  animation-delay: -1.2s;
-}
-
-.twinkleC {
-  animation-delay: -2.3s;
-}
-
-/* Water: one wavelength (300 units) per cycle, so the loop is seamless. */
-.waveA {
-  animation: wave 14s linear infinite;
-}
-
-.waveB {
-  animation: wave 9s linear infinite reverse;
-}
-
 @keyframes float {
   0%,
   100% {
@@ -62,34 +38,10 @@
   }
 }
 
-@keyframes twinkle {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
-@keyframes wave {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-300px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .floatA,
   .floatB,
-  .floatC,
-  .twinkle,
-  .waveA,
-  .waveB {
+  .floatC {
     animation: none;
   }
 }

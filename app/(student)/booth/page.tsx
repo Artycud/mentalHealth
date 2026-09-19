@@ -34,6 +34,7 @@ export default async function BoothPage() {
 
   return (
     <BoothPhone
+      festival={theme.id}
       label={theme.ticket.label}
       resultNote={theme.ticket.resultNote}
       ticketTitle={theme.ticket.title}

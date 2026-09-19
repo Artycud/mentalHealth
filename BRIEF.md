@@ -131,28 +131,31 @@ API rules:
 
 ## 4. Visual system: color
 
-Use only these. No gradients, no glassmorphism, no drop shadows, no glow.
+**The identity is warm paper printed with four inks** (navy, hot pink, cobalt, marigold), cut by hand. It belongs to Mental Health Week, not to any one festival. (Earlier drafts used a cool grey-white paper with technical marks and read as a tech conference; see the decisions table.) The values live in `app/globals.css`; `npm run check:theme` computes the contrast of every text/paper pairing from them.
 
 | Token | Hex | Use |
 |---|---|---|
-| paper | `#F1F2F4` | Page background |
-| ink | `#1B2B5E` | All main text, primary button fill, outlines, hand-drawn strokes |
+| ink | `#1B2B5E` | Navy: all main text, primary button fill, hand-drawn strokes |
+| riso-pink | `#FF48B0` | Hot pink: illustration shapes, current progress segment, focus ring |
+| riso-blue | `#0078BF` | Cobalt: illustration shapes, answer icons |
+| sunflower | `#FFB511` | Marigold: moon, light, the marigold flower |
+| paper | `#FCF1E6` | Page background: a peach cream, between marigold and pink |
+| paper-raised | `#FEF9F5` | Slabs laid on the paper: answer cards, the plate under a floating flower |
+| track | `#EDE1D1` | Empty bars, upcoming progress segments, chips |
+| line | `#E2D5C2` | Dividers, the paper-thickness edge of a slab |
+| pill-line | `#A8977A` | Small pill borders |
+| pink-tint | `#FFD9E6` | CUD Care block, selected answer background |
+| sun-tint | `#FFE9B0` | Booth ticket |
 | ink-soft | `#46507A` | Secondary text, dates, descriptions |
-| ink-muted | `#5A6386` | Footer text |
-| riso-pink | `#FF48B0` | Illustration shapes, current progress segment, focus ring |
-| riso-blue | `#0078BF` | Illustration shapes, answer icons |
-| sunflower | `#FFB511` | Loy Krathong only: moon and marigold |
-| pink-tint | `#FFDDEC` | CUD Care block, selected answer background |
-| sun-tint | `#FFF1CC` | Booth ticket |
+| ink-muted | `#565F82` | Footer text |
 | note-pink | `#B0155F` | Handwritten notes, link hover |
-| line | `#C9CEDC` | Unselected answer border, dividers |
-| track | `#D3D7E2` | Upcoming progress segments |
-| pill-line | `#9AA2BE` | Small "next booth" pill borders |
-| white | `#FFFFFF` | Answer cards, filled button text, booth label pill |
+| white | `#FFFFFF` | Text on navy |
 
 - riso-pink and riso-blue are shape colors and never body text.
-- Text on pink-tint and sun-tint is always ink.
-- Later festivals keep pink, blue, and ink; only the sunflower accent is swapped for one festival color.
+- Text on pink-tint and sun-tint is always ink. Text on the navy water is paper-coloured.
+- **No gradients, glassmorphism or drop shadows, with two exceptions, both soft and both quiet:** (1) a slab (answer card, label pill) sits on the paper with a thin edge and a soft shadow, like paper on paper; (2) *light* is allowed where a festival has light, which is a soft pool under a floating flower and around the moon, always in `--fest-light`/`--fest-glow`. Nothing else glows.
+- **Grain, not noise:** the paper has a near-invisible fibre, and solid inks carry sparse flecks of bare paper, like an uneven print. Both are small seamless tiles in `public/textures/` made by `npm run textures` (never a live filter). Grain never sits behind text, and is off for print and forced-colours.
+- A festival may change only its scene colours (section 8). Ink, paper and text colours are the same for every festival.
 
 ## 5. Visual system: typography
 
@@ -202,19 +205,18 @@ Fallback stack for every font: `'Noto Sans Thai', 'Leelawadee UI', Thonburi, san
 
 **Illustration.** All illustrations and icons are inline SVG. No emoji anywhere, no stock photos, no 3D. (If the council later insists on emoji, at most one per screen inside an answer choice, and the screen must still read correctly without it.)
 - **Ink overlap:** every fill uses `mix-blend-mode: multiply`, so overlaps make a third colour — pink over blue is purple, pink over yellow is orange. Two or three inks per illustration, maximum.
-- **Misregistration:** draw a thin ink outline of a shape offset 4–6px from its fill, as if the print slipped.
-- **Hand strokes:** ink, `fill: none`, round caps and joins, `stroke-width: 2.5` for main lines and `1.5` for thin ones.
-- **Halftone:** dot pattern on a 7px grid, 1.4px ink dots, 45% opacity, over part of one shape.
-- **Sparkles:** small "+" marks, 12–18px, two thin strokes.
+- **Cut paper:** a shape is a piece of coloured paper laid on the page, with a soft edge of shadow beneath it (its thickness) and sparse flecks of bare paper in the ink. Shapes are hand-cut and irregular, not perfect. See `components/illustrations/paper.tsx`.
+- **Hand strokes:** ink, `fill: none`, round caps and joins, `stroke-width: 2.5` for main lines and `1.5` for thin ones. The wavy water line is the base identity's.
 - **Dotted ring:** `stroke-dasharray: 1 7`, 2px wide.
+- **Retired, on purpose:** the thin offset outline ("misregistration"), halftone dots and "+" sparkles. They made the design read as a tech poster. `npm run check:theme` fails if halftone or crosshair marks return.
 - Every screen's illustration has a different composition. Nothing is reused verbatim.
 
 Per screen:
-- **Home (342×230):** a large pink organic blob centre-left; a blue circle (r≈60) overlapping its bottom-right; a halftone patch upper-left; the blob's thin ink outline offset ≈5px up and right; one long wavy ink line crossing bottom-left to upper-right; two sparkles.
-- **Result (342×180), a low battery:** a blue organic blob behind the left; a pink rounded-square charge level filling about a third; the navy battery outline (rounded rectangle r18 plus a small cap) offset from the fills; two short strokes top-right; one sparkle.
-- **Booth (342×240), a marigold:** an outer ring of 12 overlapping yellow petals; an inner ring of 8 pink petals at 55% opacity multiplying to orange; three ink dots in the centre; a dotted ring around the flower; a hand-drawn stem with a blue leaf. Plus a 200px yellow moon sitting partly off the top-right corner of the screen, with its outline offset down-left.
+- **Home (342×230):** a large pink organic blob centre-left; a blue circle (r≈60) overlapping its bottom-right; one long wavy ink line crossing bottom-left to upper-right. Cut paper with speckle; nothing else.
+- **Result (342×180), a low battery:** a blue organic blob behind the left; a pink rounded-square charge level filling about a third; the navy battery outline (rounded rectangle r18 plus a small cap) offset from the fills; two short strokes top-right.
+- **Booth (342×240), a marigold:** an outer ring of 12 overlapping yellow petals; an inner ring of 8 pink petals at 55% opacity multiplying to orange; three ink dots in the centre; a dotted ring around the flower; a hand-drawn stem with a blue leaf. Plus a 200px yellow moon sitting partly off the top-right corner of the screen, its paper edge just below it.
 - **Wordmark (28×20):** a pink and a blue circle (r8) overlapping, multiplied.
-- **Home festival icon (64×64):** a yellow moon with an offset outline above a wavy ink water line.
+- **Home festival icon (64×64):** a yellow moon above a wavy ink water line. It belongs to the festival's pack (`components/festival/`).
 - **Answer icons (32×32):** moon phases — full, half, crescent, and an empty circle with a wavy line. Blue fill, thin offset ink outline.
 - **Line icons:** back chevron, speech bubble with three dots, location pin. Ink strokes only.
 
@@ -226,13 +228,13 @@ Per screen:
 - **Pill link:** 46px, 2px ink border, fully round, 20–22px horizontal padding, left-aligned rather than full width.
 - **Text link:** ink, underlined, at least 44px tall, centred when it sits under a button.
 - **Progress row:** a 44×44 back-chevron button with `aria-label`; 8 segments 8px tall, 4px radius, 5px gaps, filling the width — done segments ink, current riso-pink, upcoming track; counter "3/8" on the right.
-- **Answer card:** a real `<button>` with `aria-pressed`. At least 68px tall, 18px radius, 2px border, 12/16px padding, 14px gap; 32px icon left, label, check badge right when selected. Unselected: white with a line-coloured border. Selected: pink-tint with an ink border and a 24px ink circle holding a white check. Stack with 12px gaps.
+- **Answer card:** a real `<button>` with `aria-pressed`. At least 68px tall, 18px radius, 14/18px padding, 14px gap; 32px icon left, label, check badge right when selected. Unselected: a slab of paper-raised on the paper (thin line-coloured edge below it and a soft shadow, no border). Selected: pink-tint with a 2px ink ring (drawn on a pseudo-element and faded by opacity, so no shadow is ever animated) and a 24px ink circle holding a white check. Stack with 12px gaps.
 - **Topic pills (result):** 36px, fully round; strongest topic filled ink with white text, second topic 2px ink outline.
 - **Suggestion rows:** not cards. 1.5px line-coloured top border on each, plus a bottom border on the last; 16px vertical padding; an 18px riso marker on the left that differs per row (pink circle, blue rounded rectangle, pink crescent with outline); title 17/600 above description 15/1.6 ink-soft. Never numbered — they are not steps.
 - **CUD Care block:** pink-tint, 20px padding, one-sharp-corner radius; a 36px speech-bubble icon on the home version.
-- **Festival section (home):** 2px **dashed** ink top border, 24px top padding; Itim note above an H2 with the festival icon right; body; date placeholder in ink-soft; a "เล่นเลย" pill link; then a row of "บูธถัดไป" plus small pills with 1.5px pill-line borders.
+- **Festival section (home):** a small hand-drawn wave (the base's water line) on top instead of a border, 24px top padding; Itim note above an H2 with the festival icon right; body; date placeholder in ink-soft; a "เล่นเลย" pill link; then a row of "บูธถัดไป" plus small filled chips (track colour, no border).
 - **Booth ticket:** sun-tint, 2px **dashed** ink border, 22px radius, 20px padding; heading, one body line, pin icon with location and date.
-- **Booth label pill:** white, 2px ink border, fully round, 4/14px padding, 14/600.
+- **Booth label pill:** a slab (paper-raised, soft shadow, no border), fully round, 4/14px padding, 14/600.
 
 ## 8. Screens and copy
 
@@ -296,11 +298,13 @@ Map the three answers deterministically onto four flowers. ดาวเรือ
 
 Only one festival is active at a time, and the admin panel chooses it. **Loy Krathong is the one that matters now** — it is the upcoming booth, it is the one in the reference screens, and it must be complete and polished. The other two are structure only.
 
-- Build the theme as a small record in `content/th/booth.ts`: id, Thai name, accent colour, festival icon component, booth illustration component, quiz questions, result set, and the ticket copy.
-- **ลอยกระทง (build fully):** accent `#FFB511`, moon icon, marigold illustration, the flower results, and all copy from section 8. This is the default value of `active_festival`.
-- **คริสต์มาส and ตรุษจีน & วาเลนไทน์ (stubs):** create the records with a placeholder accent and Thai name, and leave questions, results, and illustrations empty with a clear `TODO: awaiting council content` comment. If one of these is selected while empty, the booth route shows the "no booth running" state and the homepage festival section falls back to the บูธถัดไป pills only.
+- A festival is **a copy record plus a scene pack**. The copy record is in `content/th/booth.ts`: id, Thai name, quiz questions, result set, ticket copy. The pack is `components/festival/<id>/` (its small home icon and its scene) plus one token file, `app/festivals/<id>.css`, and one line in `components/festival/registry.tsx`. Nothing in the base changes to add one.
+- **ลอยกระทง (build fully):** the night river (two layers of cut-paper water, a marigold moon on the horizon with its broken reflection), the moon icon, the marigold illustration, the flower results, and all copy from section 8. This is the default value of `active_festival`.
+- **คริสต์มาส and ตรุษจีน & วาเลนไทน์ (stubs):** create the records with a Thai name, and leave questions, results, and scene empty with a clear `TODO: awaiting council content` comment. If one of these is selected while empty, the booth route shows the "no booth running" state and the homepage festival section falls back to the บูธถัดไป pills only.
 - **`none`:** the booth route shows the closed state and the homepage hides the booth block, keeping only the บูธถัดไป row.
-- A theme changes **only** four things: the accent colour that replaces sunflower, the small home festival icon, the booth illustration, and the booth copy and result set. Paper, ink, pink, blue, typography, components, spacing, and motion are identical across every festival. A theme must never introduce a new font, a gradient, or snow or heart animations.
+- **What a festival may change.** Its scene, drawn in reserved bands (the TV's bottom 30%, the kiosk's idle shore) and never behind text; the few colours the scene needs, and only these variables: `--accent`, `--fest-far`, `--fest-near`, `--fest-light`, `--fest-glow`, `--fest-on-water`; its small icon; and its copy and result set. **What never changes:** paper, text colours, typography and its sizes, radii, spacing, component shapes, motion timing, the wordmark, the CUD Care block, the layout skeleton, and reduced-motion behaviour. A festival must never introduce a new font, or snow or heart animations. Text sits on paper, or is paper-coloured on the navy water, so any future festival is legible by construction.
+- **Where the festival appears.** On the home page (its small section), the booth pages, the kiosk's idle and result screens and the TV. **Never** on the private screens (`/checkin`, `/result`) or while a student is answering: those carry the base identity only. `data-festival` is set only on festival pages, and `npm run test:look` checks the private ones have none.
+- `npm run check:theme` enforces all of this from the files: a festival file may set only the variables above, under its own `[data-festival]` selector; the base names no festival; contrast holds. Known gap: the booth screens still import the Loy Krathong quiz by name, because it is the only festival with content.
 - Switching the theme must not touch past sessions. Old rows keep the festival they were recorded with.
 
 ### Error and empty states
@@ -335,9 +339,9 @@ The site should feel fluid and quick, like a well-made app — not like a websit
 - `prefers-reduced-motion: reduce` turns movement off and keeps colour changes under 100ms. No exceptions for the reveals.
 - Optional: `navigator.vibrate(10)` on selection where supported. Never rely on it.
 
-**Fidelity to the reference screens.** The built site must look like `reference/screens.html`, then better — better meaning more precise, not more decorated.
-- Copy the SVG paths rather than redrawing them by eye. The marigold's petal coordinates, the battery's offset outline, and the home blob's misregistered outline are all deliberate.
-- Match every value: padding, gaps, radii, stroke widths, font sizes, and the exact hexes. If something has to change to fit a real question, change spacing before changing type or colour.
+**Fidelity.** `reference/screens.html` is the ORIGINAL design and is kept as history: its layout, spacing, type and copy still stand, but its look (cool paper, offset outlines, halftones, sparkles, bordered cards) was replaced by the warm identity in section 4. The current look is shown in `reference/direction/`.
+- The marigold's petal coordinates are deliberately a little uneven; do not tidy them into symmetry.
+- Match every layout value: padding, gaps, radii, stroke widths, font sizes. If something has to change to fit a real question, change spacing before changing type or colour.
 - Keep the one-sharp-corner variation. Do not normalise every radius to the same number, and do not make the illustrations symmetrical.
 
 **Craft details that make it feel satisfying.** These are the difference between "fine" and "someone cared":
@@ -487,10 +491,12 @@ At this scale, most of the safety comes from what is not collected. Storing sess
 
 ## 15. Do not
 
-- Emoji, gradients, glassmorphism, drop shadows, or glow.
+- Emoji, glassmorphism, or gradients and glow beyond the two quiet exceptions in section 4 (the paper slab's shadow, and a festival's light).
+- Crosshair "+" marks, halftone dots, or thin offset outlines: they made it read as a tech poster.
+- Grain behind text, or heavy grain anywhere. It should be almost invisible.
 - A card around every paragraph, or identical cards repeated down a page.
 - All-caps eyebrow labels, "→" inside buttons, or 01/02/03 numbering on things that are not steps.
-- Inter, Roboto, Arial, or Kanit as the main font. No cream-and-terracotta, no dark-and-neon.
+- Inter, Roboto, Arial, or Kanit as the main font. No terracotta, no dark-and-neon.
 - Long landing pages, onboarding carousels, splash screens, or an animated intro.
 - Names, student IDs, logins for students, or any identifying field.
 - Analytics, third-party widgets, or an LLM call inside the product.
@@ -532,6 +538,7 @@ Recorded here so they are not re-litigated later.
 | Booth scoring | The quiz measures two real things — **energy** (calm / in between / lively, from two questions added) and **heart** (looks after self / others, from one) — and each flower is one cell of the 3x2 grid, so its description is earned. Exactly 3 of 18 answer sets per flower (16.7%), all three questions matter, no tie-break. Two earlier schemes were rejected after enumerating every answer set: plurality (62.5% decided by question 1 alone; two flowers at 6%, which matters because the booth hands out physical flowers) and sum-modulo-six (balanced, but arithmetic, so the result claiming to be "like your answers" was a small fib). `npm run check:booth` re-verifies all of this. | 2026-09-19 |
 | Persistence (phase 4) | Built on `@libsql/client`: one `DATABASE_URL`, a `file:` path on a school server or a hosted URL on Vercel, same code and schema. Every server rule is in `lib/session.ts` and tested against a scratch database: answers must exist in the content, results are always recomputed from the stored answers, finished sessions are immutable, and completing twice returns the first result because the phone retries once. Nothing waits on the network — proven by blocking the API entirely and checking a student still gets their result with no error shown. The TV polls every 5 seconds (`router.refresh`), not WebSockets, so it works on Vercel. `?demo=1` shows invented TV numbers, outside production only. Device is a width bucket: under 700 mobile, under 1280 tablet (every iPad, either way up), else desktop. | 2026-09-19 |
 | TV new-flower moment | When a result arrives, the busy dashboard steps back: a plain paper screen fades in with ONE flower blooming in its own colour, its name and a single thin ring, then clears (5.5s, or 3.2s each when several are waiting; at most 3 queued). Deliberately restrained, since the screen is mostly background in a room: the flower is the only saturated colour. Anonymous: a flower and nothing about who got it. The TV polls, so it detects arrivals as the total rising; a page load never replays the day, and deleted sessions celebrate nothing (tested). `?demo=1` pretends one arrives every 12s for design review. | 2026-09-19 |
+| Warm identity + festival layer | The build read as a tech conference (cool grey-white paper, crosshairs, halftone dots, thin-bordered white cards). Replaced by a **base identity** (peach-cream paper `#FCF1E6`, the four inks unchanged, hand-cut shapes with a soft paper edge and ink speckle, slab cards, a faint paper fibre) that belongs to Mental Health Week, and a swappable **festival layer** that adds only a scene. Loy Krathong is a night river: cut-paper water, a marigold moon, and each result floating as a lit flower on a cream plate. Ink on paper by day, light on water by night. The TV keeps its reading on paper (top 70%) and puts the dark water in the bottom 30%, because a bright canteen washes out a fully dark screen. Personal mode (check-in, result) gets the base only. Paper chosen from four options by measurement and eye: a hue between marigold and pink so the marigold stays distinct. Grain is two pre-rendered tiles, tuned down from a first pass that read as static. Enforced by `check:theme` and `test:look`. | 2026-09-20 |
 | TV river depth | Past five or six, a river of identical flowers is a crowd. So it has depth: the newest flower is full size and each older one is a little smaller, sits slightly higher on the water and is a touch fainter, down to about 40% size for the oldest of the 11 shown. The eye rests on the latest and the rest drift away (ปล่อยวาง). The first few barely taper, so an early booth still looks generous. Rule in `lib/river.ts`, tested. | 2026-09-19 |
 | Booth screens | Riso illustration on every booth screen (idle, each question, result, TV), where they were plain white cards. The TV bars take their flower's own colour. Both devices have gentle idle motion — the kiosk's flower sways and its petals breathe, its button sends out a ring; the TV's river drifts, its water moves, its flowers bob — because a screen that never changes reads as broken from across a canteen. Everything stops under reduced motion (verified: zero running animations). | 2026-09-19 |
 

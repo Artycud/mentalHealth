@@ -15,8 +15,9 @@
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  padding: 3.2vh 3.5vw;
-  background: var(--paper);
+  /* The bottom 31vh belongs to the river band, which is laid over it. */
+  padding: 3.2vh 3.5vw 31vh;
+  background: var(--paper-surface);
   color: var(--ink);
   overflow: hidden;
   overflow: clip;
@@ -147,7 +148,7 @@
 .bars {
   display: flex;
   flex-direction: column;
-  gap: 1.7vh;
+  gap: 1.3vh;
   flex-grow: 1;
   min-width: 0;
 }
@@ -189,7 +190,7 @@
   display: block;
   position: relative;
   flex-grow: 1;
-  height: 3.8vh;
+  height: 3.6vh;
   border-radius: 999px;
   background: var(--track);
   overflow: hidden;
@@ -203,7 +204,11 @@
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  background: var(--ink-bar, var(--ink));
+  /* Solid ink with the print's flecks in it. Never behind text: the count and
+     the name sit outside the bar. */
+  background-color: var(--ink-bar, var(--ink));
+  background-image: var(--ink-speckle);
+  background-size: 192px 192px;
   clip-path: inset(0 var(--r, 0%) 0 0 round 999px);
   transition: clip-path 900ms var(--ease);
   animation: fill-in 900ms var(--ease) both;
@@ -218,44 +223,33 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The river: each flower is one student's result, floating away.
-   Preferred 26vh, but it is the one section allowed to shrink (down to 16vh)
-   when the bars above need the room. Before this, six bars pushed the river half
-   off the bottom and the footer clean off the screen, and the stage's
-   overflow:hidden clipped both without any warning. */
+/* The river band, full width along the bottom. The festival draws the water into
+   it (components/festival/); the flowers float on top. Absolute, so the moon can
+   rise above its top edge. */
 .river {
-  position: relative;
-  flex: 0 1 26vh;
-  min-height: 16vh;
-  margin-top: 1vh;
-}
-
-/* Behind the flowers, so they seem to sit on the surface. */
-.water {
   position: absolute;
-  left: -3.5vw;
-  right: -3.5vw;
-  bottom: 4%;
-  height: 58%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30vh;
 }
 
 /* Before the first result of the day the river is just water; this says why, and
-   invites the first player. */
+   invites the first player. Paper coloured, because it sits on the water. */
 .emptyRiver {
   position: absolute;
-  inset: 0 0 12% 0;
+  inset: 8vh 0 6vh;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-note);
   font-size: 3.4vh;
-  color: var(--note-pink);
+  color: var(--fest-on-water, var(--note-pink));
 }
 
 /* Two copies of the same row, end to end. Sliding by exactly one copy (half of
    the track) puts the second where the first began, so the loop never jumps.
-   will-change lets the browser paint it once and just move it: the flowers use
-   multiply blending, which is not cheap to redraw every frame on a TV stick. */
+   will-change lets the browser paint it once and just move it. */
 .track {
   position: absolute;
   left: 0;
@@ -268,50 +262,72 @@
 }
 
 /* Each copy is at least a screen wide however few flowers there are, so an early
-   booth with three flowers is still spread across the water, not bunched up. */
+   booth with three flowers is still spread across the water, not bunched up. The
+   bottom padding keeps the flowers clear of the footer line. */
 .set {
   display: flex;
   flex: 0 0 auto;
   align-items: flex-end;
   justify-content: space-around;
   min-width: 100vw;
-  padding-bottom: 3vh;
+  padding-bottom: 7.6vh;
 }
 
 /* --depth runs from 1 (the newest flower) down to about 0.4 (the oldest shown).
-   A flower that is further back is smaller, sits a little higher on the water and
-   is a touch fainter, so the river reads as a few near flowers and a calm drift of
+   A flower further back is smaller, sits higher on the water and has a dimmer pool
+   of light beneath it, so the river reads as a few near lights and a calm drift of
    distant ones instead of a row of identical marks. */
 .float {
-  margin-bottom: calc((1 - var(--depth, 1)) * 5vh);
+  position: relative;
+  margin-bottom: calc((1 - var(--depth, 1)) * 22vh);
   animation: bob 5s ease-in-out infinite;
+}
+
+/* The pool of light a floating flower makes on the water. */
+.float::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260%;
+  height: 150%;
+  transform: translate(-50%, -38%);
+  background: radial-gradient(
+    ellipse at center,
+    var(--fest-glow, transparent) 0%,
+    transparent 70%
+  );
+  opacity: calc(0.55 + var(--depth, 1) * 0.45);
 }
 
 /* min() so eleven flowers still fit across a narrower screen. On 16:9 the vh
    term wins and nothing changes; on 4:3 the vw term keeps them from crowding. */
 .float svg {
-  width: calc(min(12vh, 8vw) * var(--depth, 1));
+  position: relative;
+  width: calc(min(13vh, 8.6vw) * var(--depth, 1));
   height: auto;
-  opacity: calc(0.5 + var(--depth, 1) * 0.5);
 }
 
 .foot {
-  flex-shrink: 0;
+  position: absolute;
+  left: 3.5vw;
+  right: 3.5vw;
+  bottom: 2.4vh;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 2vw;
   font-size: 2vh;
   line-height: 1.5;
-  color: var(--ink-muted);
+  /* On the water, so paper coloured; on a festival with no water, plain muted ink. */
+  color: var(--fest-on-water, var(--ink-muted));
 }
 
 /* Shown only while the numbers are invented. */
 .sample {
   padding: 0.4vh 1.2vw;
-  border: 2px dashed var(--note-pink);
+  border: 2px dashed currentColor;
   border-radius: 999px;
-  color: var(--note-pink);
   font-weight: 600;
 }
 

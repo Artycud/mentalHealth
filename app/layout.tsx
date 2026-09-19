@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 
 import './fonts.css';
 import './globals.css';
+import './festivals/loykrathong.css';
 import { common } from '@/content/th/common';
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export const viewport: Viewport = {
      touches an edge then pads itself with env(safe-area-inset-*) (§6). */
   viewportFit: 'cover',
   /* Paints the iOS status bar area to match the paper background. */
-  themeColor: '#F1F2F4',
+  themeColor: '#FCF1E6',
   colorScheme: 'light',
   /* Deliberately NOT setting userScalable: false — pinch-zoom has to survive
      for accessibility (§13). */

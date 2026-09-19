@@ -14,9 +14,12 @@
     "test:dates": "node --experimental-strip-types --no-warnings scripts/test-thai-date.mjs",
     "check:booth": "node --experimental-strip-types --no-warnings scripts/check-booth-scoring.mjs",
     "test:scoring": "node --experimental-strip-types --no-warnings scripts/test-scoring.mjs",
+    "test:look": "node scripts/e2e-look.mjs",
     "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e-phone.mjs",
     "test:db": "node --experimental-strip-types --no-warnings scripts/test-db.mjs",
+    "textures": "node scripts/make-textures.mjs",
     "db:reset": "node -e \"for(const f of ['app.db','app.db-journal','app.db-wal','app.db-shm'])require('fs').rmSync('data/'+f,{force:true});console.log('data/app.db removed')\"",
+    "check:theme": "node --no-warnings scripts/check-theme.mjs",
     "test:moment": "node --experimental-strip-types --no-warnings scripts/test-new-flowers.mjs"
   },
   "dependencies": {
