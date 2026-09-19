@@ -11,8 +11,8 @@ import styles from './booth.module.css';
 
 /**
  * PHASE 2: the Loy Krathong result screen, static, showing ดาวเรือง. Phase 3
- * puts the 3-question quiz in front of it and maps the answers onto the four
- * flowers.
+ * puts the 3-question quiz in front of it and maps the answers onto the six
+ * flowers (the booth kiosk already does, via flowerFromPoints).
  *
  * With no booth running — or a festival that has no content yet — students see
  * the plain closed state instead (BRIEF §8).
@@ -31,7 +31,10 @@ export default function BoothPage() {
     );
   }
 
-  const flower = loykrathongFlowers[0];
+  // Looked up by id, not position: this static screen shows the flower whose
+  // copy BRIEF §8 wrote, and the list's order is the council's to change.
+  const flower =
+    loykrathongFlowers.find((f) => f.id === 'marigold') ?? loykrathongFlowers[0];
 
   return (
     <div className={styles.page}>

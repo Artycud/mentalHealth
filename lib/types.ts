@@ -24,6 +24,9 @@ export type ResultState = 'ok' | 'thinking' | 'drained' | 'heavy';
 
 export type Mode = 'checkin' | 'booth';
 
+/** Which of the six ink pairings draws a flower on the booth screens. */
+export type Tint = 0 | 1 | 2 | 3 | 4 | 5;
+
 export type FestivalId = 'loykrathong' | 'christmas' | 'cny-valentine';
 
 /** What `setting.active_festival` may hold — a festival, or no booth running. */

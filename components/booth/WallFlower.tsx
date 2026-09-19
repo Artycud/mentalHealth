@@ -1,3 +1,5 @@
+import type { Tint } from '@/lib/types';
+
 /**
  * A compact flower mark for the TV wall and the distribution bars.
  *
@@ -6,11 +8,18 @@
  * across a room. Tints are palette pairings only; no new colours (BRIEF §4).
  */
 
+/* Six pairings for six flowers. Only pink, blue and the festival accent exist in
+   the palette, so the pairings are every ordered combination of two distinct
+   inks — three outer inks × two inners. Swapping outer and inner changes which
+   ink dominates and what colour the multiply blend makes, so they read as
+   different flowers across a room even though nothing new is added. */
 const TINTS: { outer: string; inner: string }[] = [
-  { outer: 'var(--accent)', inner: 'var(--riso-pink)' }, // ดาวเรือง
-  { outer: 'var(--riso-pink)', inner: 'var(--riso-blue)' },
-  { outer: 'var(--riso-blue)', inner: 'var(--accent)' },
-  { outer: 'var(--riso-pink)', inner: 'var(--accent)' },
+  { outer: 'var(--accent)', inner: 'var(--riso-pink)' }, // yellow with pink centre
+  { outer: 'var(--riso-pink)', inner: 'var(--riso-blue)' }, // pink with blue centre
+  { outer: 'var(--riso-blue)', inner: 'var(--accent)' }, // blue with yellow centre
+  { outer: 'var(--riso-pink)', inner: 'var(--accent)' }, // pink with yellow centre
+  { outer: 'var(--accent)', inner: 'var(--riso-blue)' }, // yellow with blue centre
+  { outer: 'var(--riso-blue)', inner: 'var(--riso-pink)' }, // blue with pink centre
 ];
 
 /** 8 outer petals and 6 inner, on the same geometry as the full illustration. */
@@ -24,7 +33,7 @@ const INNER = Array.from({ length: 6 }, (_, i) => {
   return [50 + Math.cos(a) * 14, 50 + Math.sin(a) * 14] as const;
 });
 
-export function WallFlower({ tint, size = 72 }: { tint: 0 | 1 | 2 | 3; size?: number }) {
+export function WallFlower({ tint, size = 72 }: { tint: Tint; size?: number }) {
   const { outer, inner } = TINTS[tint];
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">

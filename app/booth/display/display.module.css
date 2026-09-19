@@ -102,7 +102,7 @@
 .bars {
   display: flex;
   flex-direction: column;
-  gap: 2.4vh;
+  gap: 1.4vh;
   flex-grow: 1;
   min-width: 0;
 }
@@ -113,13 +113,19 @@
   gap: 1.4vw;
 }
 
+/* Wide enough for the longest name, ดอกบานไม่รู้โรย, on ONE line. At 11vw it
+   wrapped and made that row taller than its neighbours. */
+/* The text is sized in vh but a width in vw does not track it, so on a 4:3 screen
+   the name outgrew its column and touched the bar. max() takes whichever is
+   larger; 22vh is the measured width of ดอกบานไม่รู้โรย at this font size. */
 .barName {
-  width: 11vw;
+  width: max(15vw, 22vh);
   flex-shrink: 0;
   font-size: 2.9vh;
   font-weight: 600;
   line-height: 1.4;
   text-align: right;
+  white-space: nowrap;
 }
 
 /* A plain div bar, no chart library (BRIEF §11).
@@ -129,7 +135,7 @@
   display: block;
   position: relative;
   flex-grow: 1;
-  height: 4.6vh;
+  height: 4vh;
   border-radius: 999px;
   background: var(--track);
   overflow: hidden;
@@ -152,10 +158,14 @@
 }
 
 /* The river: the fun part, and the one place this screen moves. */
+/* Preferred 26vh, but it is the one section allowed to shrink (down to 16vh)
+   when the bars above need the room. Before this, six bars pushed the river
+   half off the bottom and the footer clean off the screen, and the stage's
+   overflow:hidden clipped both without any warning. */
 .river {
   position: relative;
-  flex-shrink: 0;
-  height: 30vh;
+  flex: 0 1 26vh;
+  min-height: 16vh;
   margin-top: 2vh;
 }
 
@@ -181,8 +191,11 @@
   animation: bob 4s ease-in-out infinite;
 }
 
+/* min() so eleven flowers still fit across a narrower screen. On 16:9 the vh
+   term wins and nothing changes; on 4:3 the vw term keeps the last one from
+   being clipped by the edge. */
 .float svg {
-  width: 12vh;
+  width: min(12vh, 8vw);
   height: auto;
 }
 

@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { WallFlower } from '@/components/booth/WallFlower';
 import { BoothMarigold } from '@/components/illustrations/scenes';
 import { AnswerIcon, Wordmark } from '@/components/illustrations/icons';
 import {
   boothQuizTitle,
-  flowerFromVotes,
+  flowerFromPoints,
   kiosk,
   loykrathongQuiz,
   type FestivalTheme,
@@ -19,7 +20,7 @@ import styles from './kiosk.module.css';
 /** Same moon phases as the phone, so the two surfaces read as one product. */
 const ICONS: IconVariant[] = ['full', 'half', 'crescent', 'empty'];
 
-type Stage = { kind: 'idle' } | { kind: 'quiz'; step: number; votes: number[] } | { kind: 'result'; votes: number[] };
+type Stage = { kind: 'idle' } | { kind: 'quiz'; step: number; points: number[] } | { kind: 'result'; points: number[] };
 
 /**
  * The booth kiosk. Runs unattended on an iPad or laptop for two hours while a
@@ -41,9 +42,9 @@ export function Kiosk({ theme }: { theme: FestivalTheme }) {
   /** Entering the result also arms the countdown, so the effect below only ever
    *  runs the timer. Resetting `remaining` inside the effect instead would set
    *  state during render and cascade an extra render every time. */
-  const finish = useCallback((votes: number[]) => {
+  const finish = useCallback((points: number[]) => {
     setRemaining(kiosk.resetSeconds);
-    setStage({ kind: 'result', votes });
+    setStage({ kind: 'result', points });
   }, []);
 
   // Auto-reset the result for the next student in the queue.
@@ -105,7 +106,7 @@ export function Kiosk({ theme }: { theme: FestivalTheme }) {
               type="button"
               className={styles.start}
               style={{ color: 'var(--white)' }}
-              onClick={() => setStage({ kind: 'quiz', step: 0, votes: [] })}
+              onClick={() => setStage({ kind: 'quiz', step: 0, points: [] })}
             >
               {kiosk.idleAction}
             </button>
@@ -137,11 +138,11 @@ export function Kiosk({ theme }: { theme: FestivalTheme }) {
                 type="button"
                 className={styles.answer}
                 onClick={() => {
-                  const votes = [...stage.votes, choice.votes];
+                  const points = [...stage.points, choice.points];
                   if (stage.step + 1 < loykrathongQuiz.length) {
-                    setStage({ kind: 'quiz', step: stage.step + 1, votes });
+                    setStage({ kind: 'quiz', step: stage.step + 1, points });
                   } else {
-                    finish(votes);
+                    finish(points);
                   }
                 }}
               >
@@ -156,7 +157,7 @@ export function Kiosk({ theme }: { theme: FestivalTheme }) {
     );
   }
 
-  const flower = flowerFromVotes(stage.votes);
+  const flower = flowerFromPoints(stage.points);
 
   return (
     <main className={styles.stage}>
@@ -172,7 +173,11 @@ export function Kiosk({ theme }: { theme: FestivalTheme }) {
           </div>
         </div>
         <div className={styles.resultArt}>
-          <BoothMarigold />
+          {/* INTERIM: only the marigold has a hand-drawn illustration. The other
+              five show the tinted rosette from the TV wall until each flower
+              gets its own drawing — it is a stand-in, not the finished art, and
+              must not be mistaken for a lotus or an orchid. */}
+          {flower.id === 'marigold' ? <BoothMarigold /> : <WallFlower tint={flower.tint} size={320} />}
         </div>
       </div>
       <button type="button" className={styles.again} style={{ color: 'var(--white)' }} onClick={reset}>

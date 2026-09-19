@@ -17,15 +17,15 @@
  */
 
 import { loykrathongFlowers } from '@/content/th/booth';
+import type { Tint } from '@/lib/types';
 
-const TINTS = [0, 1, 2, 3] as const;
 
 export interface WallFlower {
   id: string;
   /** Thai display name. */
   name: string;
   /** Palette pairing for the mark. Index into the display's tint list. */
-  tint: 0 | 1 | 2 | 3;
+  tint: Tint;
   count: number;
 }
 
@@ -36,30 +36,30 @@ export interface WallData {
   total: number;
   flowers: WallFlower[];
   /** Most recent results, newest first — these are the ones floating. */
-  recent: { id: string; tint: 0 | 1 | 2 | 3 }[];
+  recent: { id: string; tint: Tint }[];
   /** True while the numbers are invented, so the screen can say so. */
   sample: boolean;
 }
 
 /**
- * Flower slots.
- *
- * Only ดาวเรือง is written (BRIEF §8). The other three are named by the council
- * once they know what the booth can actually hand out, so they stay clearly
- * labelled placeholders rather than invented species. The tints are palette
+ * One slot per flower the booth stocks, derived from the content file so a
+ * renamed, added or dropped flower needs no change here. The tints are palette
  * pairings, not new colours.
  */
-const FLOWER_SLOTS: Omit<WallFlower, 'count'>[] = loykrathongFlowers.map((f, i) => ({
+const FLOWER_SLOTS: Omit<WallFlower, 'count'>[] = loykrathongFlowers.map((f) => ({
   id: f.id,
   name: f.name,
-  tint: TINTS[i],
+  tint: f.tint,
 }));
 
 export function getWallData(): WallData {
   // TODO(phase 4): read from lib/db.ts —
   //   SELECT booth_result, COUNT(*) FROM session
   //   WHERE mode = 'booth' AND festival = ? AND completed_at IS NOT NULL
-  const counts = [31, 24, 18, 14];
+  // Sample only. Deliberately uneven so the bars read as a chart, but every
+  // flower has a count — the real spread is close to even (see the scoring
+  // note in content/th/booth.ts), so expect flatter bars at the real booth.
+  const counts = [31, 26, 22, 19, 14, 9];
 
   const flowers = FLOWER_SLOTS.map((slot, i) => ({ ...slot, count: counts[i] }));
 
@@ -67,7 +67,7 @@ export function getWallData(): WallData {
   // render and make the layout hard to judge.
   const recent = Array.from({ length: 11 }, (_, i) => ({
     id: `sample-${i}`,
-    tint: FLOWER_SLOTS[i % 4].tint,
+    tint: FLOWER_SLOTS[i % FLOWER_SLOTS.length].tint,
   }));
 
   return {

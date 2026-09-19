@@ -481,6 +481,8 @@ Recorded here so they are not re-litigated later.
 | Devices | iPhone **and iPad** Safari must both look good — added to §6's layout rule. | 2026-09-19 |
 | Booth devices | **Two**, not one: a kiosk for answering and a TV for live visualisation. Both landscape, both behind a booth account. See §11. | 2026-09-19 |
 | Booth password | Set and reset from the admin panel, stored hashed, shown once on generation. | 2026-09-19 |
+| Loy Krathong flowers | Six, given by the council: ดอกบัว ดอกรัก ดอกบานไม่รู้โรย ดาวเรือง กล้วยไม้ จำปี. **Names may still change.** ("จำไป" in the original message was confirmed a typo for จำปี.) | 2026-09-19 |
+| Booth scoring | Sum of answer points modulo six, **not** most-votes-wins. Plurality was rejected after enumerating all 64 answer combinations: 62.5% of students would be decided by question 1 alone, and กล้วยไม้ / จำปี would each get only 6% against 22% for the rest — a real problem for a booth that hands out physical flowers. The sum gives 14–19% per flower. | 2026-09-19 |
 
 ## Event facts
 
@@ -512,8 +514,12 @@ time and place:
 
 - **Confirm the two contradictory dates above.**
 - CUD Care's real contact channels (the `#cud-care` link).
-- The three remaining Loy Krathong flowers. ดาวเรือง is written; the booth can
-  only hand out what it stocks, so the other three are numbered placeholders.
+- **Review of the five drafted flower descriptions.** Only ดาวเรือง's line is
+  written in this brief. The other five each rest on one true fact about the
+  flower (the meaning of its name, its scent, how long it lasts) — check them.
+- **A real illustration for each of the five other flowers.** Only the marigold
+  is hand-drawn. The rest use a tinted rosette as an interim stand-in, which
+  must not be mistaken for a lotus or an orchid.
 - Review of the 7 drafted check-in questions and the 3 drafted booth questions.
 - Quiz content for the Christmas and ตรุษจีน & วาเลนไทน์ booths. Their
   activities are known from the project document, but no quiz or results exist.

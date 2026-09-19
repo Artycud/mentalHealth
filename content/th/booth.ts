@@ -20,7 +20,7 @@
  * new font, a gradient, or snow or heart animations.
  */
 
-import type { FestivalId } from '@/lib/types';
+import type { FestivalId, Tint } from '@/lib/types';
 
 import { eventFacts } from './common';
 
@@ -96,10 +96,15 @@ export const boothQuizTitle = 'คุณเป็นดอกไม้แบบ�
 /**
  * Loy Krathong flower results.
  *
- * ดาวเรือง is written in BRIEF §8. The other three are deliberately unnamed:
- * the booth can only hand out flowers it actually stocks, so the council names
- * them once that is known. The slots exist so the quiz, the TV wall and the
- * admin statistics all work now and only the labels change later.
+ * The six the booth actually stocks, given by the student council. ดาวเรือง's
+ * body line is written in BRIEF §8. The other five are DRAFTS awaiting council
+ * review: each is built on one plainly true thing about the flower (the
+ * meaning of its name, its scent, how long it lasts) rather than an invented
+ * trait, then closed with the same "เหมือนคำตอบเมื่อกี้" hook so it points at
+ * the student's actual answers (§10). Order and names may still change before
+ * the booth — the council said so directly — so nothing else in the codebase
+ * should assume this order or count beyond `loykrathongFlowers.length` and
+ * lookup-by-`id`.
  */
 export interface Flower {
   id: string;
@@ -107,19 +112,60 @@ export interface Flower {
   body: string;
   /** False while the name is a placeholder rather than a real flower. */
   named: boolean;
+  /**
+   * Ink pairing for the interim rosette (components/booth/WallFlower.tsx), picked
+   * so it does not contradict the flower's real colour: the palette has only
+   * pink, blue and the festival yellow, so this is as close as it gets. It goes
+   * away for a flower once that flower has its own illustration.
+   */
+  tint: Tint;
 }
 
 export const loykrathongFlowers: Flower[] = [
   {
+    id: 'lotus',
+    tint: 3, // pink with a yellow centre, like the real thing
+    name: 'ดอกบัว',
+    body: 'ขึ้นจากโคลนแต่ยังสะอาด เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    named: true,
+  },
+  {
+    id: 'crown-flower',
+    tint: 5, // blue over pink reads as the lilac of the common variety
+    name: 'ดอกรัก',
+    body: 'ชื่อแปลว่ารักตรง ๆ เลย เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    named: true,
+  },
+  {
+    id: 'globe-amaranth',
+    tint: 1, // magenta-purple, the usual colour of the globe
+    name: 'ดอกบานไม่รู้โรย',
+    body: 'เก็บไว้นานแค่ไหนก็ยังสีเดิม เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    named: true,
+  },
+  {
+    // BRIEF §8's written reference flower — id stays 'marigold' so
+    // app/(student)/booth/page.tsx can find it by id regardless of order.
     id: 'marigold',
+    tint: 0, // the yellow-and-orange of the hand-drawn marigold
     name: 'ดาวเรือง',
     body: 'สีสด ทนแดด อยู่ได้นาน เหมือนคำตอบเมื่อกี้ของคุณเลย',
     named: true,
   },
-  // TODO: awaiting council — the three other flowers the booth stocks.
-  { id: 'slot-2', name: 'ดอกไม้ที่ 2', body: 'รอชื่อดอกไม้จากสภานักเรียน', named: false },
-  { id: 'slot-3', name: 'ดอกไม้ที่ 3', body: 'รอชื่อดอกไม้จากสภานักเรียน', named: false },
-  { id: 'slot-4', name: 'ดอกไม้ที่ 4', body: 'รอชื่อดอกไม้จากสภานักเรียน', named: false },
+  {
+    id: 'orchid',
+    tint: 2,
+    name: 'กล้วยไม้',
+    body: 'บานอยู่ได้นานกว่าดอกไม้ทั่วไป เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    named: true,
+  },
+  {
+    id: 'champak',
+    tint: 4, // yellow-orange, as champak is
+    name: 'จำปี',
+    body: 'หอมไกลจนได้กลิ่นก่อนเห็นดอก เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    named: true,
+  },
 ];
 
 /**
@@ -130,14 +176,26 @@ export const loykrathongFlowers: Flower[] = [
  * but never asks anything a student would mind answering with people watching
  * over their shoulder, which rules out the check-in's register entirely.
  *
- * Each choice votes for one flower; most votes wins, ties broken by question
- * order, so the result is deterministic and recomputable on the server (§3).
+ * Each choice adds points; the total, modulo the number of flowers, picks the
+ * result. It is deterministic and recomputable on the server (§3).
+ *
+ * Why a sum and not "most votes wins": with three answers and six flowers a
+ * plurality is a full three-way split for 62.5% of students, so the first
+ * answer would decide their flower and questions 2 and 3 would be decoration.
+ * Worse, กล้วยไม้ and จำปี could only win on a genuine match — 6% each against
+ * 22% for the others — and this booth hands out PHYSICAL flowers, so it would
+ * run out of four kinds and be left holding a pile of two. Summing uses all
+ * three answers and lands every flower between 14% and 19% (ideal 16.7%).
+ * Verified by enumerating all 64 answer combinations, not estimated.
+ *
+ * The points below (Q1 0–3, Q2 {4,5,0,1}, Q3 {2,3,4,5}) are what produce that
+ * spread. Re-check the distribution before changing any of them.
  */
 export interface BoothChoice {
   id: string;
   label: string;
-  /** Index into loykrathongFlowers. */
-  votes: number;
+  /** Added to the running total. See the note above before changing. */
+  points: number;
 }
 
 export interface BoothQuestion {
@@ -153,10 +211,10 @@ export const loykrathongQuiz: BoothQuestion[] = [
     note: 'เลือกอันที่ใช่ที่สุด',
     headline: 'ถ้าลอยอะไรทิ้งไปได้สักอย่าง จะลอยอะไร?',
     choices: [
-      { id: 'a', label: 'เรื่องที่คิดมากเกินไป', votes: 0 },
-      { id: 'b', label: 'ความเหนื่อยที่สะสมไว้', votes: 1 },
-      { id: 'c', label: 'เรื่องที่ยังปล่อยไม่ได้', votes: 2 },
-      { id: 'd', label: 'ไม่มีอะไรอยากทิ้ง', votes: 3 },
+      { id: 'a', label: 'เรื่องที่คิดมากเกินไป', points: 0 },
+      { id: 'b', label: 'ความเหนื่อยที่สะสมไว้', points: 1 },
+      { id: 'c', label: 'เรื่องที่ยังปล่อยไม่ได้', points: 2 },
+      { id: 'd', label: 'ไม่มีอะไรอยากทิ้ง', points: 3 },
     ],
   },
   {
@@ -164,10 +222,10 @@ export const loykrathongQuiz: BoothQuestion[] = [
     note: 'ตอบเร็ว ๆ ได้เลย',
     headline: 'กระทงของคุณหน้าตาเป็นยังไง?',
     choices: [
-      { id: 'a', label: 'เรียบ ๆ แต่ดูดี', votes: 0 },
-      { id: 'b', label: 'แต่งเต็มที่ สีจัดเต็ม', votes: 1 },
-      { id: 'c', label: 'ทำเอง ไม่เหมือนใคร', votes: 2 },
-      { id: 'd', label: 'ขอแบบง่าย ๆ เร็ว ๆ', votes: 3 },
+      { id: 'a', label: 'เรียบ ๆ แต่ดูดี', points: 4 },
+      { id: 'b', label: 'แต่งเต็มที่ สีจัดเต็ม', points: 5 },
+      { id: 'c', label: 'ทำเอง ไม่เหมือนใคร', points: 0 },
+      { id: 'd', label: 'ขอแบบง่าย ๆ เร็ว ๆ', points: 1 },
     ],
   },
   {
@@ -175,10 +233,10 @@ export const loykrathongQuiz: BoothQuestion[] = [
     note: 'ข้อสุดท้ายแล้ว',
     headline: 'ลอยกระทงเสร็จแล้วอยากทำอะไรต่อ?',
     choices: [
-      { id: 'a', label: 'ยืนดูน้ำเงียบ ๆ', votes: 0 },
-      { id: 'b', label: 'ถ่ายรูปกับเพื่อน', votes: 1 },
-      { id: 'c', label: 'เดินกินของในงาน', votes: 2 },
-      { id: 'd', label: 'กลับบ้านไปนอน', votes: 3 },
+      { id: 'a', label: 'ยืนดูน้ำเงียบ ๆ', points: 2 },
+      { id: 'b', label: 'ถ่ายรูปกับเพื่อน', points: 3 },
+      { id: 'c', label: 'เดินกินของในงาน', points: 4 },
+      { id: 'd', label: 'กลับบ้านไปนอน', points: 5 },
     ],
   },
 ];
@@ -197,14 +255,12 @@ export const kiosk = {
   resetHint: 'จะกลับหน้าแรกใน',
 } as const;
 
-/** Most votes wins; ties break by the earliest question, so it is deterministic. */
-export function flowerFromVotes(votes: number[]): Flower {
-  const tally = [0, 0, 0, 0];
-  for (const v of votes) tally[v] += 1;
-  let best = 0;
-  for (let i = 1; i < tally.length; i += 1) if (tally[i] > tally[best]) best = i;
-  // A three-way split (1/1/1) leaves every tally at 1, so `best` stays at the
-  // first flower voted for — the earliest question wins, as specified.
-  if (tally[best] === 1) return loykrathongFlowers[votes[0]];
-  return loykrathongFlowers[best];
+/**
+ * The flower for a set of answers: total points, modulo the number of flowers.
+ * Sized from the flower list, so adding or dropping a flower needs no change
+ * here — but it WILL change the spread, so re-enumerate the combinations.
+ */
+export function flowerFromPoints(points: number[]): Flower {
+  const total = points.reduce((sum, p) => sum + p, 0);
+  return loykrathongFlowers[total % loykrathongFlowers.length];
 }
