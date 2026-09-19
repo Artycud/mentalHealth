@@ -2,14 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  backdropToneFor,
-  IdleBackdrop,
-  QuizArt,
-  ResultBackdrop,
-} from '@/components/booth/art';
+import { IdleBackdrop, QuizArt } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
-import { WallFlower } from '@/components/booth/WallFlower';
+import { FlowerArt } from '@/components/booth/FlowerArt';
 import {
   BackChevron,
   CheckBadge,
@@ -271,23 +266,10 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
         </div>
 
         <div className={styles.resultSide}>
+          {/* Disc, flower and bloom are the shared FlowerArt (see it for the
+              interim-art note). This box only sizes it. */}
           <div className={styles.artStack}>
-            <div className={styles.layer}>
-              <ResultBackdrop tone={backdropToneFor(flower.tint)} />
-            </div>
-            {/* The bloom: petals scale in one after another, once (§9), then the
-                whole flower settles into a slow breath. INTERIM art: only the
-                marigold has a hand-drawn illustration. The other five show the
-                tinted rosette from the TV wall until each flower gets its own
-                drawing — a stand-in, not the finished art, and it must not be
-                mistaken for a lotus or an orchid. */}
-            <div className={`${styles.flowerWrap} ${styles.bloom}`} key={flower.id}>
-              {flower.id === 'marigold' ? (
-                <BoothMarigold viewBox="70 12 216 228" />
-              ) : (
-                <WallFlower tint={flower.tint} size={320} />
-              )}
-            </div>
+            <FlowerArt flower={flower} />
           </div>
           <p className={`${styles.fact} ${styles.rise}`}>
             {flower.name} · {flower.fact}

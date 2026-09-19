@@ -12,6 +12,8 @@
  * non-scaling-stroke in globals.css.
  */
 
+import type { ResultState } from '@/lib/types';
+
 const fluid = { width: '100%', height: 'auto', display: 'block' } as const;
 
 /** Home (342×230): pink blob, blue circle, halftone patch, wavy line, sparkles. */
@@ -43,8 +45,25 @@ export function HomeScene() {
   );
 }
 
-/** Result (342×180): a low battery. Blue blob, pink charge level ~a third full. */
-export function ResultBattery() {
+/**
+ * How wide the pink charge is, per result band. `drained` is the brief's
+ * reference drawing (a square about a third of the way along); the others fill
+ * more or less of the same battery, so the picture agrees with the words.
+ */
+const CHARGE: Record<ResultState, number> = { ok: 132, thinking: 96, drained: 52, heavy: 28 };
+
+/**
+ * Result (342×180): a battery. Blue blob, and a pink charge whose length tracks
+ * the result. `chargeClassName` lets the caller animate it (§9: it grows with
+ * scaleX over 450ms when the result appears).
+ */
+export function ResultBattery({
+  state = 'drained',
+  chargeClassName = '',
+}: {
+  state?: ResultState;
+  chargeClassName?: string;
+}) {
   return (
     <svg viewBox="0 0 342 180" aria-hidden="true" style={fluid}>
       <path
@@ -52,7 +71,15 @@ export function ResultBattery() {
         fill="var(--riso-blue)"
         className="mul"
       />
-      <rect x="112" y="70" width="52" height="52" rx="9" fill="var(--riso-pink)" className="mul" />
+      <rect
+        x="112"
+        y="70"
+        width={CHARGE[state]}
+        height="52"
+        rx="9"
+        fill="var(--riso-pink)"
+        className={`mul ${chargeClassName}`}
+      />
       {/* Battery outline, offset from the fills. */}
       <rect x="104" y="60" width="164" height="74" rx="18" className="ln" />
       <rect x="268" y="84" width="14" height="26" rx="5" className="ln" />

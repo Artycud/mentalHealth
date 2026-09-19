@@ -35,12 +35,22 @@
   line-height: 1.2;
 }
 
-.scene {
-  margin-top: 8px;
+/* ดอกบานไม่รู้โรย is far longer than the other five names, and at 64px it would
+   need three lines. */
+.flowerLong {
+  font-size: 46px;
+  line-height: 1.25;
+}
+
+/* Square, so the disc stays round; sized to leave the ticket in view. */
+.art {
+  width: min(100%, 250px);
+  aspect-ratio: 1;
+  margin: 12px auto 0;
 }
 
 .body {
-  margin-top: 8px;
+  margin-top: 12px;
   font-size: 17px;
   line-height: 1.6;
 }
@@ -51,18 +61,4 @@
   gap: 8px;
   margin-top: auto;
   padding-top: 28px;
-}
-
-/* Closed state: plain ink on paper, no alarm colours (BRIEF §8). */
-.closedTitle {
-  margin-top: 36px;
-  font-size: 32px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.closedBody {
-  margin-top: 8px;
-  font-size: 17px;
-  line-height: 1.6;
 }

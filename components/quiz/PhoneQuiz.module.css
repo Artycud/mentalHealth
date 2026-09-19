@@ -1,0 +1,81 @@
+/* The question block: note, headline and answers. The progress row above it does
+   not move. */
+
+.slide {
+  display: flex;
+  flex-direction: column;
+  animation: slide var(--d-question) var(--ease) backwards;
+}
+
+/* Forward moves left, so the new question arrives from the right (§9). */
+.slide[data-dir='1'] {
+  --from: 24px;
+}
+
+.slide[data-dir='-1'] {
+  --from: -24px;
+}
+
+.note {
+  margin-top: 36px;
+  font-family: var(--font-note);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--note-pink);
+}
+
+.headline {
+  margin-top: 6px;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* Programmatic focus lands here on each question; it is not a control, so it
+   draws no ring. */
+.headline:focus {
+  outline: none;
+}
+
+.answers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+/* Cards rise in a beat apart, three steps at most (§9). `backwards`, not `both`:
+   once the entrance is over the card must be free to scale on :active, and a
+   finished animation that fills forward would pin its transform. */
+.answers > * {
+  animation: rise var(--d-question) var(--ease) backwards;
+}
+
+.answers > :nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.answers > :nth-child(n + 3) {
+  animation-delay: 60ms;
+}
+
+/* Only on the last question. Pushed to the bottom of a short screen, with a
+   minimum gap above it on a tall one. */
+.footer {
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(var(--from, 24px));
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}

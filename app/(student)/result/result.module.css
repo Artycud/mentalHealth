@@ -23,3 +23,35 @@
   margin-top: auto;
   padding-top: 32px;
 }
+
+/* ---- The reveal (BRIEF §9): once, on arrival, and then nothing moves ---- */
+
+/* The pink charge grows from its left edge over 450ms. It is scaleX, as the brief
+   says: it briefly squashes the rounded corners while it grows and is exact again
+   the moment it stops. */
+.charge {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: charge var(--d-reveal) var(--ease) 120ms backwards;
+}
+
+/* The words fade up 12px over 200ms, each 60ms after the last. `--i` is the
+   element's place in that order, set inline. `backwards`, so the finished text
+   is an ordinary element again. */
+.rise {
+  animation: rise 200ms var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+@keyframes charge {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}

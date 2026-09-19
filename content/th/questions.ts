@@ -128,7 +128,7 @@ export const questions: Question[] = [
     id: 'q8-overall',
     topic: 'overall',
     status: 'draft',
-    headline: 'นึกถึงสัปดาห์ที่ผ่านมา รู้สึกยังไงบ้าง?',
+    headline: 'สัปดาห์ที่ผ่านมา รู้สึกยังไงบ้าง?',
     choices: [
       { id: 'a', label: 'ค่อนข้างดี', topic: 'overall', weight: 0, icon: 'full' },
       { id: 'b', label: 'ปกติ ๆ', topic: 'overall', weight: 1, icon: 'half' },

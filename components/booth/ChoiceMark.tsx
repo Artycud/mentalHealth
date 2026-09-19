@@ -11,9 +11,9 @@ import type { ChoiceMark as Mark } from '@/lib/types';
  *
  * Decorative: the answer's own text carries the meaning, so it is aria-hidden.
  */
-export function ChoiceMark({ mark }: { mark: Mark }) {
+export function ChoiceMark({ mark, size = 48 }: { mark: Mark; size?: number }) {
   return (
-    <svg width="48" height="48" viewBox="0 0 32 32" aria-hidden="true" style={{ flexShrink: 0 }}>
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" style={{ flexShrink: 0 }}>
       {mark === 'circle' && (
         <>
           <circle cx="17" cy="15" r="11" fill="var(--riso-blue)" className="mul" />

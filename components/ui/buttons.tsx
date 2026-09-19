@@ -24,6 +24,35 @@ export function PrimaryButton({ href, children }: ActionProps) {
   );
 }
 
+/**
+ * The same button as PrimaryButton, but an action rather than a link. It shows
+ * as disabled (paper-grey, not removed) until there is something to submit, so
+ * the layout never jumps when it becomes available.
+ */
+export function PrimaryAction({
+  children,
+  onClick,
+  disabled = false,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-disabled={disabled}
+      onClick={() => {
+        if (!disabled) onClick();
+      }}
+      className={`${styles.base} ${styles.primary} ${disabled ? styles.disabled : ''}`}
+      style={{ color: disabled ? 'var(--ink-muted)' : 'var(--white)' }}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function SecondaryButton({ href, children }: ActionProps) {
   return (
     <Link href={href} className={`${styles.base} ${styles.secondary}`} style={{ color: 'var(--ink)' }}>

@@ -30,7 +30,6 @@ export interface FestivalTheme {
     label: string;
     resultNote: string;
     title: string;
-    body: string;
   };
 }
 
@@ -48,7 +47,6 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
       label: 'บูธลอยกระทง',
       resultNote: 'ดอกไม้ของคุณคือ',
       title: 'เอาหน้านี้ไปโชว์ที่บูธ',
-      body: 'รับดอกดาวเรืองไปแต่งกระทงของคุณได้เลย',
     },
   },
   christmas: {
@@ -304,6 +302,27 @@ export function flowerFromAnswers(answers: BoothAnswer[]): Flower {
   const heart = sum('heart') >= 1 ? 1 : 0;
   const id = FLOWER_GRID[energyLevel(sum('energy'))][heart];
   return loykrathongFlowers.find((f) => f.id === id) ?? loykrathongFlowers[0];
+}
+
+/**
+ * The flower for a set of stored answers (question id + choice id). This is what
+ * the server runs to recompute a booth result from what it saved (BRIEF §3), and
+ * what the phone runs to show one. Returns null unless every question is answered
+ * exactly once with a choice that exists.
+ */
+export function flowerFromChoices(
+  pairs: { questionId: string; choiceId: string }[],
+): Flower | null {
+  if (pairs.length !== loykrathongQuiz.length) return null;
+  const answers: BoothAnswer[] = [];
+  for (const question of loykrathongQuiz) {
+    const matches = pairs.filter((p) => p.questionId === question.id);
+    if (matches.length !== 1) return null;
+    const choice = question.choices.find((c) => c.id === matches[0].choiceId);
+    if (!choice) return null;
+    answers.push({ axis: question.axis, value: choice.value });
+  }
+  return flowerFromAnswers(answers);
 }
 
 /**

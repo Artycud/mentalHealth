@@ -26,6 +26,16 @@
   font-size: 20px;
 }
 
+/* Not yet available: the same size and shape, so nothing moves when it wakes. */
+.disabled {
+  background: var(--track);
+  cursor: default;
+}
+
+.disabled:active {
+  transform: none;
+}
+
 /* 56px, transparent, 2px ink border. Sharp corner moves to bottom-left. */
 .secondary {
   width: 100%;
