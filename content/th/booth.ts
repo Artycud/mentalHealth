@@ -89,21 +89,27 @@ export const withDok = (name: string) => (name.startsWith('ดอก') ? name : 
  * Loy Krathong flower results.
  *
  * The six the booth actually stocks, given by the student council. ดาวเรือง's
- * body line is written in BRIEF §8. Everything else about the five others —
- * `body` and `wish` — is a DRAFT awaiting council review: each `body` rests on
- * one plainly true thing about the flower (the meaning of its name, its scent,
- * how long it lasts) rather than an invented trait, and each `wish` is a warm
- * line in the booth's own theme of letting go. Order and names may still change
- * before the booth — the council said so directly — so nothing else in the
- * codebase should assume this order or count beyond `loykrathongFlowers.length`
- * and lookup-by-`id`.
+ * `body` line is written in BRIEF §8. Everything else — the other `body` lines,
+ * every `fact` and every `wish` — is a DRAFT awaiting council review.
+ *
+ * Each flower is a personality (see the quiz below), so `body` describes it in
+ * three or four plain words and closes on the "เหมือนคำตอบเมื่อกี้" hook (§10).
+ * That hook is now earned: the quiz really does measure the two things each
+ * description talks about. `fact` is one plainly true thing about the real
+ * flower, and `wish` is a warm line in the booth's theme of letting go.
+ *
+ * Order and names may still change before the booth — the council said so
+ * directly — so nothing else in the codebase should assume this order or count
+ * beyond `loykrathongFlowers.length` and lookup-by-`id`.
  */
 export interface Flower {
   id: string;
   name: string;
-  /** One line on the flower, closing on the "เหมือนคำตอบเมื่อกี้" hook (§10). */
+  /** The personality, in a few plain words. */
   body: string;
-  /** A short wish for the student, shown on the result. Draft — never advice. */
+  /** One true thing about the real flower. Small caption, never advice. */
+  fact: string;
+  /** A short wish for the student. Draft — never advice. */
   wish: string;
   /** False while the name is a placeholder rather than a real flower. */
   named: boolean;
@@ -121,7 +127,8 @@ export const loykrathongFlowers: Flower[] = [
     id: 'lotus',
     tint: 3, // pink with a yellow centre, like the real thing
     name: 'ดอกบัว',
-    body: 'ขึ้นจากโคลนแต่ยังสะอาด เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'นิ่ง สงบ ปล่อยวางเก่ง เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    fact: 'น้ำกลิ้งหลุดจากใบบัวได้ ไม่เปียกติด',
     wish: 'ขอให้เรื่องที่หนักใจ ไหลผ่านไปเหมือนน้ำบนใบบัว',
     named: true,
   },
@@ -129,7 +136,8 @@ export const loykrathongFlowers: Flower[] = [
     id: 'crown-flower',
     tint: 5, // blue over pink reads as the lilac of the common variety
     name: 'ดอกรัก',
-    body: 'ชื่อแปลว่ารักตรง ๆ เลย เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'ใจดี ห่วงใยคนรอบตัว เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    fact: 'ชื่อแปลว่า "รัก" ตรง ๆ เลย',
     wish: 'ขอให้วันนี้ได้รักตัวเองเพิ่มอีกนิด',
     named: true,
   },
@@ -137,7 +145,8 @@ export const loykrathongFlowers: Flower[] = [
     id: 'globe-amaranth',
     tint: 1, // magenta-purple, the usual colour of the globe
     name: 'ดอกบานไม่รู้โรย',
-    body: 'เก็บไว้นานแค่ไหนก็ยังสีเดิม เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'ยิ้มง่าย อยู่กับเพื่อนได้นาน ไม่จางไปไหน เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    fact: 'ตากแห้งเก็บไว้นานแค่ไหนก็ยังสีเดิม',
     wish: 'ขอให้ความรู้สึกดี ๆ ของวันนี้อยู่กับคุณไปนาน ๆ',
     named: true,
   },
@@ -148,6 +157,7 @@ export const loykrathongFlowers: Flower[] = [
     tint: 0, // the yellow-and-orange of the hand-drawn marigold
     name: 'ดาวเรือง',
     body: 'สีสด ทนแดด อยู่ได้นาน เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    fact: 'ปลูกง่าย ชอบแดดจัด ๆ',
     wish: 'ขอให้มีแรงใจสู้แดดสู้ฝนไปได้อีกนาน',
     named: true,
   },
@@ -155,7 +165,8 @@ export const loykrathongFlowers: Flower[] = [
     id: 'orchid',
     tint: 2,
     name: 'กล้วยไม้',
-    body: 'บานอยู่ได้นานกว่าดอกไม้ทั่วไป เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'ไม่เหมือนใคร มีสไตล์เป็นของตัวเอง เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    fact: 'ดอกบานอยู่ได้นานหลายวัน บางชนิดหลายสัปดาห์',
     wish: 'ขอให้ได้เป็นตัวเองในแบบที่ไม่เหมือนใคร',
     named: true,
   },
@@ -163,7 +174,8 @@ export const loykrathongFlowers: Flower[] = [
     id: 'champak',
     tint: 4, // yellow-orange, as champak is
     name: 'จำปี',
-    body: 'หอมไกลจนได้กลิ่นก่อนเห็นดอก เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    body: 'เงียบ ๆ แต่อบอุ่น อยู่ตรงไหนก็หอมไกล เหมือนคำตอบเมื่อกี้ของคุณเลย',
+    fact: 'หอมแรง ได้กลิ่นตั้งแต่ไกล',
     wish: 'ขอให้มีเรื่องดี ๆ ให้จำ มากกว่าเรื่องที่อยากลืม',
     named: true,
   },
@@ -172,41 +184,48 @@ export const loykrathongFlowers: Flower[] = [
 /**
  * The 3-question booth quiz. DRAFT — awaiting council review.
  *
- * Written to be answered on instinct. It is a game in a queue at a noisy
- * canteen, usually with someone standing behind you, so every question is a
- * concrete everyday choice ("what would you do?", "which colour?") with short
- * answers and no right one. Nothing here asks how a student is feeling — that
- * is the check-in's job, on their own phone — and nothing should ever drift
- * back toward it, because the answer can be read over a shoulder.
+ * Still written to be answered on instinct. It is a game in a queue at a noisy
+ * canteen with someone standing behind you, so every question is a concrete
+ * everyday choice, the answers are short, and none is better than another. It
+ * asks what a student DOES, never how they FEEL — that is the check-in's job, on
+ * their own phone, and nothing here should drift back toward it, because the
+ * answer can be read over a shoulder.
  *
- * The first draft asked "if you could float one thing away, what?" and "what
- * does your krathong look like?". Those are lovely but they make you stop and
- * think, and the queue is watching.
+ * What changed from the first version, and why. The questions used to be
+ * arbitrary (a colour, a snack) and the flower came out of arithmetic, so the
+ * result saying "like your answers" was a small fib. Now the quiz measures two
+ * real things and each flower is one combination of them:
  *
- * Each choice adds points; the total, modulo the number of flowers, picks the
- * result. It is deterministic and recomputable on the server (§3).
+ *   ENERGY  calm · in between · lively      (two questions, each 0–2)
+ *   HEART   looks after self · after others (one question, 0 or 1)
  *
- * Why a sum and not "most votes wins": with three answers and six flowers a
- * plurality is a full three-way split for 62.5% of students, so the first
- * answer would decide their flower and questions 2 and 3 would be decoration.
- * Worse, กล้วยไม้ and จำปี could only win on a genuine match — 6% each against
- * 22% for the others — and this booth hands out PHYSICAL flowers, so it would
- * run out of four kinds and be left holding a pile of two. Summing uses all
- * three answers and lands every flower between 14% and 19% (ideal 16.7%).
- * Verified by enumerating all 64 answer combinations, not estimated.
+ *                     self          others
+ *       calm          ดอกบัว        จำปี
+ *       in between    กล้วยไม้       ดอกรัก
+ *       lively        ดาวเรือง      ดอกบานไม่รู้โรย
  *
- * The points below (Q1 0–3, Q2 {4,5,0,1}, Q3 {2,3,4,5}, by position a–d) are
- * what produce that spread. Rewording a choice is safe; moving its points is
- * not. After ANY edit to this quiz, run `npm run check:booth`: it enumerates all
- * 64 answer sets against this file and fails if a flower is too rare or too
- * common, or if two answers to one question count the same.
+ * Fair by construction. Energy is asked twice (a morning question and a social
+ * one) and the two are added: sums 0–1 are "calm", 2 is "in between", 3–4 are
+ * "lively", which splits the nine possible pairs into exact thirds. With the
+ * heart answer that is 3 × 3 × 2 = 18 answer sets and every flower gets exactly
+ * 3 of them, 16.7%. That matters because the booth hands out PHYSICAL flowers:
+ * a lopsided quiz means running out of some and holding a pile of others. All
+ * three questions matter, and there is no tie-break to explain.
+ *
+ * Two of the questions have only three answers and one has two. That is on
+ * purpose — fewer choices are quicker to answer — but it is also load-bearing,
+ * so after ANY edit run `npm run check:booth`. It enumerates every answer set
+ * against this file and fails if a flower is too rare or too common, if a
+ * question has two answers that count the same, or if a flower cannot be reached.
  */
+export type Axis = 'energy' | 'heart';
+
 export interface BoothChoice {
   id: string;
   label: string;
-  /** Added to the running total. See the note above before changing. */
-  points: number;
-  /** The picture beside the answer: a shape, or a colour swatch. */
+  /** Energy: 0 calm, 1 in between, 2 lively. Heart: 0 self, 1 others. */
+  value: number;
+  /** The picture beside the answer. A shape carries no meaning, on purpose. */
   mark: ChoiceMark;
 }
 
@@ -214,44 +233,78 @@ export interface BoothQuestion {
   id: string;
   headline: string;
   note: string;
+  /** Which of the two things this question measures. */
+  axis: Axis;
   choices: BoothChoice[];
 }
 
 export const loykrathongQuiz: BoothQuestion[] = [
   {
     id: 'b1',
+    axis: 'energy',
     note: 'ไม่มีถูกผิด เลือกตามใจเลย',
-    headline: 'วันหยุดยาว อยากทำอะไรที่สุด?',
+    headline: 'เช้าวันหยุด อยากทำอะไร?',
     choices: [
-      { id: 'a', label: 'นอนให้เต็มอิ่ม', points: 0, mark: 'circle' },
-      { id: 'b', label: 'ไปเที่ยวกับเพื่อน', points: 1, mark: 'square' },
-      { id: 'c', label: 'ดูซีรีส์ทั้งวัน', points: 2, mark: 'leaf' },
-      { id: 'd', label: 'ออกไปเดินเล่น', points: 3, mark: 'drop' },
+      { id: 'a', label: 'นอนต่อ ไม่ต้องรีบไหน', value: 0, mark: 'circle' },
+      { id: 'b', label: 'ค่อย ๆ ตื่น หาของกิน', value: 1, mark: 'square' },
+      { id: 'c', label: 'ลุกเลย มีแผนแล้ว', value: 2, mark: 'leaf' },
     ],
   },
   {
     id: 'b2',
-    note: 'เลือกสีแรกที่เห็นแล้วชอบ',
-    headline: 'ชอบสีไหนที่สุด?',
+    axis: 'heart',
+    note: 'ตอบเร็ว ๆ ได้เลย',
+    headline: 'ได้เงินมานิดหน่อย จะเอาไปทำอะไร?',
     choices: [
-      { id: 'a', label: 'ชมพู', points: 4, mark: 'pink' },
-      { id: 'b', label: 'ฟ้า', points: 5, mark: 'blue' },
-      { id: 'c', label: 'เหลือง', points: 0, mark: 'yellow' },
-      { id: 'd', label: 'น้ำเงินเข้ม', points: 1, mark: 'navy' },
+      { id: 'a', label: 'ซื้อของให้ตัวเองสักชิ้น', value: 0, mark: 'drop' },
+      { id: 'b', label: 'ซื้อขนมไปแบ่งกับเพื่อน', value: 1, mark: 'square' },
     ],
   },
   {
     id: 'b3',
+    axis: 'energy',
     note: 'ข้อสุดท้ายแล้ว',
-    headline: 'ไปงานลอยกระทง อยากทำอะไรก่อน?',
+    headline: 'เพื่อนชวนไปงานเย็นนี้ คุณจะ...',
     choices: [
-      { id: 'a', label: 'ลอยกระทง', points: 2, mark: 'circle' },
-      { id: 'b', label: 'กินของอร่อย', points: 3, mark: 'square' },
-      { id: 'c', label: 'ถ่ายรูปสวย ๆ', points: 4, mark: 'leaf' },
-      { id: 'd', label: 'เดินดูของ', points: 5, mark: 'drop' },
+      { id: 'a', label: 'ขอพักที่บ้านนะ', value: 0, mark: 'circle' },
+      { id: 'b', label: 'ไปแป๊บเดียวแล้วกลับ', value: 1, mark: 'leaf' },
+      { id: 'c', label: 'ไปสิ! ไปด้วยเลย', value: 2, mark: 'drop' },
     ],
   },
 ];
+
+/** One answer, as the kiosk stores it and the server will recompute from. */
+export interface BoothAnswer {
+  axis: Axis;
+  value: number;
+}
+
+/** Rows are energy (calm, in between, lively); columns are heart (self, others). */
+const FLOWER_GRID: string[][] = [
+  ['lotus', 'champak'],
+  ['orchid', 'crown-flower'],
+  ['marigold', 'globe-amaranth'],
+];
+
+/**
+ * Two energy answers add to 0–4. Splitting at 1|2|3 puts three of the nine
+ * possible pairs in each band, which is what keeps every flower at exactly a
+ * sixth. If the number of energy questions ever changes, these thresholds must
+ * change with it — `npm run check:booth` will say so.
+ */
+const energyLevel = (sum: number) => (sum <= 1 ? 0 : sum === 2 ? 1 : 2);
+
+/**
+ * The flower for a set of answers. Deterministic, so the server can recompute
+ * it from stored answers (§3) and never has to trust the client.
+ */
+export function flowerFromAnswers(answers: BoothAnswer[]): Flower {
+  const sum = (axis: Axis) =>
+    answers.filter((a) => a.axis === axis).reduce((total, a) => total + a.value, 0);
+  const heart = sum('heart') >= 1 ? 1 : 0;
+  const id = FLOWER_GRID[energyLevel(sum('energy'))][heart];
+  return loykrathongFlowers.find((f) => f.id === id) ?? loykrathongFlowers[0];
+}
 
 /**
  * What to do at the booth after getting a flower.
@@ -289,13 +342,3 @@ export const kiosk = {
   resetSeconds: 45,
   resetHint: 'จะกลับหน้าแรกใน',
 } as const;
-
-/**
- * The flower for a set of answers: total points, modulo the number of flowers.
- * Sized from the flower list, so adding or dropping a flower needs no change
- * here — but it WILL change the spread, so re-enumerate the combinations.
- */
-export function flowerFromPoints(points: number[]): Flower {
-  const total = points.reduce((sum, p) => sum + p, 0);
-  return loykrathongFlowers[total % loykrathongFlowers.length];
-}

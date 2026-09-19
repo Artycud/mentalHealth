@@ -90,10 +90,17 @@ const INNER_PETALS: [number, number][] = [
   [198.7, 98.5],
 ];
 
-/** Booth (342×240): a marigold — ดาวเรือง. */
-export function BoothMarigold() {
+/**
+ * Booth (342×240): a marigold — ดาวเรือง.
+ *
+ * `viewBox` lets a caller crop in. The phone screen wants the whole 342×240
+ * drawing with its margins; the kiosk result sets the flower on a disc and crops
+ * to the flower head, stem and leaf so it fills the disc instead of floating in
+ * it.
+ */
+export function BoothMarigold({ viewBox = '0 0 342 240' }: { viewBox?: string }) {
   return (
-    <svg viewBox="0 0 342 240" aria-hidden="true" style={fluid}>
+    <svg viewBox={viewBox} aria-hidden="true" style={fluid}>
       {/* Leaf and stem sit behind the flower head. */}
       <path
         d="M172 196 C190 176 222 178 236 190 C216 206 190 210 172 196 Z"

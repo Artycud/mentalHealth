@@ -2,17 +2,29 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import {
+  backdropToneFor,
+  IdleBackdrop,
+  QuizArt,
+  ResultBackdrop,
+} from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
 import { WallFlower } from '@/components/booth/WallFlower';
-import { BackChevron, SuggestionMarker, Wordmark } from '@/components/illustrations/icons';
+import {
+  BackChevron,
+  CheckBadge,
+  SuggestionMarker,
+  Wordmark,
+} from '@/components/illustrations/icons';
 import { BoothMarigold } from '@/components/illustrations/scenes';
 import {
   boothNext,
   boothQuizTitle,
-  flowerFromPoints,
+  flowerFromAnswers,
   kiosk,
   loykrathongQuiz,
   withDok,
+  type BoothAnswer,
   type FestivalTheme,
 } from '@/content/th/booth';
 import { common } from '@/content/th/common';
@@ -20,19 +32,14 @@ import type { EventText } from '@/lib/events';
 
 import styles from './kiosk.module.css';
 
-/** A riso "+" mark: two thin strokes, as in the scene illustrations (§6). */
-function Sparkle({ className }: { className: string }) {
-  return (
-    <svg viewBox="0 0 14 14" aria-hidden="true" className={className}>
-      <path d="M7 1 L7 13 M1 7 L13 7" className="ln-thin" />
-    </svg>
-  );
-}
-
 type Stage =
   | { kind: 'idle' }
-  | { kind: 'quiz'; step: number; points: number[] }
-  | { kind: 'result'; points: number[] };
+  /** `dir` is which way the last move went, so the slide can follow it. */
+  | { kind: 'quiz'; step: number; answers: BoothAnswer[]; dir: 1 | -1 }
+  | { kind: 'result'; answers: BoothAnswer[] };
+
+/** How long a tapped answer stays visibly selected before the next question. */
+const SELECT_MS = 260;
 
 /**
  * The booth kiosk. Runs unattended on an iPad or laptop for two hours while a
@@ -50,16 +57,26 @@ type Stage =
 export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText }) {
   const [stage, setStage] = useState<Stage>({ kind: 'idle' });
   const [remaining, setRemaining] = useState<number>(kiosk.resetSeconds);
+  /** The answer just tapped, held on screen for SELECT_MS before moving on. */
+  const [picked, setPicked] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const reset = useCallback(() => setStage({ kind: 'idle' }), []);
+  // A pending move must never fire after the kiosk has been reset or unmounted.
+  useEffect(() => () => clearTimeout(advance.current), []);
+
+  const reset = useCallback(() => {
+    clearTimeout(advance.current);
+    setPicked(null);
+    setStage({ kind: 'idle' });
+  }, []);
 
   /** Entering the result also arms the countdown, so the effect below only ever
    *  runs the timer. Resetting `remaining` inside the effect instead would set
    *  state during render and cascade an extra render every time. */
-  const finish = useCallback((points: number[]) => {
+  const finish = useCallback((answers: BoothAnswer[]) => {
     setRemaining(kiosk.resetSeconds);
-    setStage({ kind: 'result', points });
+    setStage({ kind: 'result', answers });
   }, []);
 
   // Auto-reset the result for the next student in the queue.
@@ -96,11 +113,20 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
             type="button"
             className={styles.back}
             aria-label={kiosk.back}
-            onClick={() =>
-              stage.step === 0
-                ? reset()
-                : setStage({ kind: 'quiz', step: stage.step - 1, points: stage.points.slice(0, -1) })
-            }
+            onClick={() => {
+              clearTimeout(advance.current);
+              setPicked(null);
+              if (stage.step === 0) {
+                reset();
+              } else {
+                setStage({
+                  kind: 'quiz',
+                  step: stage.step - 1,
+                  answers: stage.answers.slice(0, -1),
+                  dir: -1,
+                });
+              }
+            }}
           >
             <BackChevron />
           </button>
@@ -119,10 +145,13 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
     </div>
   );
 
-  const place = (
-    <span>
-      บูธ{theme.name} · {event.place}
-    </span>
+  const foot = (right: React.ReactNode) => (
+    <div className={styles.foot}>
+      <span>
+        บูธ{theme.name} · {event.place}
+      </span>
+      {right}
+    </div>
   );
 
   if (stage.kind === 'idle') {
@@ -138,19 +167,23 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
               type="button"
               className={styles.start}
               style={{ color: 'var(--white)' }}
-              onClick={() => setStage({ kind: 'quiz', step: 0, points: [] })}
+              onClick={() => setStage({ kind: 'quiz', step: 0, answers: [], dir: 1 })}
             >
               {kiosk.idleAction}
             </button>
           </div>
+
           <div className={styles.idleArt}>
-            <BoothMarigold />
+            <div className={styles.layer}>
+              <IdleBackdrop />
+            </div>
+            {/* The flower sways and its petals breathe; see kiosk.module.css. */}
+            <div className={`${styles.layer} ${styles.idleFlower}`}>
+              <BoothMarigold />
+            </div>
           </div>
         </div>
-        <div className={styles.foot}>
-          {place}
-          <span>{event.date}</span>
-        </div>
+        {foot(<span>{event.date}</span>)}
       </main>
     );
   }
@@ -160,41 +193,60 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
     return (
       <main className={styles.stage}>
         {head}
-        <div className={styles.body}>
-          <p className={styles.note}>{question.note}</p>
-          <h1 className={styles.question} tabIndex={-1} ref={headingRef} key={question.id}>
-            {question.headline}
-          </h1>
+        {/* Re-keyed per question so each one slides in from the side it came. */}
+        <div className={styles.quiz} key={question.id} data-dir={stage.dir}>
+          <div className={styles.quizLeft}>
+            <p className={styles.note}>{question.note}</p>
+            <h1 className={styles.headline} tabIndex={-1} ref={headingRef}>
+              {question.headline}
+            </h1>
+            <div className={styles.quizArt}>
+              <QuizArt step={stage.step} />
+            </div>
+          </div>
+
           <div className={styles.answers}>
-            {question.choices.map((choice) => (
-              <button
-                key={choice.id}
-                type="button"
-                className={styles.answer}
-                onClick={() => {
-                  const points = [...stage.points, choice.points];
-                  if (stage.step + 1 < loykrathongQuiz.length) {
-                    setStage({ kind: 'quiz', step: stage.step + 1, points });
-                  } else {
-                    finish(points);
-                  }
-                }}
-              >
-                <ChoiceMark mark={choice.mark} />
-                <span className={styles.answerLabel}>{choice.label}</span>
-              </button>
-            ))}
+            {question.choices.map((choice) => {
+              const isPicked = picked === choice.id;
+              return (
+                <button
+                  key={choice.id}
+                  type="button"
+                  aria-pressed={isPicked}
+                  className={`${styles.answer} ${isPicked ? styles.picked : ''}`}
+                  onClick={() => {
+                    if (picked) return; // one tap per question
+                    setPicked(choice.id);
+                    const answers = [...stage.answers, { axis: question.axis, value: choice.value }];
+                    advance.current = setTimeout(() => {
+                      setPicked(null);
+                      if (stage.step + 1 < loykrathongQuiz.length) {
+                        setStage({ kind: 'quiz', step: stage.step + 1, answers, dir: 1 });
+                      } else {
+                        finish(answers);
+                      }
+                    }, SELECT_MS);
+                  }}
+                >
+                  <ChoiceMark mark={choice.mark} />
+                  <span className={styles.answerLabel}>{choice.label}</span>
+                  {/* The badge's space is always reserved, so nothing reflows. */}
+                  <span className={styles.tick} aria-hidden="true">
+                    <span className={styles.tickBadge}>
+                      <CheckBadge />
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
-        <div className={styles.foot}>
-          {place}
-          <span>{event.date}</span>
-        </div>
+        {foot(<span>{event.date}</span>)}
       </main>
     );
   }
 
-  const flower = flowerFromPoints(stage.points);
+  const flower = flowerFromAnswers(stage.answers);
 
   return (
     // Any touch on the result restarts the countdown: a student still reading
@@ -219,22 +271,27 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
         </div>
 
         <div className={styles.resultSide}>
-          {/* The bloom: petals scale in one after another, once, then stop (§9).
-              INTERIM art: only the marigold has a hand-drawn illustration. The
-              other five show the tinted rosette from the TV wall until each
-              flower gets its own drawing — a stand-in, not the finished art, and
-              it must not be mistaken for a lotus or an orchid. */}
-          <div className={`${styles.resultArt} ${styles.bloom}`} key={flower.id}>
-            {flower.id === 'marigold' ? (
-              <BoothMarigold />
-            ) : (
-              <>
+          <div className={styles.artStack}>
+            <div className={styles.layer}>
+              <ResultBackdrop tone={backdropToneFor(flower.tint)} />
+            </div>
+            {/* The bloom: petals scale in one after another, once (§9), then the
+                whole flower settles into a slow breath. INTERIM art: only the
+                marigold has a hand-drawn illustration. The other five show the
+                tinted rosette from the TV wall until each flower gets its own
+                drawing — a stand-in, not the finished art, and it must not be
+                mistaken for a lotus or an orchid. */}
+            <div className={`${styles.flowerWrap} ${styles.bloom}`} key={flower.id}>
+              {flower.id === 'marigold' ? (
+                <BoothMarigold viewBox="70 12 216 228" />
+              ) : (
                 <WallFlower tint={flower.tint} size={320} />
-                <Sparkle className={`${styles.sparkle} ${styles.sparkleA}`} />
-                <Sparkle className={`${styles.sparkle} ${styles.sparkleB}`} />
-              </>
-            )}
+              )}
+            </div>
           </div>
+          <p className={`${styles.fact} ${styles.rise}`}>
+            {flower.name} · {flower.fact}
+          </p>
 
           <section className={`${styles.next} ${styles.rise}`}>
             <h2 className={styles.nextTitle}>{boothNext.title}</h2>
@@ -260,12 +317,11 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
       >
         {kiosk.again}
       </button>
-      <div className={styles.foot}>
-        {place}
+      {foot(
         <span className={styles.countdown}>
           {kiosk.resetHint} {remaining} วิ
-        </span>
-      </div>
+        </span>,
+      )}
     </main>
   );
 }

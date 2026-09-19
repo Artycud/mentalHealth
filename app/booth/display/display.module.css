@@ -1,6 +1,12 @@
 /* Booth TV display — landscape, read at a distance, never touched.
    Sizes are in vh so the whole screen scales with whatever it is cast to,
-   from a 1280×720 projector to a 4K panel. */
+   from a 1280×720 projector to a 4K panel.
+
+   It runs for two hours in a canteen, so it has to look alive by itself: the
+   water moves, the flowers drift, the bars grow in. BRIEF §9 keeps the phone
+   screens still because there motion must mean "you touched something"; this is
+   a wall display, where a frozen frame reads as broken. All of it is transform,
+   opacity or clip-path, and all of it stops under prefers-reduced-motion. */
 
 .stage {
   position: relative;
@@ -49,6 +55,27 @@
   padding: 0 0.6vw;
 }
 
+/* Shown only while the numbers are real. */
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7vh;
+  margin-left: 1.2vw;
+  padding: 0.3vh 1vw;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-size: 2vh;
+  font-weight: 600;
+}
+
+.liveDot {
+  width: 1.3vh;
+  height: 1.3vh;
+  border-radius: 50%;
+  background: var(--riso-pink);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
 /* Headline block */
 .intro {
   flex-shrink: 0;
@@ -69,14 +96,19 @@
   line-height: 1.2;
 }
 
-/* Counts + distribution */
-/* Grows to absorb the leftover height and centres itself in it, so the screen
-   does not read as a top-heavy block above a band of empty paper. */
+/* A layer fills its parent, so illustrations stack without absolute maths. */
+.layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* Counts + distribution. Grows to absorb the leftover height and centres itself
+   in it, so the screen never reads as a top-heavy block above empty paper. */
 .middle {
   display: flex;
   align-items: center;
-  gap: 4vw;
-  margin-top: 3.4vh;
+  gap: 3vw;
+  margin-top: 2.6vh;
   flex-grow: 1;
 }
 
@@ -84,16 +116,29 @@
   flex-shrink: 0;
 }
 
+/* The number sits on a pink blob and a blue circle, like a riso poster numeral. */
+.countArt {
+  position: relative;
+  height: 28vh;
+  aspect-ratio: 300 / 250;
+}
+
 .countNum {
+  position: absolute;
+  inset: 0 6% 4% 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-heading);
-  font-size: 15vh;
+  font-size: 14vh;
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .countLabel {
-  margin-top: 0.6vh;
+  margin-top: 0.4vh;
+  text-align: center;
   font-size: 2.8vh;
   line-height: 1.5;
   color: var(--ink-soft);
@@ -102,7 +147,7 @@
 .bars {
   display: flex;
   flex-direction: column;
-  gap: 1.4vh;
+  gap: 1.7vh;
   flex-grow: 1;
   min-width: 0;
 }
@@ -110,18 +155,27 @@
 .bar {
   display: flex;
   align-items: center;
-  gap: 1.4vw;
+  gap: 1.2vw;
 }
 
-/* Wide enough for the longest name, ดอกบานไม่รู้โรย, on ONE line. At 11vw it
-   wrapped and made that row taller than its neighbours. */
-/* The text is sized in vh but a width in vw does not track it, so on a 4:3 screen
-   the name outgrew its column and touched the bar. max() takes whichever is
-   larger; 22vh is the measured width of ดอกบานไม่รู้โรย at this font size. */
-.barName {
-  width: max(15vw, 22vh);
+.barFlower {
+  display: flex;
   flex-shrink: 0;
-  font-size: 2.9vh;
+}
+
+.barFlower svg {
+  width: 5.6vh;
+  height: 5.6vh;
+}
+
+/* Wide enough for the longest name, ดอกบานไม่รู้โรย, on ONE line. The text is
+   sized in vh but a width in vw does not track it, so on a 4:3 screen the name
+   outgrew its column and touched the bar. max() takes whichever is larger; 22vh
+   is the measured width of that name at this font size. */
+.barName {
+  width: max(13vw, 24vh);
+  flex-shrink: 0;
+  font-size: 3vh;
   font-weight: 600;
   line-height: 1.4;
   text-align: right;
@@ -130,87 +184,96 @@
 
 /* A plain div bar, no chart library (BRIEF §11).
    display:block matters: these are spans, and height has no effect on an
-   inline box, so the fill rendered at zero height and the bars looked empty. */
+   inline box, so the fill would render at zero height and the bars look empty. */
 .barTrack {
   display: block;
   position: relative;
   flex-grow: 1;
-  height: 4vh;
+  height: 3.8vh;
   border-radius: 999px;
   background: var(--track);
   overflow: hidden;
 }
 
+/* The fill is always full width and CLIPPED to its value. Resizing it would
+   squash its rounded end into an ellipse; clipping keeps the end round. The
+   transition lets live numbers ease to a new value instead of jumping. */
 .barFill {
   display: block;
+  width: 100%;
   height: 100%;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--ink-bar, var(--ink));
+  clip-path: inset(0 var(--r, 0%) 0 0 round 999px);
+  transition: clip-path 900ms var(--ease);
+  animation: fill-in 900ms var(--ease) both;
 }
 
 .barCount {
   width: 4vw;
   flex-shrink: 0;
   font-family: var(--font-heading);
-  font-size: 3.6vh;
+  font-size: 3.4vh;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
-/* The river: the fun part, and the one place this screen moves. */
-/* Preferred 26vh, but it is the one section allowed to shrink (down to 16vh)
-   when the bars above need the room. Before this, six bars pushed the river
-   half off the bottom and the footer clean off the screen, and the stage's
+/* The river: each flower is one student's result, floating away.
+   Preferred 26vh, but it is the one section allowed to shrink (down to 16vh)
+   when the bars above need the room. Before this, six bars pushed the river half
+   off the bottom and the footer clean off the screen, and the stage's
    overflow:hidden clipped both without any warning. */
 .river {
   position: relative;
   flex: 0 1 26vh;
   min-height: 16vh;
-  margin-top: 2vh;
+  margin-top: 1vh;
 }
 
+/* Behind the flowers, so they seem to sit on the surface. */
 .water {
   position: absolute;
   left: -3.5vw;
   right: -3.5vw;
-  bottom: 0;
-  height: 100%;
+  bottom: 4%;
+  height: 58%;
 }
 
-.floats {
+/* Two copies of the same row, end to end. Sliding by exactly one copy (half of
+   the track) puts the second where the first began, so the loop never jumps.
+   will-change lets the browser paint it once and just move it: the flowers use
+   multiply blending, which is not cheap to redraw every frame on a TV stick. */
+.track {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
   display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: drift 110s linear infinite;
+}
+
+/* Each copy is at least a screen wide however few flowers there are, so an early
+   booth with three flowers is still spread across the water, not bunched up. */
+.set {
+  display: flex;
+  flex: 0 0 auto;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: 1vw;
+  justify-content: space-around;
+  min-width: 100vw;
   padding-bottom: 3vh;
 }
 
 .float {
-  animation: bob 4s ease-in-out infinite;
+  animation: bob 5s ease-in-out infinite;
 }
 
 /* min() so eleven flowers still fit across a narrower screen. On 16:9 the vh
-   term wins and nothing changes; on 4:3 the vw term keeps the last one from
-   being clipped by the edge. */
+   term wins and nothing changes; on 4:3 the vw term keeps them from crowding. */
 .float svg {
   width: min(12vh, 8vw);
   height: auto;
-}
-
-/* Gentle bob, so the screen reads as live rather than frozen. Deliberately the
-   only looping motion in the product, and confined to the TV — §9's "nothing
-   loops or floats" governs the student phone screens, where motion must mean
-   "you did something". A wall display with no life at all looks broken. */
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-1.2vh);
-  }
 }
 
 .foot {
@@ -233,8 +296,49 @@
   font-weight: 600;
 }
 
+@keyframes drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.3vh);
+  }
+}
+
+/* No end value: it grows to whatever --r says, in the base style. */
+@keyframes fill-in {
+  from {
+    clip-path: inset(0 100% 0 0 round 999px);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .float {
+  .track,
+  .float,
+  .liveDot,
+  .barFill {
     animation: none;
   }
 }

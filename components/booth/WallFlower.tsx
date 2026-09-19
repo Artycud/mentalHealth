@@ -22,6 +22,9 @@ const TINTS: { outer: string; inner: string }[] = [
   { outer: 'var(--riso-blue)', inner: 'var(--riso-pink)' }, // blue with pink centre
 ];
 
+/** The flower's main ink, for anything that should match it (e.g. a TV bar). */
+export const tintInk = (tint: Tint) => TINTS[tint].outer;
+
 /** 8 outer petals and 6 inner, on the same geometry as the full illustration. */
 const OUTER = Array.from({ length: 8 }, (_, i) => {
   const a = (i / 8) * Math.PI * 2;

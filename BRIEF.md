@@ -36,7 +36,7 @@ The website has two student modes plus an admin area:
 
 - Next.js (App Router) with TypeScript.
 - Plain CSS: one `globals.css` holding the design tokens as CSS custom properties, plus CSS Modules per component. No Tailwind, no UI kit, no animation library, no chart library.
-- SQLite through `better-sqlite3`, stored as a single file at `DATABASE_PATH`.
+- SQLite through the `@libsql/client` package, opened from `DATABASE_URL`: a `file:` URL (a single file) on a school server, a `libsql://` URL (hosted, e.g. Turso) on Vercel. **Not `better-sqlite3`** — it needs a persistent disk, and Vercel has none. Planned, to be confirmed before phase 4 starts; see *Hosting* below.
 - `zod` for validating every request body.
 - Password hashing with `@node-rs/argon2` or `bcryptjs`.
 - Fonts self-hosted as woff2 in `public/fonts` (Mitr 400/500/600, IBM Plex Sans Thai Looped 400/500/600, Itim 400). Do not load Google Fonts at runtime.
@@ -126,7 +126,7 @@ API rules:
 - `POST /api/session` takes `{ mode, festival? }`, returns `{ id }`.
 - `POST /api/session/:id/answer` takes `{ questionId, choiceId }`. Reject any id that is not in the content files. Upsert on `(session_id, question_id)` so a changed answer does not duplicate.
 - `POST /api/session/:id/complete` takes the computed `{ resultState, primaryTopic, secondaryTopic }` or `{ boothResult }`. Recompute it on the server from the stored answers and store the server's value, so the client cannot post nonsense.
-- Validate everything with zod and cap body size. A simple in-memory guard is enough: at most 60 new sessions per hour per IP, counted in memory and never written to disk.
+- Validate everything with zod and cap body size. Rate-limit new sessions (about 60 an hour). **How** is open: an in-memory counter only works on a server that stays running, and on Vercel every call can be a fresh instance, so it would silently do nothing. Decide at phase 4 between the platform's own rate limiting and a short-lived counter in the database. Either way no IP address is ever stored (section 12).
 - **The student flow never waits on the network.** Fire the requests in the background. If one fails, retry once, then drop it silently. A student must never see a saving error or a spinner because of logging.
 
 ## 4. Visual system: color
@@ -369,7 +369,7 @@ One account, used by the student council to pull statistics for the school. Thai
 **Access**
 - `/admin/login` with a single account. Username in `ADMIN_USERNAME`, an argon2 or bcrypt hash in `ADMIN_PASSWORD_HASH`. Never store a plain password anywhere, including `.env.example`.
 - On success, set a signed, `httpOnly`, `Secure`, `SameSite=Lax` cookie signed with `SESSION_SECRET`, expiring in 8 hours. Logout clears it.
-- After 5 failed attempts, lock that IP out for 10 minutes, counted in memory.
+- After 5 failed attempts, lock the login for 10 minutes. There is one admin account, so key the counter to the account and keep it in the database, not in memory: memory does not persist across serverless calls, so an in-memory lockout would never trigger on Vercel.
 - Every `/api/admin/*` route and `/admin` page checks the cookie server-side. `noindex` on all admin pages.
 
 **Look.** Same palette and fonts, denser layout: 8px radii, 13–15px text, real tables, tight rows. One small riso accent in the header and nothing else. No big illustrations. The only motion is the 180ms collapse and expand.
@@ -435,6 +435,18 @@ behind a second account, separate from the admin one.
 - The kiosk auto-resets to its idle screen 20 seconds after a result, so a
   student who walks off does not leave their answer up for the next person.
 
+**Booth screens: look and motion.** The kiosk and TV follow the phone's riso-zine
+language but are their own compositions, sized in `vh` so they fill an iPad or a
+projector alike. The kiosk quiz is two columns — the question and a per-question
+illustration on the left, big answers on the right — and the result is a poster:
+the flower blooms in on a paper-cut disc, then the name, a description, a wish,
+the ticket to show staff, and what to do next. Idle motion is deliberate here
+and only here: section 9 keeps the *phone* still because there motion must mean
+"you touched something", but a wall display that never changes reads as frozen.
+All motion is transform, opacity or clip-path, and stops under
+`prefers-reduced-motion`. The TV's river is one composited layer that slides, so
+it is painted once rather than every frame — which matters on a low-end stick.
+
 **Export and cleanup**
 - Export two CSVs honouring the current filters: one row per session, and one row per answer. UTF-8 with a BOM so Excel opens Thai correctly. Filenames include the date.
 - Delete a single session, and a "ลบข้อมูลทั้งหมด" action that requires typing a confirmation word. The council should wipe the data once the school report is done.
@@ -450,7 +462,7 @@ At this scale, most of the safety comes from what is not collected. Storing sess
 - Self-host the fonts. No analytics, ad scripts, chat widgets, heatmaps, or tracking pixels of any kind. This is a mental health page.
 - No API keys or secrets in client code. `.env` is git-ignored; commit only `.env.example`.
 - Headers to ask school IT for (or set in `next.config`): `Content-Security-Policy` allowing only self, `img-src 'self' data:`, `frame-ancestors 'none'`, `base-uri 'self'`; plus `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`.
-- Parameterised SQL everywhere (better-sqlite3 prepared statements). Validate every input against the known question and choice ids.
+- Parameterised SQL everywhere (bound parameters through the database client, never string-built queries). Validate every input against the known question and choice ids.
 - Back up the SQLite file before the event and after each booth day. It is one file; copying it is the whole backup plan.
 - Booth mode runs on trust — staff just look at the screen. Do not build codes, tokens, or anti-cheat for 30 students.
 - **Safety, which matters more here than security:** the site never diagnoses anyone and never tells a student they are fine. Every result keeps a visible route to CUD Care. Do not add a free-text box in this version, because someone would have to be responsible for reading whatever a student writes in it.
@@ -507,17 +519,48 @@ Recorded here so they are not re-litigated later.
 
 | Question | Decision | Date |
 |---|---|---|
-| Hosting (§2 check) | **Not decided yet.** Building against local SQLite with all queries behind `lib/db.ts`, so storage can change without touching routes. Must be settled before phase 4. | 2026-09-19 |
-| Node runtime | **22 LTS.** Node 20 is past end-of-life and `better-sqlite3` 13 requires `>= 22`. | 2026-09-19 |
+| Hosting (§2 check) | **Vercel + GitHub first; a school server on the school domain is likely later** (the council put it at high chance). So everything must run in both places — see *Hosting* below. It rules out `better-sqlite3` and in-memory state. | 2026-09-19 |
+| Node runtime | **22 LTS.** Node 20 is past end-of-life. Vercel and any school server should both run 22 or newer. | 2026-09-19 |
 | Auto-advance vs ไปต่อ (§9) | **Auto-advance.** Bottom button appears only on Q8, labelled มาดูผลกัน. | 2026-09-19 |
 | Devices | iPhone **and iPad** Safari must both look good — added to §6's layout rule. | 2026-09-19 |
 | Booth devices | **Two**, not one: a kiosk for answering and a TV for live visualisation. Both landscape, both behind a booth account. See §11. | 2026-09-19 |
 | Booth password | Set and reset from the admin panel, stored hashed, shown once on generation. | 2026-09-19 |
 | Loy Krathong flowers | Six, given by the council: ดอกบัว ดอกรัก ดอกบานไม่รู้โรย ดาวเรือง กล้วยไม้ จำปี. **Names may still change.** ("จำไป" in the original message was confirmed a typo for จำปี.) | 2026-09-19 |
 | Booth dates | Loy Krathong is **19–20 พ.ย. 2569** — the schedule section of the project document, which the council confirmed as "probably" right. The Gantt table's 19–24 พ.ย. is dropped. Dates are **editable later in the admin panel's Events section**, so a wrong guess is a two-minute fix, not a deploy. | 2026-09-19 |
-| Booth quiz style | Easier, on instinct: concrete everyday choices with short answers and no right one (a holiday, a colour, a festival), instead of "what would you float away?". Answer pictures are neutral shapes and colour swatches, not the check-in's full-to-empty moons, which read as better-to-worse. Every question can be undone with a back button. | 2026-09-19 |
+| Booth quiz style | Easy to answer but telling: concrete things a student DOES (their morning, their money, an evening invitation), never how they feel, with two or three short answers and none better than another. Answer pictures are neutral shapes, not the check-in's full-to-empty moons, which read as better-to-worse. Every question can be undone with a back button, and a tapped answer stays highlighted for a beat so a tap always visibly lands. | 2026-09-19 |
 | Booth result | A moment, not a label: the flower blooms in, with a wish from the flower, the ticket to show staff, and what to do next at the booth. Reset is 45 seconds, restarted by any touch, so nobody is cut off mid-read. | 2026-09-19 |
-| Booth scoring | Sum of answer points modulo six, **not** most-votes-wins. Plurality was rejected after enumerating all 64 answer combinations: 62.5% of students would be decided by question 1 alone, and กล้วยไม้ / จำปี would each get only 6% against 22% for the rest — a real problem for a booth that hands out physical flowers. The sum gives 14–19% per flower. | 2026-09-19 |
+| Booth scoring | The quiz measures two real things — **energy** (calm / in between / lively, from two questions added) and **heart** (looks after self / others, from one) — and each flower is one cell of the 3x2 grid, so its description is earned. Exactly 3 of 18 answer sets per flower (16.7%), all three questions matter, no tie-break. Two earlier schemes were rejected after enumerating every answer set: plurality (62.5% decided by question 1 alone; two flowers at 6%, which matters because the booth hands out physical flowers) and sum-modulo-six (balanced, but arithmetic, so the result claiming to be "like your answers" was a small fib). `npm run check:booth` re-verifies all of this. | 2026-09-19 |
+| Booth screens | Riso illustration on every booth screen (idle, each question, result, TV), where they were plain white cards. The TV bars take their flower's own colour. Both devices have gentle idle motion — the kiosk's flower sways and its petals breathe, its button sends out a ring; the TV's river drifts, its water moves, its flowers bob — because a screen that never changes reads as broken from across a canteen. Everything stops under reduced motion (verified: zero running animations). | 2026-09-19 |
+
+## Hosting: Vercel first, school server likely later
+
+The council will launch on Vercel from a GitHub repo and expects to move to the
+school's own server and domain (high chance). Building for one and porting later
+is where this project would get hurt, so build for both from phase 4:
+
+- **Database.** `@libsql/client`, `DATABASE_URL` from the environment. Same
+  schema and queries everywhere; only the URL changes (`file:./data/app.db` on
+  the school server, `libsql://...` on Vercel). `better-sqlite3` cannot work on
+  Vercel: its filesystem is read-only and wiped between deploys.
+- **No state in memory.** Serverless calls can each be a new instance, so rate
+  limits, lockouts and caches held in a variable silently do nothing there.
+  Anything that must persist goes in the database.
+- **The TV polls.** Every 4-5 seconds, a plain request. WebSockets and
+  server-sent events are unreliable on serverless.
+- **Per-request rendering.** Any page that reads the database (home, booth,
+  kiosk, TV) must not be prerendered — see the note in the Events section.
+- **Config in the environment only.** No absolute paths, no committed secrets.
+  `.env*` is git-ignored except `.env.example`, and a `.db` file is never
+  committed. Keep the GitHub repo private.
+- **The QR code points at the school's domain from day one**, never at a
+  `*.vercel.app` address. A printed QR code cannot be changed. If the school
+  domain points at Vercel now and at the school server later, every code already
+  on a poster keeps working. Do not print codes until that domain exists.
+- **Moving later.** On the school server: Node 22, `npm run build`,
+  `npm start` behind a reverse proxy with HTTPS. The admin CSV export is the
+  portable copy of the data, and a `file:` database is a single file to copy.
+- Vercel's free tier is for non-commercial use, which a school project is.
+  Choose a region near Thailand (Singapore) for the fewest milliseconds.
 
 ## Event facts
 

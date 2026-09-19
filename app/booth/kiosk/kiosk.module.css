@@ -92,6 +92,7 @@
   background: var(--riso-pink);
 }
 
+/* Used by the closed-booth state in page.tsx. */
 .body {
   display: flex;
   flex-direction: column;
@@ -100,12 +101,61 @@
   min-height: 0;
 }
 
-/* Idle: text left, flower right, so the screen invites someone over rather
-   than sitting as a block of text in the middle of a canteen. */
+.note {
+  font-family: var(--font-note);
+  font-size: 2.8vh;
+  line-height: 1.4;
+  color: var(--note-pink);
+}
+
+.question {
+  margin-top: 0.8vh;
+  font-size: 7vh;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.lead,
+.resultBody {
+  font-size: 2.7vh;
+  line-height: 1.6;
+  /* Balanced, so a two-line description never leaves "คุณเลย" on a line alone. */
+  text-wrap: balance;
+}
+
+.lead {
+  margin-top: 1.5vh;
+  font-size: 3vh;
+}
+
+.foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  padding-top: 2.5vh;
+  font-size: 2vh;
+  color: var(--ink-muted);
+}
+
+/* A layer fills its parent, so illustrations stack without absolute maths in
+   every rule. The SVGs inside centre themselves and keep their proportions. */
+.layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Idle: an invitation, and it moves ---- */
+
 .idle {
   display: flex;
   align-items: center;
-  gap: 4vw;
+  gap: 3vw;
   flex-grow: 1;
   min-height: 0;
 }
@@ -115,32 +165,54 @@
   flex-direction: column;
   align-items: flex-start;
   flex-shrink: 0;
-  width: 52%;
+  width: 46%;
 }
 
 .idleArt {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-grow: 1;
+  position: relative;
+  flex: 1;
   min-width: 0;
+  height: 64vh;
 }
 
-.idleArt svg {
+/* The marigold sits inside the blobs, inset so the blobs frame it. */
+.idleFlower {
+  inset: 12% 8% 6%;
+  transform-origin: 50% 88%;
+  animation: sway 8s ease-in-out infinite;
+}
+
+.idleFlower svg {
   width: 100%;
-  max-height: 58vh;
   height: auto;
+  max-height: 100%;
 }
 
-.lead {
-  margin-top: 1.5vh;
-  font-size: 3vh;
-  line-height: 1.6;
+/* The petals breathe on two alternating clocks, so the flower looks alive
+   rather than pulsing as one block. The dotted ring, always the last circle,
+   turns instead — slowly enough to notice only if you look. The ring rule comes
+   last so it wins the tie with the odd-numbered petal rule. */
+.idleFlower svg circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.idleFlower svg circle:nth-of-type(odd) {
+  animation: breathe 5.2s ease-in-out infinite;
+}
+
+.idleFlower svg circle:nth-of-type(even) {
+  animation: breathe 5.2s ease-in-out -2.6s infinite;
+}
+
+.idleFlower svg circle:last-of-type {
+  animation: spin 70s linear infinite;
 }
 
 /* Sized to its label, not the full width — a full-bleed bar reads as a banner
    rather than something to press. */
 .start {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,16 +231,48 @@
   transform: scale(0.98);
 }
 
-.note {
-  font-family: var(--font-note);
-  font-size: 2.8vh;
-  line-height: 1.4;
-  color: var(--note-pink);
+/* A ring that swells and fades out from the button, over and over: the one cue
+   that says "press me" from across a room. Transform and opacity only. */
+.start::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--ink);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: ripple 2.8s ease-out infinite;
 }
 
-.question {
+/* ---- Quiz: words on the left, big answers on the right ---- */
+
+.quiz {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 4vw;
+  flex-grow: 1;
+  min-height: 0;
+  margin-top: 1vh;
+  animation: slide 240ms var(--ease) both;
+}
+
+.quiz[data-dir='1'] {
+  --from: 24px;
+}
+
+.quiz[data-dir='-1'] {
+  --from: -24px;
+}
+
+.quizLeft {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.headline {
   margin-top: 0.8vh;
-  font-size: 7vh;
+  font-size: 6.2vh;
   font-weight: 600;
   line-height: 1.25;
   text-wrap: balance;
@@ -176,31 +280,39 @@
 
 /* Programmatic focus lands here on each question; it is not a control, so it
    should not draw a ring. */
-.question:focus {
+.headline:focus {
   outline: none;
 }
 
-/* Two columns: four answers reachable without scrolling, each big enough to
-   hit while standing. */
+.quizArt {
+  height: 30vh;
+  margin-top: 3vh;
+}
+
+/* One column of big cards. Two answers make two very tall cards and three make
+   three shorter ones; either way each is easy to hit standing up. */
 .answers {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2vh 2vw;
-  margin-top: 4vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2vh;
+  min-width: 0;
 }
 
 .answer {
   display: flex;
   align-items: center;
   gap: 1.6vw;
-  min-height: 14vh;
-  padding: 2vh 2.4vw;
+  flex: 1 1 0;
+  min-height: 13vh;
+  max-height: 22vh;
+  padding: 2vh 2.2vw;
   border: 3px solid var(--line);
   border-radius: 3vh;
   background: var(--white);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 3.8vh;
+  font-size: 3.6vh;
   font-weight: 500;
   line-height: 1.4;
   text-align: left;
@@ -212,6 +324,11 @@
 
 .answer:active {
   transform: scale(0.985);
+}
+
+/* The tapped answer holds on screen for a beat before the question moves on, so
+   a tap always visibly lands. Border and fill fade together (§9). */
+.picked {
   border-color: var(--ink);
   background: var(--pink-tint);
 }
@@ -219,8 +336,8 @@
 /* The marker is the first thing the eye lands on, so it is bigger than the
    phone's 32px icon: it lets a student answer by picture, without reading. */
 .answer svg {
-  width: 7vh;
-  height: 7vh;
+  width: 8vh;
+  height: 8vh;
   flex-shrink: 0;
 }
 
@@ -229,15 +346,29 @@
   text-wrap: balance;
 }
 
-.foot {
+/* Reserved whether or not it is showing, so the label never reflows. */
+.tick {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2vw;
-  padding-top: 2.5vh;
-  font-size: 2vh;
-  color: var(--ink-muted);
+  width: 5vh;
+  height: 5vh;
+}
+
+.tick svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tickBadge {
+  display: block;
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* The one bouncy thing in the whole product (§9). */
+.picked .tickBadge {
+  opacity: 1;
+  transform: scale(1);
+  animation: pop var(--d-badge) var(--ease-overshoot);
 }
 
 /* ---- Result: the payoff, so it carries more than a name ---- */
@@ -267,8 +398,6 @@
 
 .resultBody {
   margin-top: 1vh;
-  font-size: 2.7vh;
-  line-height: 1.6;
 }
 
 /* A wish from the flower. Tinted block with one sharp corner, the same
@@ -323,42 +452,42 @@
 .resultSide {
   display: flex;
   flex-direction: column;
-  gap: 2vh;
+  align-items: stretch;
+  gap: 1.2vh;
   flex: 1;
   min-width: 0;
 }
 
-.resultArt {
+/* The flower on its backdrop. Square, so the disc stays round however wide the
+   column is. */
+.artStack {
   position: relative;
+  align-self: center;
+  height: 36vh;
+  aspect-ratio: 1;
+}
+
+.flowerWrap {
+  position: absolute;
+  inset: 13%;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: breathe 6.5s ease-in-out 1.3s infinite;
 }
 
-.resultArt > svg:first-child {
+.flowerWrap svg {
   width: 100%;
-  max-height: 38vh;
   height: auto;
+  max-height: 100%;
 }
 
-/* The marigold's drawing has "+" sparkles built in (BRIEF §6). The stand-in
-   rosettes get the same two, so all six results read as one family. */
-.sparkle {
-  position: absolute;
-  width: 3vh;
-  height: 3vh;
-}
-
-.sparkleA {
-  top: 10%;
-  left: 14%;
-}
-
-.sparkleB {
-  bottom: 14%;
-  right: 12%;
-  width: 2.2vh;
-  height: 2.2vh;
+/* One true thing about the real flower, as a small caption under it. */
+.fact {
+  text-align: center;
+  font-size: 2.1vh;
+  line-height: 1.5;
+  color: var(--ink-soft);
 }
 
 /* Open rows, not cards, and never numbered: they are things you can do, not
@@ -366,6 +495,7 @@
 .next {
   display: flex;
   flex-direction: column;
+  margin-top: 0.6vh;
 }
 
 .nextTitle {
@@ -379,7 +509,7 @@
   display: flex;
   align-items: center;
   gap: 1vw;
-  padding: 1.1vh 0;
+  padding: 1vh 0;
   border-top: 1.5px solid var(--line);
   font-size: 2.3vh;
   line-height: 1.5;
@@ -414,13 +544,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- The reveal (BRIEF §9): once, then it stops ---- */
+/* ---- The reveal (BRIEF §9): once, then it settles ---- */
 
 /* Petals scale in one after another, about 500ms in all. No overshoot: the
    check badge's small bounce is the single bouncy thing in the product. The
    transform box is the circle's own, so each petal grows from its centre rather
-   than from the corner of the drawing. The last circle is the dotted ring, which
-   arrives as the flower opens. */
+   than from the corner of the drawing. The last circle is the dotted ring. */
 .bloom svg circle {
   transform-box: fill-box;
   transform-origin: center;
@@ -449,6 +578,13 @@
 .bloom svg circle:nth-of-type(20) { animation-delay: 266ms; }
 .bloom svg circle:nth-of-type(21) { animation-delay: 280ms; }
 
+/* Once the bloom is done the ring starts to turn, so the flower is never still. */
+.bloom svg circle:last-of-type {
+  animation:
+    bloom 260ms var(--ease) 280ms both,
+    spin 60s linear 700ms infinite;
+}
+
 /* No opacity in `to`, deliberately. With fill-mode `both` an explicit
    `opacity: 1` would replace the inner petals' own 55% for good, turning the
    soft ink-overlap into a solid dark centre. Left out, each petal finishes at
@@ -473,7 +609,8 @@
 .resultText > :nth-child(3) { animation-delay: 180ms; }
 .resultText > :nth-child(4) { animation-delay: 240ms; }
 .resultText > :nth-child(5) { animation-delay: 300ms; }
-.next { animation-delay: 360ms; }
+.fact { animation-delay: 340ms; }
+.next { animation-delay: 400ms; }
 
 @keyframes rise {
   from {
@@ -486,11 +623,85 @@
   }
 }
 
-/* Reduced motion: no movement at all. Removing the animation outright also
-   removes its delay, so nothing sits invisible waiting for its turn. */
+/* ---- Shared motion ---- */
+
+@keyframes slide {
+  from {
+    transform: translateX(var(--from, 24px));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Idle. Slow and small: it should read as alive, not as a screensaver. */
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-1.6deg);
+  }
+  50% {
+    transform: rotate(1.6deg);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  70%,
+  100% {
+    transform: scale(1.16);
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: no movement at all. Removing an animation outright also
+   removes its delay, so nothing sits invisible waiting for its turn. The tapped
+   answer still highlights, which is a colour change and not movement. */
 @media (prefers-reduced-motion: reduce) {
   .bloom svg circle,
-  .rise {
+  .bloom svg circle:last-of-type,
+  .rise,
+  .quiz,
+  .idleFlower,
+  .idleFlower svg circle,
+  .idleFlower svg circle:nth-of-type(odd),
+  .idleFlower svg circle:nth-of-type(even),
+  .idleFlower svg circle:last-of-type,
+  .flowerWrap,
+  .picked .tickBadge,
+  .start::after {
     animation: none;
   }
 }
