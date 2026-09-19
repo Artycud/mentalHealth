@@ -9,6 +9,7 @@ import { boothQuizTitle, festivals, tv } from '@/content/th/booth';
 import { common } from '@/content/th/common';
 import { demoWallData, getWallData } from '@/lib/booth-wall';
 import { getEventText } from '@/lib/events';
+import { riverDepth } from '@/lib/river';
 import { getActiveFestival } from '@/lib/settings';
 
 import styles from './display.module.css';
@@ -154,7 +155,13 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
                 <span
                   key={`${copy}-${i}-${r.tint}`}
                   className={styles.float}
-                  style={{ animationDelay: `${-(i % 5) * 0.8}s` }}
+                  style={
+                    {
+                      // Newest is nearest and biggest; older ones recede.
+                      '--depth': riverDepth(i),
+                      animationDelay: `${-(i % 5) * 0.8}s`,
+                    } as React.CSSProperties
+                  }
                 >
                   <WallFlower tint={r.tint} />
                 </span>

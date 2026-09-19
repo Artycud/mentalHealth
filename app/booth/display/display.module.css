@@ -278,15 +278,21 @@
   padding-bottom: 3vh;
 }
 
+/* --depth runs from 1 (the newest flower) down to about 0.4 (the oldest shown).
+   A flower that is further back is smaller, sits a little higher on the water and
+   is a touch fainter, so the river reads as a few near flowers and a calm drift of
+   distant ones instead of a row of identical marks. */
 .float {
+  margin-bottom: calc((1 - var(--depth, 1)) * 5vh);
   animation: bob 5s ease-in-out infinite;
 }
 
 /* min() so eleven flowers still fit across a narrower screen. On 16:9 the vh
    term wins and nothing changes; on 4:3 the vw term keeps them from crowding. */
 .float svg {
-  width: min(12vh, 8vw);
+  width: calc(min(12vh, 8vw) * var(--depth, 1));
   height: auto;
+  opacity: calc(0.5 + var(--depth, 1) * 0.5);
 }
 
 .foot {

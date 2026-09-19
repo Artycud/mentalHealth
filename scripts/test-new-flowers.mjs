@@ -1,5 +1,6 @@
 // Tests for detecting new flowers on the TV. Run:  npm run test:moment
 import { MAX_QUEUED, newArrivals } from '../lib/new-flowers.ts';
+import { MIN_DEPTH, riverDepth } from '../lib/river.ts';
 
 let fail = 0;
 const eq = (label, got, want) => {
@@ -22,6 +23,14 @@ eq('a smaller cap is respected', newArrivals(0, 5, recent, 1).map((a) => a.flowe
 eq('it cannot invent flowers beyond what the wall listed', newArrivals(0, 50, recent.slice(0, 2)).map((a) => a.flowerId), ['d', 'e']);
 eq('an empty list gives nothing, however much the total grew', newArrivals(0, 3, []), []);
 eq('the arrival carries its name and colour for the screen', newArrivals(4, 5, [f('lotus', 3), ...recent]), [{ flowerId: 'lotus', name: 'lotus', tint: 3 }]);
+
+// The river's depth: newest biggest, older ones smaller, never vanishing.
+const depths = Array.from({ length: 14 }, (_, i) => riverDepth(i));
+eq('the newest flower is full size', riverDepth(0), 1);
+eq('each older flower is never bigger than the one after it', depths.every((d, i) => i === 0 || d <= depths[i - 1]), true);
+eq('the first few barely taper', riverDepth(2) > 0.8, true);
+eq('the oldest is small but still visible', riverDepth(50), MIN_DEPTH);
+eq('a bad rank cannot enlarge a flower', riverDepth(-3), 1);
 
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');
 process.exit(fail ? 1 : 0);
