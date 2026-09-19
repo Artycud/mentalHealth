@@ -376,6 +376,33 @@ One account, used by the student council to pull statistics for the school. Thai
 - Each row is a real `<button>` for the toggle, with `aria-expanded` and `aria-controls`. Enter and Space work.
 - Pressing "เช็กอินอีกครั้ง" produces a separate row, never an edit of the previous one. Unfinished sessions stay visible, marked ยังไม่จบ, because drop-off is useful information.
 
+**Booth account (added after the project document was reviewed).**
+
+The booth runs on two devices, neither of them a student's phone: a **kiosk**
+(`/booth/kiosk`, landscape iPad or laptop) that students tap to answer, and a
+**TV display** (`/booth/display`) cast to a screen showing live counts and a
+river of everyone's flowers. Both are staff-operated fixtures, so both sit
+behind a second account, separate from the admin one.
+
+- One booth account: `booth_username` and `booth_password_hash` in the `setting`
+  table, so the council can change them without touching the server.
+- The admin panel shows a **บัญชีบูธ** card: the current username, an editable
+  field for it, and a button that generates a new password. The generated
+  password is easy to type on an iPad (no ambiguous characters) and is shown
+  **once**, at the moment it is generated. It is stored only as a hash, so
+  nobody can read it back later — not even an admin. Forgotten means reset, not
+  recovered. This keeps §12's rule that no plain password is ever stored.
+- The booth cookie is separate from the admin cookie and grants **only**
+  `/booth/kiosk` and `/booth/display`. A booth device can never reach `/admin`
+  or any `/api/admin/*` route. It lasts 12 hours, so one login covers a booth
+  day without a staff member re-entering it mid-service.
+- The kiosk writes sessions exactly as the phone does — anonymous, no student
+  login, nothing that ties a flower to a person (§12). The TV shows counts and
+  flowers only, never anything traceable, because it is a screen in a room full
+  of people.
+- The kiosk auto-resets to its idle screen 20 seconds after a result, so a
+  student who walks off does not leave their answer up for the next person.
+
 **Export and cleanup**
 - Export two CSVs honouring the current filters: one row per session, and one row per answer. UTF-8 with a BOM so Excel opens Thai correctly. Filenames include the date.
 - Delete a single session, and a "ลบข้อมูลทั้งหมด" action that requires typing a confirmation word. The council should wipe the data once the school report is done.
@@ -452,11 +479,41 @@ Recorded here so they are not re-litigated later.
 | Node runtime | **22 LTS.** Node 20 is past end-of-life and `better-sqlite3` 13 requires `>= 22`. | 2026-09-19 |
 | Auto-advance vs ไปต่อ (§9) | **Auto-advance.** Bottom button appears only on Q8, labelled มาดูผลกัน. | 2026-09-19 |
 | Devices | iPhone **and iPad** Safari must both look good — added to §6's layout rule. | 2026-09-19 |
+| Booth devices | **Two**, not one: a kiosk for answering and a TV for live visualisation. Both landscape, both behind a booth account. See §11. | 2026-09-19 |
+| Booth password | Set and reset from the admin panel, stored hashed, shown once on generation. | 2026-09-19 |
+
+## Event facts
+
+From the approved project document (โครงการ CUD Mental Health Week), at
+โรงเรียนสาธิตจุฬาลงกรณ์มหาวิทยาลัย ฝ่ายมัธยม. All three booths run
+**11.10–12.50 น.** in **โถงโรงอาหาร**.
+
+| Booth | Dates | Wellbeing theme |
+|---|---|---|
+| ลอยกระทง | 19–20 พ.ย. 2569 | การปล่อยวางความทุกข์ และการจัดการความรู้สึกเชิงลบ |
+| คริสต์มาส | 8–9 ธ.ค. 2569 | การสร้างความหวังในชีวิต และการจัดการความรู้สึกเมื่อเกิดความผิดหวัง |
+| ตรุษจีน & วาเลนไทน์ | 10–11 ก.พ. 2570 | การให้ความรู้สึกรัก และการปรับตัวให้เข้ากับทุกรูปแบบความสัมพันธ์ |
+
+The document also names the booth quiz — **"คุณเป็นดอกไม้แบบไหน?"** — and lists
+the Loy Krathong activities it belongs to: a mini-krathong zone, a post-it wall,
+the flower quiz, แปะดอกไม้แทนความรู้สึก, and an origami workshop. The TV river of
+flowers is built to mirror แปะดอกไม้แทนความรู้สึก on screen.
+
+**Two dates need confirming.** The document's schedule section and its Gantt
+table disagree, and the schedule section is used because it also carries the
+time and place:
+
+| Booth | Schedule section | Gantt table |
+|---|---|---|
+| ลอยกระทง | 19–20 พ.ย. 2569 | 19–24 พ.ย. 2569 |
+| ตรุษจีน & วาเลนไทน์ | 10–11 ก.พ. 2570 | 10–12 ก.พ. 2570 |
 
 ## Still needed from the student council
 
-- Booth dates for the `[วันที่จัดบูธ]` placeholder.
+- **Confirm the two contradictory dates above.**
 - CUD Care's real contact channels (the `#cud-care` link).
-- The three remaining Loy Krathong flower results (ดาวเรือง is written).
-- Review of the 7 drafted check-in questions.
-- Content for the Christmas and ตรุษจีน & วาเลนไทน์ booths.
+- The three remaining Loy Krathong flowers. ดาวเรือง is written; the booth can
+  only hand out what it stocks, so the other three are numbered placeholders.
+- Review of the 7 drafted check-in questions and the 3 drafted booth questions.
+- Quiz content for the Christmas and ตรุษจีน & วาเลนไทน์ booths. Their
+  activities are known from the project document, but no quiz or results exist.

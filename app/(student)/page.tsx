@@ -5,7 +5,7 @@ import { FestivalSection } from '@/components/ui/FestivalSection';
 import { Screen } from '@/components/ui/Screen';
 import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
 import { festivalOrder, festivals } from '@/content/th/booth';
-import { common, home, placeholders } from '@/content/th/common';
+import { common, home } from '@/content/th/common';
 import { getActiveFestival } from '@/lib/festival';
 
 import styles from './home.module.css';
@@ -21,7 +21,7 @@ export default function HomePage() {
       ? {
           name: theme.name,
           blurb: theme.home.blurb,
-          date: placeholders.boothDate,
+          date: theme.date,
           playLabel: common.actions.playBooth,
           href: '/booth',
         }

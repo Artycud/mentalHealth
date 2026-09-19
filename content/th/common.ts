@@ -9,11 +9,20 @@
  * conversational. Not a wellness app, not corporate.
  */
 
-/** Placeholders the student council fills in. Never invent these (§15). */
+/**
+ * Facts from the approved project document (โครงการ CUD Mental Health Week).
+ * Booth dates now live per-festival in booth.ts; these are the shared ones.
+ */
+export const eventFacts = {
+  /** Same slot for all three booths. */
+  boothTime: '11.10–12.50 น.',
+  /** โถงโรงอาหาร — the canteen hall. */
+  boothPlace: 'โถงโรงอาหาร',
+} as const;
+
+/** Still awaiting the council. Never invent these (§15). */
 export const placeholders = {
-  /** Booth date, e.g. "12–14 พ.ย." — awaiting council. */
-  boothDate: '[วันที่จัดบูธ]',
-  /** CUD Care contact channels — awaiting council. Anchor until then. */
+  /** CUD Care contact channels. Anchor until then. */
   cudCareHref: '#cud-care',
 } as const;
 
@@ -74,7 +83,7 @@ export const errors = {
   },
   noBooth: {
     title: 'หน้านี้จะเปิดตอนมีบูธ',
-    body: `แล้วเจอกันที่โรงอาหาร ${placeholders.boothDate}`,
+    body: `แล้วเจอกันที่${eventFacts.boothPlace}`,
     action: common.actions.home,
   },
 } as const;

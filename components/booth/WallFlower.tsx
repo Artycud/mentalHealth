@@ -1,0 +1,49 @@
+/**
+ * A compact flower mark for the TV wall and the distribution bars.
+ *
+ * Same construction as the full marigold — overlapping petals, multiplied, a
+ * dotted ring, three ink dots — reduced to a mark that stays legible at 60px
+ * across a room. Tints are palette pairings only; no new colours (BRIEF §4).
+ */
+
+const TINTS: { outer: string; inner: string }[] = [
+  { outer: 'var(--accent)', inner: 'var(--riso-pink)' }, // ดาวเรือง
+  { outer: 'var(--riso-pink)', inner: 'var(--riso-blue)' },
+  { outer: 'var(--riso-blue)', inner: 'var(--accent)' },
+  { outer: 'var(--riso-pink)', inner: 'var(--accent)' },
+];
+
+/** 8 outer petals and 6 inner, on the same geometry as the full illustration. */
+const OUTER = Array.from({ length: 8 }, (_, i) => {
+  const a = (i / 8) * Math.PI * 2;
+  return [50 + Math.cos(a) * 26, 50 + Math.sin(a) * 26] as const;
+});
+
+const INNER = Array.from({ length: 6 }, (_, i) => {
+  const a = (i / 6) * Math.PI * 2 + 0.4;
+  return [50 + Math.cos(a) * 14, 50 + Math.sin(a) * 14] as const;
+});
+
+export function WallFlower({ tint, size = 72 }: { tint: 0 | 1 | 2 | 3; size?: number }) {
+  const { outer, inner } = TINTS[tint];
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      {OUTER.map(([cx, cy]) => (
+        <circle key={`o${cx}${cy}`} cx={cx} cy={cy} r="17" fill={outer} className="mul" />
+      ))}
+      {INNER.map(([cx, cy]) => (
+        <circle
+          key={`i${cx}${cy}`}
+          cx={cx}
+          cy={cy}
+          r="14"
+          fill={inner}
+          opacity="0.55"
+          className="mul"
+        />
+      ))}
+      <circle cx="50" cy="50" r="44" className="ln-dot" />
+      <path d="M46 48 L46.1 48 M52 53 L52.1 53 M54 45 L54.1 45" className="ln" />
+    </svg>
+  );
+}

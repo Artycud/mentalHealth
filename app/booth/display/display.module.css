@@ -1,0 +1,227 @@
+/* Booth TV display — landscape, read at a distance, never touched.
+   Sizes are in vh so the whole screen scales with whatever it is cast to,
+   from a 1280×720 projector to a 4K panel. */
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  padding: 3.2vh 3.5vw;
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+  overflow: clip;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1vh;
+  font-family: var(--font-heading);
+  font-size: 2.4vh;
+  font-weight: 500;
+}
+
+.brand svg {
+  width: 4.4vh;
+  height: auto;
+}
+
+.when {
+  font-family: var(--font-heading);
+  font-size: 2.4vh;
+  font-weight: 500;
+}
+
+.dot {
+  color: var(--ink-soft);
+  padding: 0 0.6vw;
+}
+
+/* Headline block */
+.intro {
+  flex-shrink: 0;
+  margin-top: 2.4vh;
+}
+
+.note {
+  font-family: var(--font-note);
+  font-size: 3vh;
+  line-height: 1.4;
+  color: var(--note-pink);
+}
+
+.title {
+  margin-top: 0.4vh;
+  font-size: 8.4vh;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Counts + distribution */
+/* Grows to absorb the leftover height and centres itself in it, so the screen
+   does not read as a top-heavy block above a band of empty paper. */
+.middle {
+  display: flex;
+  align-items: center;
+  gap: 4vw;
+  margin-top: 3.4vh;
+  flex-grow: 1;
+}
+
+.count {
+  flex-shrink: 0;
+}
+
+.countNum {
+  font-family: var(--font-heading);
+  font-size: 15vh;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.countLabel {
+  margin-top: 0.6vh;
+  font-size: 2.8vh;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2.4vh;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 1.4vw;
+}
+
+.barName {
+  width: 11vw;
+  flex-shrink: 0;
+  font-size: 2.9vh;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: right;
+}
+
+/* A plain div bar, no chart library (BRIEF §11).
+   display:block matters: these are spans, and height has no effect on an
+   inline box, so the fill rendered at zero height and the bars looked empty. */
+.barTrack {
+  display: block;
+  position: relative;
+  flex-grow: 1;
+  height: 4.6vh;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.barCount {
+  width: 4vw;
+  flex-shrink: 0;
+  font-family: var(--font-heading);
+  font-size: 3.6vh;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The river: the fun part, and the one place this screen moves. */
+.river {
+  position: relative;
+  flex-shrink: 0;
+  height: 30vh;
+  margin-top: 2vh;
+}
+
+.water {
+  position: absolute;
+  left: -3.5vw;
+  right: -3.5vw;
+  bottom: 0;
+  height: 100%;
+}
+
+.floats {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1vw;
+  padding-bottom: 3vh;
+}
+
+.float {
+  animation: bob 4s ease-in-out infinite;
+}
+
+.float svg {
+  width: 12vh;
+  height: auto;
+}
+
+/* Gentle bob, so the screen reads as live rather than frozen. Deliberately the
+   only looping motion in the product, and confined to the TV — §9's "nothing
+   loops or floats" governs the student phone screens, where motion must mean
+   "you did something". A wall display with no life at all looks broken. */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.2vh);
+  }
+}
+
+.foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  font-size: 2vh;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* Shown only while the numbers are invented. */
+.sample {
+  padding: 0.4vh 1.2vw;
+  border: 2px dashed var(--note-pink);
+  border-radius: 999px;
+  color: var(--note-pink);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float {
+    animation: none;
+  }
+}

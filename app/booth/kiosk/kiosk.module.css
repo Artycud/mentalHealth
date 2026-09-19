@@ -1,0 +1,290 @@
+/* Booth kiosk — the device students actually touch. Landscape iPad or laptop,
+   standing up, in a queue, often with someone watching over their shoulder.
+   Sized in vh like the TV so it fills whatever it runs on. */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  padding: 3.5vh max(4vw, env(safe-area-inset-left)) max(3.5vh, env(safe-area-inset-bottom))
+    max(4vw, env(safe-area-inset-right));
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+  overflow: clip;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1vh;
+  font-family: var(--font-heading);
+  font-size: 2.2vh;
+  font-weight: 500;
+}
+
+.brand svg {
+  width: 4vh;
+  height: auto;
+}
+
+/* Progress: 3 questions, same ink/pink/track language as the phone (§7). */
+.segments {
+  display: flex;
+  gap: 0.8vw;
+  width: 22vw;
+}
+
+.segment {
+  flex-grow: 1;
+  height: 1.2vh;
+  border-radius: 999px;
+  background: var(--track);
+  transition: background-color var(--d-color) var(--ease);
+}
+
+.done {
+  background: var(--ink);
+}
+
+.current {
+  background: var(--riso-pink);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* Idle: text left, flower right, so the screen invites someone over rather
+   than sitting as a block of text in the middle of a canteen. */
+.idle {
+  display: flex;
+  align-items: center;
+  gap: 4vw;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.idleText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  width: 52%;
+}
+
+.idleArt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.idleArt svg {
+  width: 100%;
+  max-height: 58vh;
+  height: auto;
+}
+
+/* Sized to its label, not the full width — a full-bleed bar reads as a banner
+   rather than something to press. */
+.start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 9vh;
+  margin-top: 4vh;
+  padding: 0 4vw;
+  border-radius: 3vh 3vh 3vh 1vh;
+  background: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 3.6vh;
+  font-weight: 500;
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.start:active {
+  transform: scale(0.98);
+}
+
+.note {
+  font-family: var(--font-note);
+  font-size: 2.8vh;
+  line-height: 1.4;
+  color: var(--note-pink);
+}
+
+.question {
+  margin-top: 0.8vh;
+  font-size: 7vh;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+/* Two columns: four answers reachable without scrolling, each big enough to
+   hit while standing. */
+.answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vh 2vw;
+  margin-top: 4vh;
+}
+
+.answer {
+  display: flex;
+  align-items: center;
+  gap: 1.6vw;
+  min-height: 13vh;
+  padding: 2vh 2.4vw;
+  border: 3px solid var(--line);
+  border-radius: 3vh;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 3.4vh;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  transition:
+    background-color var(--d-color) var(--ease),
+    border-color var(--d-color) var(--ease),
+    transform var(--d-tap) var(--ease);
+}
+
+.answer:active {
+  transform: scale(0.985);
+}
+
+.selected {
+  border-color: var(--ink);
+  background: var(--pink-tint);
+}
+
+.answer svg {
+  width: 6vh;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.answerLabel {
+  flex-grow: 1;
+  text-wrap: balance;
+}
+
+.foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  padding-top: 2.5vh;
+  font-size: 2vh;
+  color: var(--ink-muted);
+}
+
+/* ---- Result ---- */
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: 4vw;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.resultText {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 46%;
+}
+
+.flowerName {
+  margin-top: 0.5vh;
+  font-size: 11vh;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.resultBody {
+  margin-top: 1.5vh;
+  font-size: 3vh;
+  line-height: 1.6;
+}
+
+.ticket {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  margin-top: 3vh;
+  padding: 2.4vh 2.4vw;
+  border: 3px dashed var(--ink);
+  border-radius: 3vh;
+  background: var(--sun-tint);
+}
+
+.ticketTitle {
+  font-size: 3.4vh;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.ticketBody {
+  font-size: 2.6vh;
+  line-height: 1.6;
+}
+
+.resultArt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.resultArt svg {
+  width: 100%;
+  max-height: 62vh;
+  height: auto;
+}
+
+/* Full-width so the next student in the queue cannot miss it. */
+.again {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 9vh;
+  margin-top: 2vh;
+  border-radius: 3vh 3vh 3vh 1vh;
+  background: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 3.4vh;
+  font-weight: 500;
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.again:active {
+  transform: scale(0.99);
+}
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+}

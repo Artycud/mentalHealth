@@ -31,7 +31,7 @@ export default function BoothPage() {
     );
   }
 
-  const flower = loykrathongFlowers.marigold;
+  const flower = loykrathongFlowers[0];
 
   return (
     <div className={styles.page}>
