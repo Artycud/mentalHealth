@@ -12,6 +12,7 @@ import { Screen } from '@/components/ui/Screen';
 import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
 import { flowerFromChoices, loykrathongQuiz, withDok, type Flower } from '@/content/th/booth';
 import { common } from '@/content/th/common';
+import { createTracker } from '@/lib/track';
 
 import styles from './booth.module.css';
 
@@ -35,6 +36,8 @@ interface BoothPhoneProps {
 export function BoothPhone({ label, resultNote, ticketTitle, where }: BoothPhoneProps) {
   const router = useRouter();
   const [flower, setFlower] = useState<Flower | null>(null);
+  // One per run. Going back from a result to play again makes a new one.
+  const [tracker, setTracker] = useState(() => createTracker('booth'));
 
   const quiz = useMemo<QuizQuestion[]>(
     () =>
@@ -51,7 +54,10 @@ export function BoothPhone({ label, resultNote, ticketTitle, where }: BoothPhone
   // of appearing to do nothing. The quiz itself owns history while it is showing.
   useEffect(() => {
     if (!flower) return;
-    const back = () => setFlower(null);
+    const back = () => {
+      setFlower(null);
+      setTracker(createTracker('booth'));
+    };
     window.addEventListener('popstate', back);
     return () => window.removeEventListener('popstate', back);
   }, [flower]);
@@ -61,8 +67,11 @@ export function BoothPhone({ label, resultNote, ticketTitle, where }: BoothPhone
       <PhoneQuiz
         questions={quiz}
         finishLabel={common.actions.seeResult}
+        onStart={() => tracker.start()}
+        onAnswer={(a) => tracker.answer(a.questionId, a.choiceId)}
         onExit={() => router.push('/')}
         onFinish={(answers) => {
+          tracker.complete();
           const result = flowerFromChoices(answers);
           if (!result) return; // unreachable: the quiz only finishes complete
           // A history entry for the result, so back has something to pop.

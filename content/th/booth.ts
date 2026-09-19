@@ -343,6 +343,12 @@ export const boothNext = {
   ],
 } as const;
 
+/** Copy for the TV. */
+export const tv = {
+  /** On the water before anyone has played today. */
+  empty: 'ยังไม่มีใครเล่นวันนี้ มาเป็นคนแรกเลย',
+} as const;
+
 /** Copy for the kiosk, which is read standing up by a queue. */
 export const kiosk = {
   idleTitle: 'คุณเป็นดอกไม้แบบไหน?',

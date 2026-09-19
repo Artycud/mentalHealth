@@ -24,6 +24,7 @@ import {
 } from '@/content/th/booth';
 import { common } from '@/content/th/common';
 import type { EventText } from '@/lib/events';
+import { createTracker, type Tracker } from '@/lib/track';
 
 import styles from './kiosk.module.css';
 
@@ -56,12 +57,16 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
   const [picked, setPicked] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // One per student. It starts when they press start and is dropped on reset, so
+  // the next student is a new, unrelated session (BRIEF §3, §12).
+  const tracker = useRef<Tracker | null>(null);
 
   // A pending move must never fire after the kiosk has been reset or unmounted.
   useEffect(() => () => clearTimeout(advance.current), []);
 
   const reset = useCallback(() => {
     clearTimeout(advance.current);
+    tracker.current = null;
     setPicked(null);
     setStage({ kind: 'idle' });
   }, []);
@@ -70,6 +75,7 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
    *  runs the timer. Resetting `remaining` inside the effect instead would set
    *  state during render and cascade an extra render every time. */
   const finish = useCallback((answers: BoothAnswer[]) => {
+    tracker.current?.complete();
     setRemaining(kiosk.resetSeconds);
     setStage({ kind: 'result', answers });
   }, []);
@@ -162,7 +168,11 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
               type="button"
               className={styles.start}
               style={{ color: 'var(--white)' }}
-              onClick={() => setStage({ kind: 'quiz', step: 0, answers: [], dir: 1 })}
+              onClick={() => {
+                tracker.current = createTracker('booth');
+                tracker.current.start();
+                setStage({ kind: 'quiz', step: 0, answers: [], dir: 1 });
+              }}
             >
               {kiosk.idleAction}
             </button>
@@ -212,6 +222,7 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
                   onClick={() => {
                     if (picked) return; // one tap per question
                     setPicked(choice.id);
+                    tracker.current?.answer(question.id, choice.id);
                     const answers = [...stage.answers, { axis: question.axis, value: choice.value }];
                     advance.current = setTimeout(() => {
                       setPicked(null);

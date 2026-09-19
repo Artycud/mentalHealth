@@ -14,12 +14,16 @@
     "test:dates": "node --experimental-strip-types --no-warnings scripts/test-thai-date.mjs",
     "check:booth": "node --experimental-strip-types --no-warnings scripts/check-booth-scoring.mjs",
     "test:scoring": "node --experimental-strip-types --no-warnings scripts/test-scoring.mjs",
-    "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e-phone.mjs"
+    "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e-phone.mjs",
+    "test:db": "node --experimental-strip-types --no-warnings scripts/test-db.mjs",
+    "db:reset": "node -e \"for(const f of ['app.db','app.db-journal','app.db-wal','app.db-shm'])require('fs').rmSync('data/'+f,{force:true});console.log('data/app.db removed')\""
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "next": "16.3.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^22",

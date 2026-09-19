@@ -1,3 +1,5 @@
+import { connection } from 'next/server';
+
 import { HomeScene } from '@/components/illustrations/scenes';
 import { PrimaryButton } from '@/components/ui/buttons';
 import { CudCareBlock } from '@/components/ui/CudCareBlock';
@@ -7,14 +9,19 @@ import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
 import { festivalOrder, festivals } from '@/content/th/booth';
 import { common, home } from '@/content/th/common';
 import { getEventText } from '@/lib/events';
-import { getActiveFestival } from '@/lib/festival';
+import { getActiveFestival } from '@/lib/settings';
 
 import styles from './home.module.css';
 
 /** Keep it this short: the student came from a QR code, so get them in (BRIEF §8). */
-export default function HomePage() {
-  const active = getActiveFestival();
+export default async function HomePage() {
+  // Which booth is live, and when it runs, can change at any moment from the admin
+  // panel, so this page is built per request and never prerendered. (`connection`
+  // is how Next.js says so; the database read below does not, by itself.)
+  await connection();
+  const active = await getActiveFestival();
   const theme = active === 'none' ? undefined : festivals[active];
+  const event = active === 'none' ? undefined : await getEventText(active);
 
   // A festival with no content yet shows only the next-booth pills (§8).
   const live =
@@ -22,7 +29,7 @@ export default function HomePage() {
       ? {
           name: theme.name,
           blurb: theme.home.blurb,
-          date: getEventText(active).date,
+          date: event?.date ?? '',
           playLabel: common.actions.playBooth,
           href: '/booth',
         }

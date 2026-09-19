@@ -239,6 +239,19 @@
   height: 58%;
 }
 
+/* Before the first result of the day the river is just water; this says why, and
+   invites the first player. */
+.emptyRiver {
+  position: absolute;
+  inset: 0 0 12% 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-note);
+  font-size: 3.4vh;
+  color: var(--note-pink);
+}
+
 /* Two copies of the same row, end to end. Sliding by exactly one copy (half of
    the track) puts the second where the first began, so the loop never jumps.
    will-change lets the browser paint it once and just move it: the flowers use

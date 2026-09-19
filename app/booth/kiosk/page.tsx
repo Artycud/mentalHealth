@@ -1,7 +1,9 @@
+import { connection } from 'next/server';
+
 import { festivals } from '@/content/th/booth';
 import { errors } from '@/content/th/common';
 import { getEventText } from '@/lib/events';
-import { getActiveFestival } from '@/lib/festival';
+import { getActiveFestival } from '@/lib/settings';
 
 import { Kiosk } from './Kiosk';
 import styles from './kiosk.module.css';
@@ -13,8 +15,12 @@ import styles from './kiosk.module.css';
  * is a database to hold the booth account's hashed password and the sessions.
  * See BRIEF.md for the agreed booth-account design.
  */
-export default function BoothKioskPage() {
-  const active = getActiveFestival();
+export default async function BoothKioskPage() {
+  // Which booth is live, and when it runs, can change at any moment from the admin
+  // panel, so this page is built per request and never prerendered. (`connection`
+  // is how Next.js says so; the database read below does not, by itself.)
+  await connection();
+  const active = await getActiveFestival();
   const theme = active === 'none' ? undefined : festivals[active];
 
   if (active === 'none' || !theme?.ready) {
@@ -28,5 +34,5 @@ export default function BoothKioskPage() {
     );
   }
 
-  return <Kiosk theme={theme} event={getEventText(active)} />;
+  return <Kiosk theme={theme} event={await getEventText(active)} />;
 }

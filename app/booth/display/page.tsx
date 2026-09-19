@@ -1,11 +1,14 @@
+import { connection } from 'next/server';
+
 import { CountBlob, Waves } from '@/components/booth/art';
+import { AutoRefresh } from '@/components/booth/AutoRefresh';
 import { tintInk, WallFlower } from '@/components/booth/WallFlower';
 import { Wordmark } from '@/components/illustrations/icons';
-import { boothQuizTitle, festivals } from '@/content/th/booth';
+import { boothQuizTitle, festivals, tv } from '@/content/th/booth';
 import { common } from '@/content/th/common';
-import { getWallData } from '@/lib/booth-wall';
+import { demoWallData, getWallData } from '@/lib/booth-wall';
 import { getEventText } from '@/lib/events';
-import { getActiveFestival } from '@/lib/festival';
+import { getActiveFestival } from '@/lib/settings';
 
 import styles from './display.module.css';
 
@@ -22,10 +25,13 @@ import styles from './display.module.css';
  * Anonymous by construction (BRIEF §12). Counts and flowers only, never a name,
  * a class or anything traceable — this is a screen in a room full of people.
  */
-export default function BoothDisplayPage() {
-  const active = getActiveFestival();
+export default async function BoothDisplayPage(props: PageProps<'/booth/display'>) {
+  // Which booth is live, and when it runs, can change at any moment from the admin
+  // panel, so this page is built per request and never prerendered. (`connection`
+  // is how Next.js says so; the database read below does not, by itself.)
+  await connection();
+  const active = await getActiveFestival();
   const theme = active === 'none' ? undefined : festivals[active];
-  const wall = getWallData();
 
   if (active === 'none' || !theme?.ready) {
     return (
@@ -43,8 +49,17 @@ export default function BoothDisplayPage() {
     );
   }
 
-  const event = getEventText(active);
+  // `?demo=1` shows invented numbers so the design can be reviewed before there is
+  // any real data. It works only outside production: on the real TV the query is
+  // ignored, so nobody can put made-up figures on the wall.
+  const { demo } = await props.searchParams;
+  const showDemo = demo === '1' && process.env.NODE_ENV !== 'production';
+
+  const wall = showDemo ? demoWallData() : await getWallData(active);
+  const event = await getEventText(active);
   const max = Math.max(...wall.flowers.map((f) => f.count), 1);
+
+  const empty = wall.recent.length === 0;
 
   // The river shows the same flowers twice, end to end, and slides by exactly
   // one copy — so the loop has no seam. Each copy is at least a screen wide.
@@ -52,6 +67,8 @@ export default function BoothDisplayPage() {
 
   return (
     <main className={styles.stage}>
+      {/* Polls the server so the numbers stay current. */}
+      <AutoRefresh />
       <div className={styles.head}>
         <span className={styles.brand}>
           <Wordmark />
@@ -125,12 +142,13 @@ export default function BoothDisplayPage() {
         <div className={styles.water}>
           <Waves />
         </div>
+        {empty && <p className={styles.emptyRiver}>{tv.empty}</p>}
         <div className={styles.track}>
           {river.map((copy) => (
             <div key={copy} className={styles.set} aria-hidden={copy === 1}>
               {wall.recent.map((r, i) => (
                 <span
-                  key={`${copy}-${r.id}`}
+                  key={`${copy}-${i}-${r.tint}`}
                   className={styles.float}
                   style={{ animationDelay: `${-(i % 5) * 0.8}s` }}
                 >
