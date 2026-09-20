@@ -1,0 +1,778 @@
+/* The admin panel (BRIEF §11): for the student council, and denser than the student
+   pages on purpose. Same paper, inks and fonts; 8px radii, 13 to 15px text, real
+   tables and tight rows. No illustrations. One small accent (the wordmark and a
+   marigold rule under the title). The only motion is the 180ms open and close. */
+
+.root {
+  min-height: 100dvh;
+  padding: 0 max(16px, env(safe-area-inset-left)) 64px max(16px, env(safe-area-inset-right));
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin-inline: auto;
+}
+
+/* ---- header ---- */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 18px 0 12px;
+  border-bottom: 2px solid var(--sunflower);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.brandSub {
+  padding-left: 10px;
+  border-left: 1.5px solid var(--line);
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.linkButton {
+  min-height: 36px;
+  padding: 0 4px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- layout ---- */
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 860px) {
+  .grid2 {
+    grid-template-columns: 1.15fr 1fr;
+  }
+}
+
+.section {
+  margin-top: 14px;
+}
+
+.card {
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--paper-raised);
+  box-shadow: var(--slab-shadow);
+}
+
+.card h2,
+.h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.hint {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* ---- summary strip ---- */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 720px) {
+  .summary {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.stat {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--paper-raised);
+  box-shadow: var(--slab-shadow);
+}
+
+.statValue {
+  /* The body face, not the heading one: the heading font draws a zero as a slashed
+     "Ø", which is confusing in a table of statistics. */
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+
+.statWide {
+  grid-column: span 2;
+}
+
+/* ---- forms ---- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.input,
+.select {
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--pill-line);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.input:focus-visible,
+.select:focus-visible {
+  outline-offset: 1px;
+}
+
+.button {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  background: var(--track);
+  color: var(--ink-muted);
+  cursor: default;
+}
+
+.buttonQuiet {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.buttonDanger {
+  background: var(--note-pink);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.msg {
+  min-height: 20px;
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+/* Nothing to say yet: take up no room. */
+.msg:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+.ok {
+  color: var(--ink-soft);
+}
+
+.bad {
+  color: var(--note-pink);
+  font-weight: 500;
+}
+
+.note {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--pink-tint);
+  font-size: 13px;
+}
+
+.note a {
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+/* ---- theme control ---- */
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--track);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.choiceOn {
+  background: var(--pink-tint);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tagQuiet {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--pill-line);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* ---- events ---- */
+
+.eventList {
+  display: grid;
+  gap: 10px;
+}
+
+.event {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1.5px solid var(--line);
+}
+
+.event:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.eventName {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.eventFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .eventFields {
+    grid-template-columns: 150px 150px 1fr 1fr auto;
+    align-items: end;
+  }
+}
+
+/* ---- booth account ---- */
+
+.secret {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--sun-tint);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.secretValue {
+  display: block;
+  margin: 4px 0;
+  font: 600 26px/1.2 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: 0.06em;
+  user-select: all;
+}
+
+/* ---- charts ---- */
+
+.chartTitle {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.days {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+  padding-top: 18px;
+  overflow-x: auto;
+}
+
+.day {
+  display: flex;
+  flex: 0 0 34px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.dayBar {
+  position: relative;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.dayFill {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: var(--riso-pink);
+}
+
+.dayCount {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.bars {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: minmax(90px, 40%) 1fr 72px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.barLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--riso-blue);
+}
+
+.barPink {
+  background: var(--riso-pink);
+}
+
+.barSun {
+  background: var(--sunflower);
+}
+
+.barNum {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.questions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+@media (min-width: 860px) {
+  .questions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.qCard {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--paper-raised);
+  box-shadow: var(--slab-shadow);
+}
+
+.qHead {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.qMeta {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.empty {
+  padding: 14px 0;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+/* ---- filters ---- */
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+
+@media (min-width: 860px) {
+  .filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(3, minmax(0, 1fr)) auto;
+  }
+}
+
+.filterActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 860px) {
+  .filterActions {
+    grid-column: auto;
+  }
+}
+
+/* ---- sessions list ---- */
+
+.listTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.seg {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--track);
+}
+
+.segBtn {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.segOn {
+  background: var(--paper-raised);
+  box-shadow: 0 1px 0 var(--line);
+  font-weight: 600;
+}
+
+.group {
+  margin-top: 8px;
+  border-radius: 8px;
+  background: var(--paper-raised);
+  box-shadow: var(--slab-shadow);
+}
+
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  text-align: left;
+}
+
+.chev {
+  flex: 0 0 auto;
+  width: 14px;
+  color: var(--ink-soft);
+  transition: transform 180ms var(--ease);
+}
+
+.chevOpen {
+  transform: rotate(90deg);
+}
+
+.groupTitle {
+  font-family: var(--font-heading);
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.groupMeta {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* Open and close: rows grow from 0 to their height in 180ms (the panel's only motion).
+   `visibility` waits out the close so a hidden row can never be tabbed into. */
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 180ms var(--ease),
+    visibility 0s linear 180ms;
+}
+
+.panelOpen {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows 180ms var(--ease),
+    visibility 0s;
+}
+
+.panelInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.subHead {
+  margin: 0;
+  padding: 6px 14px 2px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.sess {
+  border-top: 1.5px solid var(--line);
+}
+
+.sessRow {
+  display: grid;
+  grid-template-columns: 16px 46px 70px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 6px 14px;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+@media (max-width: 640px) {
+  .sessRow {
+    grid-template-columns: 16px 46px 1fr;
+  }
+  .sessCells {
+    grid-column: 3;
+  }
+  .sessEnd {
+    grid-column: 3;
+  }
+}
+
+.sessCells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  min-width: 0;
+}
+
+.sessEnd {
+  display: flex;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--track);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.chipOpen {
+  background: var(--sun-tint);
+}
+
+.detail {
+  padding: 4px 14px 12px 40px;
+}
+
+.table {
+  width: 100%;
+  max-width: 720px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.detailTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+
+.mono {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 12.5px;
+}
+
+.small {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+/* ---- export and danger ---- */
+
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.download {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.download:hover {
+  color: var(--white);
+}
+
+/* ---- login ---- */
+
+.loginWrap {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 380px;
+  padding: 22px 22px 20px;
+  border-radius: 8px;
+  background: var(--paper-raised);
+  box-shadow: var(--slab-shadow);
+}
+
+.loginCard h1 {
+  margin: 8px 0 14px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.loginForm {
+  display: grid;
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panelOpen,
+  .chev {
+    transition: none;
+  }
+}

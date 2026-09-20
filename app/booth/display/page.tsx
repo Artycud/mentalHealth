@@ -10,6 +10,7 @@ import { boothQuizTitle, festivals, tv } from '@/content/th/booth';
 import { common } from '@/content/th/common';
 import { demoWallData, getWallData } from '@/lib/booth-wall';
 import { getEventText } from '@/lib/events';
+import { requireBooth } from '@/lib/guard';
 import { riverDepth } from '@/lib/river';
 import { getActiveFestival } from '@/lib/settings';
 
@@ -33,6 +34,7 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
   // panel, so this page is built per request and never prerendered. (`connection`
   // is how Next.js says so; the database read below does not, by itself.)
   await connection();
+  await requireBooth('/booth/display');
   const active = await getActiveFestival();
   const theme = active === 'none' ? undefined : festivals[active];
 

@@ -40,13 +40,13 @@ const one = async (sql, args = []) => (await c.execute({ sql, args })).rows[0];
 // ---- 1. Schema and seed ----
 {
   const tables = (await c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")).rows.map((r) => r.name).sort();
-  eq('the four tables exist', tables.filter((t) => t !== 'sqlite_sequence'), ['answer', 'event', 'session', 'setting']);
+  eq('the five tables exist', tables.filter((t) => t !== 'sqlite_sequence'), ['answer', 'auth_lock', 'event', 'session', 'setting']);
   eq('the live festival is seeded as Loy Krathong', await getActiveFestival(), 'loykrathong');
 
   // Privacy by construction (BRIEF sections 3 and 12): no column could hold a
   // person. If someone adds one, this fails.
   const columns = [];
-  for (const t of ['session', 'answer', 'setting', 'event']) {
+  for (const t of ['session', 'answer', 'setting', 'event', 'auth_lock']) {
     for (const r of (await c.execute(`PRAGMA table_info(${t})`)).rows) columns.push(`${t}.${r.name}`);
   }
   const forbidden = /(^|\.)(name|student|class|grade|email|phone|ip|ip_address|user_agent|ua|note|comment|text|message|free)/i;

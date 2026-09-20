@@ -1,0 +1,86 @@
+/* The booth devices' sign-in: the base identity, sized for an iPad in landscape.
+   Big fields, one big button, in vh like the rest of the booth. The password field
+   shows what is typed on purpose: the password is made to be typed on a tablet
+   (no look-alike characters), and a mistyped hidden one is the common failure. */
+
+.stage {
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 4vh 4vw;
+  background: var(--paper-surface);
+  color: var(--ink);
+}
+
+.card {
+  width: min(92vw, 560px);
+  padding: 4vh 4vh 3.4vh;
+  border-radius: 20px 20px 20px 6px;
+  background: var(--paper-raised);
+  box-shadow: var(--slab-shadow);
+}
+
+.title {
+  margin: 1.4vh 0 0.4vh;
+  font-size: max(26px, 3.6vh);
+  font-weight: 600;
+}
+
+.note {
+  margin: 0 0 2.4vh;
+  color: var(--ink-soft);
+  font-size: max(16px, 2vh);
+}
+
+.form {
+  display: grid;
+  gap: 2vh;
+}
+
+.field {
+  display: grid;
+  gap: 0.6vh;
+  color: var(--ink-soft);
+  font-size: max(15px, 1.9vh);
+}
+
+.input {
+  width: 100%;
+  min-height: max(52px, 7vh);
+  padding: 0 16px;
+  border: 2px solid var(--pill-line);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: max(20px, 2.8vh);
+}
+
+.button {
+  min-height: max(56px, 7.6vh);
+  border-radius: 20px 20px 20px 6px;
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-heading);
+  font-size: max(20px, 2.8vh);
+  font-weight: 500;
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  background: var(--track);
+  color: var(--ink-muted);
+}
+
+.error {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--note-pink);
+  font-size: max(16px, 2vh);
+  font-weight: 500;
+}

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CUD Mental Health Week: school server guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* Printable A4. Source of docs/school-server-guide.pdf (npm run docs:guide). */
+  @page { size: A4; margin: 10mm 11mm; }
+  :root {
+    --ink: #1B2B5E; --soft: #46507A; --paper: #FCF1E6; --line: #E2D5C2;
+    --pink: #FF48B0; --blue: #0078BF; --sun: #FFB511; --code: #F6EBDC;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; color: var(--ink); background: #fff;
+    font: 8.6pt/1.42 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  .sheet { max-width: 190mm; margin: 0 auto; padding: 0; }
+
+  header {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 12mm;
+    padding: 4mm 5mm 3.4mm; margin-bottom: 3.5mm;
+    background: var(--paper); border-radius: 3mm 3mm 3mm 1mm;
+  }
+  h1 { margin: 0; font-size: 15.5pt; line-height: 1.15; letter-spacing: -0.01em; }
+  h1 small { display: block; font-size: 8.6pt; font-weight: 500; color: var(--soft); letter-spacing: 0; margin-top: 1mm; }
+  .for { font-size: 7.8pt; color: var(--soft); text-align: right; line-height: 1.35; white-space: nowrap; }
+  .dots { display: inline-flex; margin-right: 2mm; vertical-align: -1mm; }
+  .dots i { width: 4.2mm; height: 4.2mm; border-radius: 50%; display: block; }
+  .dots i:first-child { background: var(--pink); }
+  .dots i:last-child { background: var(--blue); margin-left: -1.6mm; mix-blend-mode: multiply; }
+
+  .flow {
+    display: flex; align-items: stretch; gap: 1.6mm; margin: 0 0 3.2mm;
+    font-size: 7.8pt; text-align: center;
+  }
+  .flow div { flex: 1; padding: 1.6mm 1.4mm; border: 1px solid var(--line); border-radius: 2mm; background: #fff; }
+  .flow b { display: block; font-size: 8.2pt; }
+  .flow span { color: var(--soft); }
+  .flow .arrow { flex: 0 0 auto; border: 0; background: none; padding: 0; align-self: center; color: var(--soft); font-size: 10pt; }
+  .flow .app { background: var(--sun); border-color: var(--sun); }
+  .flow .app span { color: var(--ink); }
+
+  .cols { column-count: 2; column-gap: 6mm; }
+  section { break-inside: avoid; margin: 0 0 3mm; }
+  h2 {
+    margin: 0 0 1.1mm; font-size: 10pt; line-height: 1.2;
+    padding-bottom: 0.7mm; border-bottom: 1.5px solid var(--sun);
+  }
+  h2 em { font-style: normal; color: var(--pink); margin-right: 1.4mm; }
+  p { margin: 0 0 1.3mm; }
+  ul { margin: 0 0 1.3mm; padding-left: 4.2mm; }
+  li { margin: 0 0 0.5mm; }
+  b, strong { font-weight: 650; }
+  pre {
+    margin: 0.6mm 0 1.6mm; padding: 1.5mm 2.2mm; background: var(--code); border-radius: 1.6mm;
+    font: 7.3pt/1.38 "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+    white-space: pre-wrap; word-break: break-word; break-inside: avoid; color: #1B2B5E;
+  }
+  code { font: 7.6pt "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace; background: var(--code); padding: 0 0.9mm; border-radius: 0.8mm; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .note { margin: 0.6mm 0 1.6mm; padding: 1.4mm 2.2mm; border-left: 1.2mm solid var(--pink); background: #FFF3F9; border-radius: 0 1.4mm 1.4mm 0; }
+  .ok { border-left-color: var(--blue); background: #EFF7FC; }
+  table { width: 100%; border-collapse: collapse; margin: 0.6mm 0 1.4mm; font-size: 8pt; }
+  th, td { text-align: left; vertical-align: top; padding: 0.9mm 1.4mm; border-bottom: 1px solid var(--line); }
+  th { color: var(--soft); font-weight: 600; font-size: 7.6pt; }
+  td:first-child { white-space: nowrap; font-weight: 600; }
+  footer { margin-top: 1mm; padding-top: 1.6mm; border-top: 1px solid var(--line); color: var(--soft); font-size: 7.5pt; display: flex; justify-content: space-between; gap: 6mm; }
+
+  @media screen {
+    body { background: #f3ece1; padding: 8mm 0; }
+    .sheet { background: #fff; padding: 9mm 10mm; box-shadow: 0 2mm 8mm rgba(27,43,94,.12); border-radius: 2mm; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<header>
+  <h1><span class="dots"><i></i><i></i></span>CUD Mental Health Week
+    <small>Putting the site on the school server, with the school's own domain</small></h1>
+  <div class="for">For the school's IT person<br>Time needed: about 1 hour<br>plus waiting for DNS and the certificate</div>
+</header>
+
+<div class="flow" aria-label="How it fits together">
+  <div><b>Students' phones</b><span>scan the QR code</span></div><div class="arrow">&#8594;</div>
+  <div><b>Your domain, HTTPS</b><span>Caddy (or nginx / IIS) on 80 and 443</span></div><div class="arrow">&#8594;</div>
+  <div class="app"><b>The app</b><span>one Node.js process, port 3000, this machine only</span></div><div class="arrow">&#8594;</div>
+  <div><b>data/app.db</b><span>one database file</span></div>
+</div>
+
+<div class="cols">
+
+<section>
+  <h2><em>1</em>What this is</h2>
+  <p>A small Thai-language website: a mood check-in, a flower quiz for the booth, a booth TV display, and a password-protected admin page for the student council. It is a single Node.js program (Next.js) with a one-file database. <b>Nothing else is needed:</b> no cloud account, no separate database server, and it makes no calls to outside services. Fonts are served by the app itself. The load is light: a few hundred students over a couple of hours.</p>
+  <p>It stores <b>no personal data</b>: no names, student IDs, IP addresses or free text. Only anonymous answers.</p>
+</section>
+
+<section>
+  <h2><em>2</em>What we need from you</h2>
+  <table>
+    <tr><td>A machine</td><td>Ubuntu 22.04+ or Debian 12 recommended (Windows: see 9). Always on during event days. 1 CPU, 1 GB RAM and 2 GB free disk is plenty.</td></tr>
+    <tr><td>A hostname</td><td>For example <code>mentalhealth.yourschool.ac.th</code>, with a DNS record pointing at the machine. <b>It must stay the same for the whole campaign: the QR codes are printed once.</b></td></tr>
+    <tr><td>HTTPS</td><td>A certificate for that name (step 5).</td></tr>
+    <tr><td>Network</td><td>Ports <b>80 and 443</b> reachable by the students' network. Only if students use mobile data, that means the internet too. <b>Port 3000 must not be exposed.</b></td></tr>
+    <tr><td>Access</td><td>Read access to the code (a GitHub deploy key, or a zip from the student council) and internet during setup only.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><em>3</em>Install</h2>
+  <p>Node.js <b>22 or newer</b> is required. On Ubuntu/Debian:</p>
+<pre>curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs git
+sudo useradd --system --create-home --shell /usr/sbin/nologin mentalhealth</pre>
+  <p>Get the code into <code>/home/mentalhealth/app</code> (either way works):</p>
+<pre>sudo -u mentalhealth git clone git@github.com:Artycud/mentalHealth.git /home/mentalhealth/app
+# or: unzip the project there, then: sudo chown -R mentalhealth: /home/mentalhealth/app</pre>
+<pre>cd /home/mentalhealth/app
+sudo -u mentalhealth npm ci
+sudo -u mentalhealth npm run build</pre>
+</section>
+
+<section>
+  <h2><em>4</em>Settings, then keep it running</h2>
+  <p>The admin login is set with one command. It asks for a username and a password (choose a long one, and give it to the council in person) and saves three lines into <code>.env.local</code>. Only a hash of the password is saved, never the password:</p>
+<pre>cd /home/mentalhealth/app
+sudo -u mentalhealth npm run admin:setup -- --write
+echo 'DATABASE_URL=file:./data/app.db' | sudo -u mentalhealth tee -a .env.local
+sudo chmod 600 .env.local</pre>
+  <p>The file then holds <code>ADMIN_USERNAME</code>, <code>ADMIN_PASSWORD_HASH</code>, <code>SESSION_SECRET</code> and <code>DATABASE_URL</code>. Run the command again any time to change the password (it signs everyone out of the panel).</p>
+  <p>Create <code>/etc/systemd/system/mentalhealth.service</code>. This starts it on boot and restarts it if it stops:</p>
+<pre>[Unit]
+Description=CUD Mental Health Week
+After=network.target
+
+[Service]
+User=mentalhealth
+WorkingDirectory=/home/mentalhealth/app
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload &amp;&amp; sudo systemctl enable --now mentalhealth</pre>
+</section>
+
+<section>
+  <h2><em>5</em>Domain and HTTPS (Caddy)</h2>
+  <p>Caddy is the simplest: it gets and renews the certificate itself. <code>sudo apt-get install -y caddy</code>, then <code>/etc/caddy/Caddyfile</code>:</p>
+<pre>mentalhealth.yourschool.ac.th {
+    reverse_proxy 127.0.0.1:3000
+}
+
+sudo systemctl reload caddy</pre>
+  <ul>
+    <li><b>Automatic certificates</b> need public DNS for the name and ports 80/443 open from the internet.</li>
+    <li><b>Inside the school network only?</b> Use the school's own certificate instead: add <code>tls /path/cert.pem /path/key.pem</code> inside the block.</li>
+    <li>nginx or IIS work equally well: proxy to <code>127.0.0.1:3000</code> and pass <code>X-Forwarded-Proto</code>. No WebSockets are used.</li>
+    <li>The app sends its own security headers. After HTTPS is confirmed working, you may add HSTS: <code>header Strict-Transport-Security "max-age=31536000"</code>.</li>
+  </ul>
+  <div class="note">Do not put a login, captive portal or single sign-on in front of it. Students arrive from a QR code and must open the page directly.</div>
+</section>
+
+<section>
+  <h2><em>6</em>Check it works</h2>
+<pre># expect HTTP 200:
+curl -I https://mentalhealth.yourschool.ac.th/
+sudo systemctl status mentalhealth
+sudo journalctl -u mentalhealth -n 50 --no-pager</pre>
+  <table>
+    <tr><th>Address</th><th>What it is</th></tr>
+    <tr><td>/</td><td>Students land here (the QR code)</td></tr>
+    <tr><td>/booth/kiosk</td><td>The iPad at the booth</td></tr>
+    <tr><td>/booth/display</td><td>The TV (open full-screen)</td></tr>
+    <tr><td>/admin</td><td>Student council: statistics, dates, export</td></tr>
+    <tr><td>/booth/login</td><td>Sign-in for the iPad and TV, once the council has made a booth password in /admin</td></tr>
+  </table>
+  <p>Open <code>/</code> on a phone over <b>mobile data</b> and over <b>school wifi</b>, if both are meant to work.</p>
+</section>
+
+<section>
+  <h2><em>7</em>Backups (please set this up)</h2>
+  <p>All the data is one file. Copying it while the site is running can give a broken copy, so use the built-in command. It is safe at any moment and keeps the newest 60:</p>
+<pre>cd /home/mentalhealth/app &amp;&amp; sudo -u mentalhealth npm run db:backup</pre>
+  <p>Hourly, in <code>/etc/cron.d/mentalhealth</code>:</p>
+<pre>0 * * * * mentalhealth cd /home/mentalhealth/app &amp;&amp; npm run db:backup</pre>
+  <p>Snapshots appear in <code>data/backups/</code>. Also copy that folder to <b>another machine</b> once a day. <b>Restore:</b> <code>systemctl stop mentalhealth</code>, copy the chosen snapshot over <code>data/app.db</code> (delete any <code>app.db-wal</code> / <code>-shm</code> files beside it), then <code>systemctl start mentalhealth</code>.</p>
+</section>
+
+<section>
+  <h2><em>8</em>Updating</h2>
+  <p>Not during booth hours. It takes under a minute:</p>
+<pre>cd /home/mentalhealth/app &amp;&amp; sudo -u mentalhealth git pull
+sudo -u mentalhealth npm ci &amp;&amp; sudo -u mentalhealth npm run build
+sudo systemctl restart mentalhealth</pre>
+  <p>The database is never touched by an update. New tables are added automatically on first start.</p>
+</section>
+
+<section>
+  <h2><em>9</em>Windows Server instead</h2>
+  <p>Install Node.js 22 (MSI), then in the project folder run <code>npm ci</code>, <code>npm run admin:setup</code> (save the printed lines in <code>.env.local</code>) and <code>npm run build</code>. Run it as a service with <a href="https://nssm.cc">NSSM</a>: program <code>node.exe</code>, arguments <code>node_modules\next\dist\bin\next start -H 127.0.0.1 -p 3000</code>, start directory the project folder, startup type Automatic. Put HTTPS in front with IIS (URL Rewrite + ARR) or Caddy for Windows. Schedule <code>npm run db:backup</code> in Task Scheduler every hour.</p>
+</section>
+
+<section>
+  <h2><em>10</em>If something is wrong</h2>
+  <table>
+    <tr><th>Symptom</th><th>Look at</th></tr>
+    <tr><td>502 / blank page</td><td>The app is not running. <code>journalctl -u mentalhealth -n 50</code>. Usually Node older than 22 (<code>node -v</code>) or <code>npm run build</code> not run.</td></tr>
+    <tr><td>Cannot open the database</td><td>The <code>data/</code> folder must be owned by <code>mentalhealth</code> and writable.</td></tr>
+    <tr><td>Certificate error</td><td>DNS for the name is wrong, or ports 80/443 are blocked. See <code>journalctl -u caddy</code>.</td></tr>
+    <tr><td>Admin says "not configured"</td><td><code>.env.local</code> is missing one of the three admin lines, or the service was not restarted.</td></tr>
+    <tr><td>Locked out of admin</td><td>Five wrong passwords lock the login for 10 minutes. Wait, then retry.</td></tr>
+    <tr><td>Times look wrong</td><td>They should not: the app uses Thailand time itself, whatever the server's clock zone.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><em>11</em>Good to know</h2>
+  <ul>
+    <li>Keep the hostname unchanged for the whole campaign. QR codes are printed once and cannot be edited.</li>
+    <li>The booth TV and kiosk are ordinary browser pages: no software to install on them.</li>
+    <li>The council can switch the live booth, edit dates, export or delete data from <code>/admin</code>. You do not have to.</li>
+    <li>When the report is done, the council can wipe all answers from <code>/admin</code>. Take a last backup first if they want to keep it.</li>
+  </ul>
+</section>
+
+</div>
+
+<footer>
+  <span>Project: github.com/Artycud/mentalHealth (private). Questions: ask the student council for the project owner.</span>
+  <span>Source of this page: docs/school-server-guide.html</span>
+</footer>
+
+</div>
+</body>
+</html>

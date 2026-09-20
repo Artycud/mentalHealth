@@ -21,13 +21,18 @@ every result carries a visible route to CUD Care.
 ## Status
 
 Built and tested: the design, the check-in and its scoring, the booth quiz, the
-kiosk, the TV, saving to a database, and live updates.
+kiosk, the TV, saving to a database, live updates, **and the admin panel** (log in,
+switch the live booth, edit dates, statistics, export, delete) with the **booth login**
+for the kiosk and TV.
 
-**Not built yet:** the admin panel (log in, change the festival or the dates, see
-statistics, export, delete), the booth login, and the final polish pass. Until the
-admin panel exists, **the booth pages have no login**, and the live festival and
-the event dates can only be changed in the database. Do not put this in front of
-real students before that is decided.
+The admin panel is closed until the server has an admin account: run
+`npm run admin:setup` and put the three lines it prints in `.env.local`. Until an admin
+has generated a booth password from the panel, the kiosk and TV are open to anyone who
+knows the address (the panel warns about it).
+
+**Not built yet:** the final polish pass (an old-phone check, a wider accessibility
+pass). Several pieces of copy are still drafts for the student council to approve; the
+brief lists them.
 
 Everything is specified in **[BRIEF.md](BRIEF.md)**: what to build, the reasoning
 behind each decision, and what is still needed from the student council. Read it
@@ -64,6 +69,10 @@ made-up figures can never appear on the real wall).
 | `npm run test:moment` | Detecting new flowers for the TV, and how the river's flowers recede with age. |
 | `npm run check:theme` | The look's guard rails, computed from the real files: contrast of every text/paper pairing, that a festival file sets only its scene variables, that the base names no festival, and that no crosshair or halftone marks creep back. |
 | `npm run test:look` | In a real browser: the private screens carry no festival layer, the festival appears where it should, the TV never scrolls, and reduced motion really stops everything. Needs `npm run dev` running. Writes nothing to the database. |
+| `npm run test:auth` | Passwords, signed cookies (forged, tampered, expired), the five-tries lockout, and the booth password. |
+| `npm run test:admin` | What the panel reads and does to the data: filters, the numbers, Thailand-time days, exports, delete, wipe. |
+| `npm run test:admin:e2e` | The whole admin panel and the booth login in a real browser, including the security rules (no access without a login, cross-site requests refused, the lockout, cookies). Run `npm run build` first. It starts **its own** server on its own throwaway database, so it can never touch real data. |
+| `npm run db:backup` | Not a test: a safe snapshot of the database, made while the site is running. |
 | `npm run test:e2e` | Drives a **real Chrome** through the check-in, the booth quiz on all 18 paths, the kiosk and the TV, then reads the database to check what was saved. Needs `npm run dev` running and Chrome or Edge installed. It deletes only the sessions it creates. |
 
 ## Configuration
@@ -74,6 +83,15 @@ Everything is set with environment variables; see [`.env.example`](.env.example)
   school server, or your laptop). `libsql://…` is a hosted database (Vercel).
   The same code runs against either.
 - `DATABASE_AUTH_TOKEN`: only for a hosted database.
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET`: the admin login. Make them
+  with `npm run admin:setup` (it asks for a password and prints the three lines; add
+  `--write` to save them into `.env.local`). Without them `/admin` shows "not
+  configured" and stays closed. The password is never stored, only its hash, and the
+  secret must be at least 32 characters. Changing either signs everyone out.
+
+The **booth** account (for the kiosk and TV) is different: the admin sets it from the
+panel, and it is stored in the database as a hash. A new password is shown once, when
+it is made, and can never be read back.
 
 ## Deploying
 
@@ -86,22 +104,32 @@ The site is a Node app with a database, so it needs a host that can run Node.
    (there is a free tier), in a region near Thailand.
 2. Import this repository into Vercel.
 3. Set `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in the project's environment
-   variables. On Vercel, leaving `DATABASE_URL` unset is an error on purpose: a
+   variables, plus the three admin ones (`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`,
+   `SESSION_SECRET`: run `npm run admin:setup` on your own computer and paste what it
+   prints). On Vercel, leaving `DATABASE_URL` unset is an error on purpose: a
    file would appear to work and then quietly lose every answer.
 4. Choose a region near Thailand (Singapore) for the function.
 
 The tables are created automatically on the first request.
 
-**On a school server** (likely later):
+**On a school server** (likely later): there is a printable, step-by-step guide for
+the school's IT person in **[docs/school-server-guide.pdf](docs/school-server-guide.pdf)**
+(its source is `docs/school-server-guide.html`; `npm run docs:guide` rebuilds the PDF).
+In short:
 
 ```bash
 npm ci
+npm run admin:setup -- --write     # the admin login, into .env.local
 npm run build
-npm start            # behind a reverse proxy with HTTPS
+npm start                          # behind a reverse proxy with HTTPS
 ```
 
-with `DATABASE_URL=file:./data/app.db`. **Back up `data/app.db`**: it is one file,
-and copying it is the whole backup plan.
+with `DATABASE_URL=file:./data/app.db`. **Back up the database with `npm run db:backup`**
+(hourly is sensible). Copying `data/app.db` by hand can catch it mid-write; this makes a
+consistent snapshot at any moment and keeps the newest 60 in `data/backups/`.
+
+The app sends its own security headers (a content security policy that allows only this
+site, nosniff, no-referrer, no framing), so the reverse proxy only has to do HTTPS.
 
 **The QR code must point at the school's own domain from the start**, never at a
 `*.vercel.app` address. A printed QR code cannot be changed, so if the school

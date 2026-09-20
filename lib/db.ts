@@ -81,6 +81,15 @@ CREATE TABLE IF NOT EXISTS event (
   updated_at TEXT NOT NULL
 );
 
+-- The login lockout (BRIEF section 11). One row per account ('admin', 'booth'), never
+-- per person or address, so it identifies nobody.
+CREATE TABLE IF NOT EXISTS auth_lock (
+  key          TEXT PRIMARY KEY,
+  failures     INTEGER NOT NULL,
+  locked_until TEXT,
+  updated_at   TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_session_started ON session (started_at);
 CREATE INDEX IF NOT EXISTS idx_session_booth ON session (mode, festival, completed_at);
 `;
