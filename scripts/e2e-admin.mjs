@@ -244,6 +244,11 @@ try {
     check('and it lasts 8 hours', /max-age=28800/i.test(raw), raw);
     check('the password is not in the cookie', !adminCookie.includes(encodeURIComponent(PASSWORD)) && !Buffer.from(adminCookie.split('=')[1].split('.')[0], 'base64url').toString().includes(PASSWORD));
     check('with the cookie, the panel opens', (await api('/admin', { cookie: adminCookie })).status === 200);
+    // An account set by the server's environment cannot be taken over or changed from the browser.
+    check('the one-time setup is closed when the server already has an admin', (await api('/api/admin/setup', { method: 'POST', body: { username: 'intruder', password: 'another long phrase' } })).status === 409);
+    check('and its page sends you to login', [302, 307, 308].includes((await api('/admin/setup')).status));
+    const managed = await api('/api/admin/account', { method: 'POST', cookie: adminCookie, body: { currentPassword: PASSWORD, newPassword: 'a different long phrase' } });
+    check("an account set in the server's environment is changed there, not in the browser (409)", managed.status === 409, String(managed.status));
     check('a tampered cookie does not', (await api('/admin', { cookie: `${adminCookie.slice(0, -3)}AAA` })).status !== 200);
     check('a forged cookie for another role does not', (await api('/admin', { cookie: 'cud_admin=eyJyb2xlIjoiYWRtaW4ifQ.abc' })).status !== 200);
 
@@ -290,6 +295,7 @@ try {
   check('the live booth is marked (ลอยกระทง เปิดอยู่)', (await page.$eval('button[role=radio][aria-checked=true]', (e) => e.textContent)).includes('ลอยกระทง'));
   check('the charts show the result states and the flowers', text.includes('ผลเช็กอิน') && text.includes('ดอกบัว') && text.includes('ดาวเรือง'));
   check('and the answers to each question', text.includes('เรื่องเรียนช่วงนี้เป็นยังไงบ้าง?'));
+  check('the panel says the admin account is managed by the server', (await textOf(page)).includes('ตั้งค่าไว้ที่เซิร์ฟเวอร์') && (await page.$('section[aria-labelledby="account-h"] input[name=current]')) === null);
   check('the panel warns that the booth screens are still open (no booth password yet)', text.includes('ใครก็เปิดหน้าจอบูธได้'));
 
   // the sessions list: grouped and collapsible

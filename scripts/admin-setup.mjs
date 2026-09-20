@@ -1,4 +1,6 @@
-// Creates the admin login. Run:  npm run admin:setup   (or add --write to save it)
+// OPTIONAL. The admin is normally set up in the browser, the first time /admin is opened,
+// with no command at all. Use this only for a server that would rather set the admin
+// itself, from the environment.  Run:  npm run admin:setup   (or add --write to save it)
 //
 // Asks for a username and a password, and prints the three lines the server needs in
 // .env.local: ADMIN_USERNAME, ADMIN_PASSWORD_HASH and SESSION_SECRET. The password

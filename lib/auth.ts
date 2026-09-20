@@ -1,6 +1,8 @@
 import { createHash, createHmac, randomBytes, randomInt, scrypt, timingSafeEqual } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
-import { db } from './db.ts';
+import { databaseFile, db } from './db.ts';
 
 /**
  * Passwords, signed cookies and the login lockout (BRIEF §11). Nothing here knows
@@ -132,7 +134,7 @@ export const SESSION_MS: Record<Role, number> = { admin: 8 * 3_600_000, booth: 1
 export const MAX_FAILURES = 5;
 export const LOCK_MS = 10 * 60_000;
 
-export type LockKey = 'admin' | 'booth';
+export type LockKey = 'admin' | 'booth' | 'setup';
 
 /**
  * Kept in the database, not in memory: memory is not shared between server instances
@@ -253,4 +255,153 @@ export async function attemptLogin(
   }
   const { locked } = await recordFailure(key, now);
   return locked ? 'locked' : 'wrong';
+}
+
+// ---- the admin account and the signing secret, in the database ----
+//
+// The admin does not have to be set up with a terminal command. The first time /admin
+// is opened with no account, it asks for a username and a password (see
+// app/admin/setup), and this is where they are kept: as a hash, never the password.
+// The environment can still set the account (ADMIN_USERNAME, ADMIN_PASSWORD_HASH,
+// SESSION_SECRET) for a server that prefers it, and wins over what is stored.
+
+const ACCOUNT_KEY = 'admin_account';
+const SECRET_KEY = 'session_secret';
+const CODE_KEY = 'admin_setup_code';
+
+export interface StoredAdmin {
+  username: string;
+  hash: string;
+}
+
+/** Plain usernames, easy to type and to see a typo in. */
+export const validAdminUsername = (s: string) => /^[a-zA-Z0-9._-]{3,32}$/.test(s);
+
+/** Length counts characters, not bytes, so a Thai passphrase is counted fairly. */
+export const MIN_PASSWORD = 10;
+
+/** Why a password is refused, or null if it is fine. */
+export function passwordProblem(password: string, username: string): 'too_short' | 'has_username' | null {
+  if ([...password].length < MIN_PASSWORD) return 'too_short';
+  if (username && password.toLowerCase().includes(username.toLowerCase())) return 'has_username';
+  return null;
+}
+
+export async function getStoredAdmin(): Promise<StoredAdmin | null> {
+  const c = await db();
+  const r = await c.execute({ sql: 'SELECT value FROM setting WHERE key = ?', args: [ACCOUNT_KEY] });
+  if (!r.rows[0]) return null;
+  try {
+    const v = JSON.parse(String(r.rows[0].value)) as Partial<StoredAdmin>;
+    return typeof v.username === 'string' && typeof v.hash === 'string' ? { username: v.username, hash: v.hash } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Makes the admin account, but only if there is not one already. One statement decides
+ * it (INSERT OR IGNORE), so two people submitting the setup form at the same moment
+ * cannot both win: exactly one gets true.
+ */
+export async function createAdminAccount(username: string, password: string): Promise<boolean> {
+  const hash = await hashPassword(password);
+  const c = await db();
+  const r = await c.execute({
+    sql: 'INSERT OR IGNORE INTO setting (key, value, updated_at) VALUES (?, ?, ?)',
+    args: [ACCOUNT_KEY, JSON.stringify({ username, hash }), new Date().toISOString()],
+  });
+  return r.rowsAffected === 1;
+}
+
+/** A new password for the stored account. Returns its hash, so the caller can sign in with it. */
+export async function changeAdminPassword(newPassword: string): Promise<string> {
+  const current = await getStoredAdmin();
+  if (!current) throw new Error('there is no stored admin account');
+  const hash = await hashPassword(newPassword);
+  const c = await db();
+  await c.execute({
+    sql: 'UPDATE setting SET value = ?, updated_at = ? WHERE key = ?',
+    args: [JSON.stringify({ username: current.username, hash }), new Date().toISOString(), ACCOUNT_KEY],
+  });
+  return hash;
+}
+
+/** For "I forgot the password" (npm run admin:reset): the setup page comes back. */
+export async function resetAdminAccount(): Promise<void> {
+  const c = await db();
+  await c.execute({ sql: 'DELETE FROM setting WHERE key IN (?, ?)', args: [ACCOUNT_KEY, CODE_KEY] });
+  await c.execute({ sql: 'DELETE FROM auth_lock', args: [] });
+  const f = codeFile();
+  if (f) fs.rmSync(f, { force: true });
+}
+
+/**
+ * The secret that signs the login cookies. From SESSION_SECRET if the environment sets a
+ * good one (32+ characters); otherwise made once and kept in the database, so a fresh
+ * install needs no configuration at all.
+ */
+let storedSecret: Promise<string> | undefined;
+export async function getSessionSecret(env: NodeJS.ProcessEnv = process.env): Promise<string> {
+  const fromEnv = env.SESSION_SECRET?.trim();
+  if (fromEnv && fromEnv.length >= 32) return fromEnv;
+  storedSecret ??= (async () => {
+    const c = await db();
+    await c.execute({
+      sql: 'INSERT OR IGNORE INTO setting (key, value, updated_at) VALUES (?, ?, ?)',
+      args: [SECRET_KEY, newSecret(), new Date().toISOString()],
+    });
+    return String((await c.execute({ sql: 'SELECT value FROM setting WHERE key = ?', args: [SECRET_KEY] })).rows[0].value);
+  })().catch((error) => {
+    storedSecret = undefined;
+    throw error;
+  });
+  return storedSecret;
+}
+
+/** Forget the cached secret. For tests that reopen a fresh database. */
+export const forgetSessionSecret = () => {
+  storedSecret = undefined;
+};
+
+// ---- the setup code ----
+
+/** Named after its database (data/admin-setup-code-app.txt), so two databases never share one. */
+const codeFile = () => {
+  const dbFile = databaseFile();
+  return dbFile ? path.join(path.dirname(dbFile), `admin-setup-code-${path.basename(dbFile, path.extname(dbFile))}.txt`) : null;
+};
+
+/**
+ * The code a person must type to set up the admin on a live server. Without it, whoever
+ * reached /admin first after a deployment could claim the account. It is made the first
+ * time it is needed, printed in the server's log, and written to data/admin-setup-code-app.txt,
+ * so it is only ever shown to someone with access to the machine. Kept until setup is done.
+ */
+export async function getSetupCode(): Promise<string> {
+  const c = await db();
+  const existing = await c.execute({ sql: 'SELECT value FROM setting WHERE key = ?', args: [CODE_KEY] });
+  if (existing.rows[0]) return String(existing.rows[0].value);
+  await c.execute({
+    sql: 'INSERT OR IGNORE INTO setting (key, value, updated_at) VALUES (?, ?, ?)',
+    args: [CODE_KEY, generateBoothPassword(), new Date().toISOString()],
+  });
+  const code = String((await c.execute({ sql: 'SELECT value FROM setting WHERE key = ?', args: [CODE_KEY] })).rows[0].value);
+  const file = codeFile();
+  console.log(`[admin setup] The admin has not been set up yet. Setup code: ${code}${file ? `  (also in ${file})` : ''}`);
+  if (file) {
+    try {
+      fs.writeFileSync(file, `${code}\n`, { mode: 0o600 });
+    } catch {
+      /* the log line above is enough */
+    }
+  }
+  return code;
+}
+
+export async function clearSetupCode(): Promise<void> {
+  const c = await db();
+  await c.execute({ sql: 'DELETE FROM setting WHERE key = ?', args: [CODE_KEY] });
+  const file = codeFile();
+  if (file) fs.rmSync(file, { force: true });
 }

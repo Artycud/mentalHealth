@@ -147,6 +147,63 @@ const eq = (label, got, want) => check(label, JSON.stringify(got) === JSON.strin
   check('a bad username is refused', refused);
 }
 
+// ---- 6. the admin account, kept in the database (no terminal command needed) ----
+{
+  const {
+    changeAdminPassword, clearSetupCode, createAdminAccount, forgetSessionSecret, getSessionSecret, getSetupCode, getStoredAdmin,
+    passwordProblem, resetAdminAccount, validAdminUsername,
+  } = auth;
+  const codeFile = 'data/admin-setup-code-test-auth.txt';
+
+  eq('before setup there is no stored admin', await getStoredAdmin(), null);
+  check('usernames are 3 to 32 plain characters', validAdminUsername('council') && validAdminUsername('Student.Council_2569') && !validAdminUsername('ab') && !validAdminUsername('a b') && !validAdminUsername("x'; drop") && !validAdminUsername('a'.repeat(33)));
+  eq('a short password is refused', passwordProblem('short', 'council'), 'too_short');
+  eq('ten characters is enough', passwordProblem('0123456789', 'council'), null);
+  eq('a Thai passphrase is counted in characters, not bytes (10 is enough)', passwordProblem('รหัสลับสภา', 'x'), null);
+  eq('and 9 is not', passwordProblem('รหัสลับสภ', 'x'), 'too_short');
+  eq('a password that contains the username is refused', passwordProblem('the council pass', 'council'), 'has_username');
+
+  const first = await createAdminAccount('council', 'a long enough phrase');
+  const second = await createAdminAccount('intruder', 'another long phrase');
+  eq('the first setup makes the account and a second is refused', [first, second], [true, false]);
+  const stored = await getStoredAdmin();
+  check('the account is kept under the first username, as a hash', stored.username === 'council' && stored.hash.startsWith('scrypt.') && !stored.hash.includes('enough'));
+  check('and the hash checks out', (await verifyPassword('a long enough phrase', stored.hash)) && !(await verifyPassword('another long phrase', stored.hash)));
+
+  await resetAdminAccount();
+  eq('a reset removes the account (so setup can be done again)', await getStoredAdmin(), null);
+  const race = await Promise.all(Array.from({ length: 6 }, (_, i) => createAdminAccount(`user${i}xx`, 'a long enough phrase')));
+  eq('six people submitting setup at the same moment: exactly one wins', race.filter(Boolean).length, 1);
+
+  const before = await getStoredAdmin();
+  const changedHash = await changeAdminPassword('a brand new passphrase');
+  const after = await getStoredAdmin();
+  check('changing the password keeps the username and stores a new hash', after.username === before.username && after.hash === changedHash && changedHash !== before.hash);
+  check('the new password works and the old one does not', (await verifyPassword('a brand new passphrase', after.hash)) && !(await verifyPassword('a long enough phrase', after.hash)));
+  check('and every cookie issued under the old password stops working', passwordVersion(before.hash) !== passwordVersion(after.hash));
+
+  // the signing secret needs no configuration
+  const secret = await getSessionSecret({});
+  check('a fresh install makes its own long signing secret', secret.length >= 32 && !secret.includes('$'));
+  eq('and it is the same next time', await getSessionSecret({}), secret);
+  forgetSessionSecret();
+  closeDb();
+  eq('and after a restart (it is stored, not made up again)', await getSessionSecret({}), secret);
+  eq('a good SESSION_SECRET in the environment wins', await getSessionSecret({ SESSION_SECRET: 'e'.repeat(40) }), 'e'.repeat(40));
+  eq('a short one is ignored, not used', await getSessionSecret({ SESSION_SECRET: 'short' }), secret);
+
+  // the setup code, for a live server
+  fs.rmSync(codeFile, { force: true });
+  const code = await getSetupCode();
+  check('the setup code is easy to read out: xxxx-xxxx', /^[a-z2-9]{4}-[a-z2-9]{4}$/.test(code), code);
+  eq('it stays the same until setup is done', await getSetupCode(), code);
+  check('and is written to a file next to the database, for whoever has the machine', fs.existsSync(codeFile) && fs.readFileSync(codeFile, 'utf8').trim() === code);
+  await clearSetupCode();
+  check('setup done: the code and the file are gone', !fs.existsSync(codeFile) && (await getSetupCode()) !== code);
+  await resetAdminAccount();
+  check('a reset clears the code too', !fs.existsSync(codeFile));
+}
+
 closeDb();
 wipe();
 console.log(fail ? `\n${fail} FAILED` : '\nall passed');

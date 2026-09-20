@@ -124,6 +124,12 @@ export function db(): Promise<Client> {
   return ready;
 }
 
+/** The database file on this machine, or null for a hosted database. */
+export function databaseFile(): string | null {
+  const url = process.env.DATABASE_URL || (process.env.VERCEL ? '' : 'file:./data/app.db');
+  return url.startsWith('file:') && !url.includes(':memory:') ? path.resolve(url.slice('file:'.length)) : null;
+}
+
 /** Test hook: close and forget the connection, so a test can reopen a fresh file. */
 export function closeDb(): void {
   client?.close();

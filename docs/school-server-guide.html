@@ -125,13 +125,8 @@ sudo -u mentalhealth npm run build</pre>
 </section>
 
 <section>
-  <h2><em>4</em>Settings, then keep it running</h2>
-  <p>The admin login is set with one command. It asks for a username and a password (choose a long one, and give it to the council in person) and saves three lines into <code>.env.local</code>. Only a hash of the password is saved, never the password:</p>
-<pre>cd /home/mentalhealth/app
-sudo -u mentalhealth npm run admin:setup -- --write
-echo 'DATABASE_URL=file:./data/app.db' | sudo -u mentalhealth tee -a .env.local
-sudo chmod 600 .env.local</pre>
-  <p>The file then holds <code>ADMIN_USERNAME</code>, <code>ADMIN_PASSWORD_HASH</code>, <code>SESSION_SECRET</code> and <code>DATABASE_URL</code>. Run the command again any time to change the password (it signs everyone out of the panel).</p>
+  <h2><em>4</em>Keep it running</h2>
+  <p><b>There is nothing to configure.</b> The council sets its own admin username and password in the browser, the first time they open <code>/admin</code> (step 6). The database defaults to <code>data/app.db</code> inside the project folder, so no settings file is needed; just make sure the folder is owned by the service user (the <code>useradd</code> above did it).</p>
   <p>Create <code>/etc/systemd/system/mentalhealth.service</code>. This starts it on boot and restarts it if it stops:</p>
 <pre>[Unit]
 Description=CUD Mental Health Week
@@ -183,6 +178,9 @@ sudo journalctl -u mentalhealth -n 50 --no-pager</pre>
     <tr><td>/booth/login</td><td>Sign-in for the iPad and TV, once the council has made a booth password in /admin</td></tr>
   </table>
   <p>Open <code>/</code> on a phone over <b>mobile data</b> and over <b>school wifi</b>, if both are meant to work.</p>
+  <p><b>First time in the admin.</b> When the council opens <code>/admin</code> it asks them to choose a username and password, and for a one-time <b>setup code</b> that only you can read (it stops a stranger claiming the account before them). Find it, and give it to the person setting up:</p>
+<pre>sudo journalctl -u mentalhealth | grep "Setup code"
+# or:  cat /home/mentalhealth/app/data/admin-setup-code-app.txt</pre>
 </section>
 
 <section>
@@ -205,7 +203,7 @@ sudo systemctl restart mentalhealth</pre>
 
 <section>
   <h2><em>9</em>Windows Server instead</h2>
-  <p>Install Node.js 22 (MSI), then in the project folder run <code>npm ci</code>, <code>npm run admin:setup</code> (save the printed lines in <code>.env.local</code>) and <code>npm run build</code>. Run it as a service with <a href="https://nssm.cc">NSSM</a>: program <code>node.exe</code>, arguments <code>node_modules\next\dist\bin\next start -H 127.0.0.1 -p 3000</code>, start directory the project folder, startup type Automatic. Put HTTPS in front with IIS (URL Rewrite + ARR) or Caddy for Windows. Schedule <code>npm run db:backup</code> in Task Scheduler every hour.</p>
+  <p>Install Node.js 22 (MSI), then in the project folder run <code>npm ci</code> and <code>npm run build</code>. Run it as a service with <a href="https://nssm.cc">NSSM</a>: program <code>node.exe</code>, arguments <code>node_modules\next\dist\bin\next start -H 127.0.0.1 -p 3000</code>, start directory the project folder, startup type Automatic. Put HTTPS in front with IIS (URL Rewrite + ARR) or Caddy for Windows. Schedule <code>npm run db:backup</code> in Task Scheduler every hour.</p>
 </section>
 
 <section>
@@ -215,7 +213,7 @@ sudo systemctl restart mentalhealth</pre>
     <tr><td>502 / blank page</td><td>The app is not running. <code>journalctl -u mentalhealth -n 50</code>. Usually Node older than 22 (<code>node -v</code>) or <code>npm run build</code> not run.</td></tr>
     <tr><td>Cannot open the database</td><td>The <code>data/</code> folder must be owned by <code>mentalhealth</code> and writable.</td></tr>
     <tr><td>Certificate error</td><td>DNS for the name is wrong, or ports 80/443 are blocked. See <code>journalctl -u caddy</code>.</td></tr>
-    <tr><td>Admin says "not configured"</td><td><code>.env.local</code> is missing one of the three admin lines, or the service was not restarted.</td></tr>
+    <tr><td>Forgot the admin password</td><td>Signed-in admins can change it in the panel. If it is lost: <code>cd /home/mentalhealth/app &amp;&amp; sudo -u mentalhealth npm run admin:reset</code>, type RESET, then open <code>/admin</code> and set a new one (a new setup code is in the log).</td></tr>
     <tr><td>Locked out of admin</td><td>Five wrong passwords lock the login for 10 minutes. Wait, then retry.</td></tr>
     <tr><td>Times look wrong</td><td>They should not: the app uses Thailand time itself, whatever the server's clock zone.</td></tr>
   </table>

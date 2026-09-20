@@ -25,10 +25,14 @@ kiosk, the TV, saving to a database, live updates, **and the admin panel** (log 
 switch the live booth, edit dates, statistics, export, delete) with the **booth login**
 for the kiosk and TV.
 
-The admin panel is closed until the server has an admin account: run
-`npm run admin:setup` and put the three lines it prints in `.env.local`. Until an admin
-has generated a booth password from the panel, the kiosk and TV are open to anyone who
-knows the address (the panel warns about it).
+**The admin needs no command and no configuration.** The first time `/admin` is opened
+it asks you to choose a username and a password, then signs you in; the password is
+stored only as a hash. On a live server it also asks for a **setup code**, printed in the
+server's log and written to `data/admin-setup-code-app.txt`, so a stranger who reaches the
+page first cannot claim it. The password can be changed from the panel. Forgot it? Run
+`npm run admin:reset`, then open `/admin` again. Until an admin has generated a booth
+password from the panel, the kiosk and TV are open to anyone who knows the address (the
+panel warns about it).
 
 **Not built yet:** the final polish pass (an old-phone check, a wider accessibility
 pass). Several pieces of copy are still drafts for the student council to approve; the
@@ -71,6 +75,7 @@ made-up figures can never appear on the real wall).
 | `npm run test:look` | In a real browser: the private screens carry no festival layer, the festival appears where it should, the TV never scrolls, and reduced motion really stops everything. Needs `npm run dev` running. Writes nothing to the database. |
 | `npm run test:auth` | Passwords, signed cookies (forged, tampered, expired), the five-tries lockout, and the booth password. |
 | `npm run test:admin` | What the panel reads and does to the data: filters, the numbers, Thailand-time days, exports, delete, wipe. |
+| `npm run test:setup:e2e` | Setting up the admin in the browser with no configuration: the setup code, the first-time form, changing the password, a server restart, and the forgot-password reset. Run `npm run build` first; it starts its own server and database. |
 | `npm run test:admin:e2e` | The whole admin panel and the booth login in a real browser, including the security rules (no access without a login, cross-site requests refused, the lockout, cookies). Run `npm run build` first. It starts **its own** server on its own throwaway database, so it can never touch real data. |
 | `npm run db:backup` | Not a test: a safe snapshot of the database, made while the site is running. |
 | `npm run test:e2e` | Drives a **real Chrome** through the check-in, the booth quiz on all 18 paths, the kiosk and the TV, then reads the database to check what was saved. Needs `npm run dev` running and Chrome or Edge installed. It deletes only the sessions it creates. |
@@ -83,11 +88,13 @@ Everything is set with environment variables; see [`.env.example`](.env.example)
   school server, or your laptop). `libsql://…` is a hosted database (Vercel).
   The same code runs against either.
 - `DATABASE_AUTH_TOKEN`: only for a hosted database.
-- `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET`: the admin login. Make them
-  with `npm run admin:setup` (it asks for a password and prints the three lines; add
-  `--write` to save them into `.env.local`). Without them `/admin` shows "not
-  configured" and stays closed. The password is never stored, only its hash, and the
-  secret must be at least 32 characters. Changing either signs everyone out.
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET`: **optional.** Normally the
+  admin is set up in the browser and none of these are needed. A server that prefers to
+  set the admin itself can: `npm run admin:setup -- --write` asks for a password and
+  saves the three lines into `.env.local`. When set, they win over a browser-made
+  account, and the password is then changed there, not in the panel. `SESSION_SECRET`
+  must be at least 32 characters; without one the app makes its own and keeps it in the
+  database.
 
 The **booth** account (for the kiosk and TV) is different: the admin sets it from the
 panel, and it is stored in the database as a hash. A new password is shown once, when
@@ -104,9 +111,8 @@ The site is a Node app with a database, so it needs a host that can run Node.
    (there is a free tier), in a region near Thailand.
 2. Import this repository into Vercel.
 3. Set `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in the project's environment
-   variables, plus the three admin ones (`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`,
-   `SESSION_SECRET`: run `npm run admin:setup` on your own computer and paste what it
-   prints). On Vercel, leaving `DATABASE_URL` unset is an error on purpose: a
+   variables. (The admin is set up in the browser on first visit; on Vercel the setup code
+   is in the function's log.) On Vercel, leaving `DATABASE_URL` unset is an error on purpose: a
    file would appear to work and then quietly lose every answer.
 4. Choose a region near Thailand (Singapore) for the function.
 
@@ -119,9 +125,9 @@ In short:
 
 ```bash
 npm ci
-npm run admin:setup -- --write     # the admin login, into .env.local
 npm run build
 npm start                          # behind a reverse proxy with HTTPS
+# then open /admin: it asks for the setup code (see the server's log) and a new login
 ```
 
 with `DATABASE_URL=file:./data/app.db`. **Back up the database with `npm run db:backup`**

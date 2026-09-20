@@ -7,9 +7,10 @@ import { festivalOrder, festivals } from '@/content/th/booth';
 import { filtersToQuery, getAdminData, parseFilters, thaiDay } from '@/lib/admin-data';
 import { getBoothAccount } from '@/lib/auth';
 import { getEvent } from '@/lib/events';
-import { requireAdminPage } from '@/lib/guard';
+import { adminConfig, requireAdminPage } from '@/lib/guard';
 import { getActiveFestival } from '@/lib/settings';
 
+import { AccountCard } from './AccountCard';
 import styles from './admin.module.css';
 import { BoothAccountCard } from './BoothAccountCard';
 import { Charts } from './Charts';
@@ -31,10 +32,11 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
   await requireAdminPage();
 
   const filters = parseFilters(await props.searchParams);
-  const [data, live, booth, events] = await Promise.all([
+  const [data, live, booth, account, events] = await Promise.all([
     getAdminData(filters),
     getActiveFestival(),
     getBoothAccount(),
+    adminConfig(),
     Promise.all(
       festivalOrder.map(async (id) => {
         const e = await getEvent(id);
@@ -145,6 +147,10 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
 
       <div className={`${styles.grid2} ${styles.section}`} style={{ alignItems: 'start' }}>
         <BoothAccountCard username={booth.username} hasPassword={booth.hash !== null} changedAt={booth.changedAt ? thaiStamp(booth.changedAt) : ''} />
+        <AccountCard username={account?.username ?? ''} managedByServer={account?.source === 'env'} />
+      </div>
+
+      <div className={styles.section}>
         <DangerZone />
       </div>
     </main>

@@ -18,7 +18,7 @@ const Body = z.object({
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
-    const config = adminConfig();
+    const config = await adminConfig();
     if (!config) throw new ApiError(503, 'not_configured');
     const body = parse(Body, await readJson(request));
     const result = await attemptLogin('admin', body, { username: config.username, hash: config.hash });
