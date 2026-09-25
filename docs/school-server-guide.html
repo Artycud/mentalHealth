@@ -21,7 +21,7 @@
 
   header {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 12mm;
-    padding: 4mm 5mm 3.4mm; margin-bottom: 3.5mm;
+    padding: 3.2mm 5mm 2.6mm; margin-bottom: 2.6mm;
     background: var(--paper); border-radius: 3mm 3mm 3mm 1mm;
   }
   h1 { margin: 0; font-size: 15.5pt; line-height: 1.15; letter-spacing: -0.01em; }
@@ -33,10 +33,10 @@
   .dots i:last-child { background: var(--blue); margin-left: -1.6mm; mix-blend-mode: multiply; }
 
   .flow {
-    display: flex; align-items: stretch; gap: 1.6mm; margin: 0 0 3.2mm;
+    display: flex; align-items: stretch; gap: 1.6mm; margin: 0 0 2.4mm;
     font-size: 7.8pt; text-align: center;
   }
-  .flow div { flex: 1; padding: 1.6mm 1.4mm; border: 1px solid var(--line); border-radius: 2mm; background: #fff; }
+  .flow div { flex: 1; padding: 1.2mm 1.4mm; border: 1px solid var(--line); border-radius: 2mm; background: #fff; }
   .flow b { display: block; font-size: 8.2pt; }
   .flow span { color: var(--soft); }
   .flow .arrow { flex: 0 0 auto; border: 0; background: none; padding: 0; align-self: center; color: var(--soft); font-size: 10pt; }
@@ -44,27 +44,27 @@
   .flow .app span { color: var(--ink); }
 
   .cols { column-count: 2; column-gap: 6mm; }
-  section { break-inside: avoid; margin: 0 0 3mm; }
+  section { break-inside: avoid; margin: 0 0 2.3mm; }
   h2 {
-    margin: 0 0 1.1mm; font-size: 10pt; line-height: 1.2;
-    padding-bottom: 0.7mm; border-bottom: 1.5px solid var(--sun);
+    margin: 0 0 0.9mm; font-size: 10pt; line-height: 1.2;
+    padding-bottom: 0.5mm; border-bottom: 1.5px solid var(--sun);
   }
   h2 em { font-style: normal; color: var(--pink); margin-right: 1.4mm; }
-  p { margin: 0 0 1.3mm; }
-  ul { margin: 0 0 1.3mm; padding-left: 4.2mm; }
-  li { margin: 0 0 0.5mm; }
+  p { margin: 0 0 1mm; }
+  ul { margin: 0 0 1mm; padding-left: 4.2mm; }
+  li { margin: 0 0 0.3mm; }
   b, strong { font-weight: 650; }
   pre {
-    margin: 0.6mm 0 1.6mm; padding: 1.5mm 2.2mm; background: var(--code); border-radius: 1.6mm;
-    font: 7.3pt/1.38 "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+    margin: 0.5mm 0 1.2mm; padding: 1.2mm 2.2mm; background: var(--code); border-radius: 1.6mm;
+    font: 7.3pt/1.32 "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
     white-space: pre-wrap; word-break: break-word; break-inside: avoid; color: #1B2B5E;
   }
   code { font: 7.6pt "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace; background: var(--code); padding: 0 0.9mm; border-radius: 0.8mm; }
   pre code { background: none; padding: 0; font-size: inherit; }
   .note { margin: 0.6mm 0 1.6mm; padding: 1.4mm 2.2mm; border-left: 1.2mm solid var(--pink); background: #FFF3F9; border-radius: 0 1.4mm 1.4mm 0; }
   .ok { border-left-color: var(--blue); background: #EFF7FC; }
-  table { width: 100%; border-collapse: collapse; margin: 0.6mm 0 1.4mm; font-size: 8pt; }
-  th, td { text-align: left; vertical-align: top; padding: 0.9mm 1.4mm; border-bottom: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; margin: 0.5mm 0 1mm; font-size: 8pt; }
+  th, td { text-align: left; vertical-align: top; padding: 0.7mm 1.4mm; border-bottom: 1px solid var(--line); }
   th { color: var(--soft); font-weight: 600; font-size: 7.6pt; }
   td:first-child { white-space: nowrap; font-weight: 600; }
   footer { margin-top: 1mm; padding-top: 1.6mm; border-top: 1px solid var(--line); color: var(--soft); font-size: 7.5pt; display: flex; justify-content: space-between; gap: 6mm; }
@@ -102,7 +102,7 @@
 <section>
   <h2><em>2</em>What we need from you</h2>
   <table>
-    <tr><td>A machine</td><td>Ubuntu 22.04+ or Debian 12 recommended (Windows: see 9). Always on during event days. 1 CPU, 1 GB RAM and 2 GB free disk is plenty.</td></tr>
+    <tr><td>A machine</td><td>Ubuntu 22.04+ or Debian 12 recommended (Windows: see 9). Always on during event days. 2 vCPU, 4&nbsp;GB RAM, 16&nbsp;GB disk (the app itself needs a fraction of that; the room is for building it, see step 3).</td></tr>
     <tr><td>A hostname</td><td>For example <code>mentalhealth.yourschool.ac.th</code>, with a DNS record pointing at the machine. <b>It must stay the same for the whole campaign: the QR codes are printed once.</b></td></tr>
     <tr><td>HTTPS</td><td>A certificate for that name (step 5).</td></tr>
     <tr><td>Network</td><td>Ports <b>80 and 443</b> reachable by the students' network. Only if students use mobile data, that means the internet too. <b>Port 3000 must not be exposed.</b></td></tr>
@@ -116,6 +116,10 @@
 <pre>curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs git
 sudo useradd --system --create-home --shell /usr/sbin/nologin mentalhealth</pre>
+  <p><b>Add swap before building.</b> Building the site (next) briefly needs well over a gigabyte of memory, more than running it day-to-day. A swap file means a memory spike slows the build down instead of killing it outright. Skip this only if the machine has 8&nbsp;GB+ of its own memory:</p>
+<pre>sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab</pre>
   <p>Get the code into <code>/home/mentalhealth/app</code> (either way works):</p>
 <pre>sudo -u mentalhealth git clone git@github.com:Artycud/mentalHealth.git /home/mentalhealth/app
 # or: unzip the project there, then: sudo chown -R mentalhealth: /home/mentalhealth/app</pre>
