@@ -14,17 +14,27 @@
 import type { FestivalId } from '@/lib/types';
 
 export const landing = {
+  /**
+   * The one-page scroll intro (components/landing/IntroStory): one question the
+   * way a friend would ask it; scrolling brings the check-up into the middle of
+   * everyone's hearts. Shown one phrase to a row, so Thai never breaks mid-word.
+   */
+  intro: {
+    kicker: 'CUD Mental Health Week',
+    line: ['ช่วงนี้ได้ดูแล', 'ใจตัวเองบ้างไหม?'],
+    cue: 'เลื่อนลง',
+  },
+
   hero: {
     kicker: 'CUD Mental Health Week',
     title: 'ให้ใจได้พักบ้าง',
     body: 'ช่วงพักเที่ยง 3 รอบ ตลอดเทอมนี้ ที่โถงโรงอาหาร มีดนตรีสด มีของกิน แล้วก็มีกิจกรรมเล็ก ๆ ให้ใจได้หายใจ',
-    scroll: 'เลื่อนลงดูว่ามีอะไรบ้าง',
-    /** The one thing to do on arrival: a light look at today's heart, never a test. */
+    /** The check-up's panel, at the end of the intro: a light look at today's heart, never a test. */
     check: {
-      ask: 'อยากรู้ไหม',
-      title: 'ใจตอนนี้เป็นยังไง?',
+      ask: 'อยากรู้ไหม ใจตอนนี้เป็นยังไง',
+      title: 'เช็กใจตอนนี้',
       tap: 'แตะที่ใจ',
-      sub: 'ตอบแค่ 2 เรื่อง ไม่มีถูกผิด',
+      sub: 'ตอบ 2 คำถาม แล้วรู้ว่าวันนี้ใจเธอสีอะไร',
     },
   },
 

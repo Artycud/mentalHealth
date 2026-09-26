@@ -50,35 +50,9 @@
 
 /* ---------- hero ---------- */
 
-.hero {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 100svh;
-  max-width: 520px;
-  margin-inline: auto;
-  padding: max(28px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
-}
 
-/* The invitation sits in the middle of what is left of the first screen, with
-   the hearts around its edges: never behind the words above it. */
-.invite {
-  position: relative;
-  margin-block: auto;
-  padding-block: 8px 12px;
-}
 
-.hearts {
-  position: absolute;
-  /* Out to the sides and below, never above: the words sit there. */
-  inset: 0 -30px -40px;
-  pointer-events: none;
-}
 
-.heroText {
-  position: relative;
-  z-index: 1;
-}
 
 .kicker {
   font-family: var(--font-heading);
@@ -102,35 +76,8 @@
   color: var(--cream-soft);
 }
 
-.scroll {
-  margin-top: auto;
-  padding-top: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--cream-soft);
-}
 
-.scrollLine {
-  width: 1.5px;
-  height: 28px;
-  background: linear-gradient(var(--cream-soft), transparent);
-  animation: drip 2.4s ease-in-out infinite;
-  transform-origin: top;
-}
 
-@keyframes drip {
-  0% {
-    transform: scaleY(0);
-  }
-  60%,
-  100% {
-    transform: scaleY(1);
-    opacity: 0;
-  }
-}
 
 /* ---------- sections ---------- */
 
@@ -429,7 +376,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scrollLine,
   .bar,
   .musicNote,
   .steam,

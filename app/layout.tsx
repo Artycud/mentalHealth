@@ -3,7 +3,9 @@ import type { Metadata, Viewport } from 'next';
 import './fonts.css';
 import './globals.css';
 import './festivals/loykrathong.css';
+import { ToneFromUrl } from '@/components/heart/ToneFromUrl';
 import { common } from '@/content/th/common';
+import { DEFAULT_TONE } from '@/lib/tone';
 
 export const metadata: Metadata = {
   title: common.wordmark,
@@ -38,7 +40,7 @@ const PRELOAD_FONTS = [
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="th">
+    <html lang="th" data-tone={DEFAULT_TONE}>
       <head>
         {PRELOAD_FONTS.map((href) => (
           <link
@@ -51,7 +53,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           />
         ))}
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ToneFromUrl />
+      </body>
     </html>
   );
 }

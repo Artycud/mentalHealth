@@ -131,6 +131,7 @@
 .sub {
   font-size: 15px;
   color: #5f566f;
+  text-wrap: balance;
 }
 
 .go {

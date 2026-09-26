@@ -252,3 +252,23 @@ svg {
 body:has([data-home='heart']) {
   background: #fff8fa;
 }
+
+/* ---- Warm tone (lib/tone.ts) ----
+   A soft apricot light laid over the User Mode sky, and nothing else: text,
+   pinks and layout are untouched, so switching back to `normal` is exact.
+   Booth screens never carry data-home, so they are never warmed. */
+html[data-tone='warm'] body:has([data-home='heart']) {
+  background: #fff6f1;
+}
+
+html[data-tone='warm'] [data-home='heart']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(85% 55% at 12% 0%, rgba(255, 186, 136, 0.24) 0%, transparent 70%),
+    radial-gradient(75% 50% at 100% 100%, rgba(255, 168, 120, 0.18) 0%, transparent 70%),
+    linear-gradient(rgba(255, 214, 180, 0.14), rgba(255, 196, 160, 0.12));
+}

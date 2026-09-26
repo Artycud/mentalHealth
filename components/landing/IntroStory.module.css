@@ -1,0 +1,108 @@
+/* The one-page intro: pinned for a single screen of scrolling while the hearts
+   gather around the words, then it scrolls away into the home. */
+
+.track {
+  position: relative;
+  height: 200svh;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.heart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.heart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 14px rgba(138, 61, 99, 0.22));
+}
+
+.kicker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: max(5svh, calc(env(safe-area-inset-top) + 20px));
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: #c8336a;
+}
+
+.line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(84vw, 380px);
+  translate: -50% -50%;
+  opacity: 0;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: clamp(26px, 7.6vw, 34px);
+  font-weight: 600;
+  line-height: 1.4;
+  color: #2a2140;
+  text-wrap: balance;
+  will-change: opacity, transform;
+}
+
+/* One phrase to a row. */
+.line span {
+  display: block;
+}
+
+/* What the question gives way to: the check-up's panel, in the middle of the hearts. */
+.then {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(calc(100vw - 48px), 420px);
+  translate: -50% -50%;
+  opacity: 0;
+  visibility: hidden;
+  will-change: opacity, transform;
+}
+
+.cue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(4svh, calc(env(safe-area-inset-bottom) + 16px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  text-align: center;
+  font-size: 14px;
+  color: #5f566f;
+}
+
+.cueLine {
+  width: 1.5px;
+  height: 30px;
+  background: linear-gradient(#5f566f, transparent);
+  transform-origin: top;
+  animation: drip 2.4s ease-in-out infinite;
+}
+
+@keyframes drip {
+  0% { transform: scaleY(0); }
+  60%, 100% { transform: scaleY(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cueLine {
+    animation: none;
+  }
+}

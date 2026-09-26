@@ -5,8 +5,8 @@ import { landing, roundDetail } from '@/content/th/landing';
 import type { FestivalId } from '@/lib/types';
 
 import { BoothArt, FoodArt, MusicArt } from './art';
-import { DriftingHearts } from './DriftingHearts';
 import { HeartInvite } from './HeartInvite';
+import { IntroStory } from './IntroStory';
 import { MorePanels } from './MorePanels';
 import styles from './Landing.module.css';
 
@@ -24,10 +24,11 @@ export interface Round {
 const ART = { music: MusicArt, food: FoodArt, booth: BoothArt } as const;
 
 /**
- * The User Mode home: the event's front door. What the week is, then one living
- * heart to touch (the check-up), then MBTI and VENT as panels of their own, what
- * every round has, and when the rounds are (only what each is about: what happens
- * at them stays a surprise).
+ * The User Mode home: a one-page scroll intro that turns into the check-up (one
+ * living heart to touch, framed by everyone's), then MBTI and VENT as panels of
+ * their own, and then the event itself: what the week is, what every round has,
+ * and when the rounds are (only what each is about: what happens at them stays a
+ * surprise).
  */
 export function Landing({
   rounds,
@@ -44,31 +45,22 @@ export function Landing({
       <div className={styles.sky} aria-hidden="true" />
       <div className={styles.grain} aria-hidden="true" />
 
-      {/* ---------- hero ---------- */}
-      <section className={styles.hero}>
-
-        <div className={styles.heroText}>
-          <p className={styles.kicker}>{landing.hero.kicker}</p>
-          <h1 className={styles.title}>{landing.hero.title}</h1>
-          <p className={styles.lead}>{landing.hero.body}</p>
-        </div>
-
-        {/* The one thing to do now. Light on purpose: a look, not a test. Everyone's
-            hearts drift around it, peeking out from behind. */}
-        <div className={styles.invite}>
-          <DriftingHearts className={styles.hearts} />
-          <HeartInvite greeting={greeting} copy={landing.hero.check} />
-        </div>
-
-        <p className={styles.scroll} aria-hidden="true">
-          {landing.hero.scroll}
-          <span className={styles.scrollLine} />
-        </p>
-      </section>
+      {/* ---------- a one-page scroll intro, then the home ---------- */}
+      {/* The question, and one page later the check-up, among everyone's hearts. */}
+      <IntroStory kicker={landing.intro.kicker} line={landing.intro.line} cue={landing.intro.cue}>
+        <HeartInvite greeting={greeting} copy={landing.hero.check} />
+      </IntroStory>
 
       {/* ---------- MBTI and VENT, whenever ---------- */}
       <section className={styles.section} style={{ paddingTop: 8 }}>
         <MorePanels mbti={landing.more.mbti} vent={landing.more.vent} samples={heart.ways.vent.samples} />
+      </section>
+
+      {/* ---------- the event ---------- */}
+      <section className={styles.section}>
+        <p className={styles.kicker}>{landing.hero.kicker}</p>
+        <h2 className={styles.title}>{landing.hero.title}</h2>
+        <p className={styles.lead}>{landing.hero.body}</p>
       </section>
 
       {/* ---------- every round ---------- */}

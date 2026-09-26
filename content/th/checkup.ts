@@ -1,78 +1,90 @@
 /**
  * "ใจวันนี้" as a guided check-up (User Mode).
  *
- * The heart pad works, but dropped on someone cold it is a graph to answer. So
- * the check-up walks in: meet the heart (still colourless,
- * because nobody has asked it anything yet), then ask it one thing at a time —
- * energy, then weight — each with everyday anchors so the ends mean something.
- * Only when both are answered does the heart take its colour. Then, optionally,
- * where it is coming from, and what might help.
+ * Two questions shape a heart: how much charge is left (energy) and how much is
+ * being carried (weight). They are asked through things every student knows (a
+ * phone battery, a school bag), so answering is a small moment of noticing, not
+ * a test. The heart only takes its colour once both are answered; the result says
+ * where it sits, a few words for it, and something true and interesting about it.
+ *
+ * On the home the same two questions are asked inside the scroll story
+ * (content/th/story.ts); this is the standalone /checkup page.
  *
  * Voice (BRIEF §10): a friend, not an app. Nothing here is stored.
+ * Everything below is a DRAFT awaiting council review.
  */
 
 export const checkup = {
-  skip: 'ข้าม',
-
   meet: {
     note: 'เช็กใจวันนี้',
     title: 'นี่คือใจของเธอตอนนี้',
-    body: 'มันยังไม่มีสี เพราะยังไม่มีใครถามมันเลย ถามแค่ 2 เรื่อง ไม่มีถูกผิด',
-    go: 'ถามเลย',
+    body: 'ยังไม่มีสี เพราะยังไม่มีใครถามมันเลย ตอบ 2 คำถาม แล้วดูว่าวันนี้ใจเธอสีอะไร และมันกำลังบอกอะไรอยู่',
+    go: 'ถามใจเลย',
   },
 
   energy: {
-    note: 'เรื่องแรก',
-    title: 'ตอนนี้มีแรงเหลือแค่ไหน?',
+    note: 'คำถามที่ 1',
+    title: 'ถ้าใจเป็นแบตมือถือ ตอนนี้เหลือเท่าไหร่?',
     hint: 'ลากไปซ้ายหรือขวา',
-    ends: { low: 'หมดแรง', high: 'เต็มแรง' },
-    /** Low, middle, high — something everyone at school has felt. */
+    ends: { low: 'ใกล้หมด', high: 'เต็มหลอด' },
+    /** Low, middle, high — said the way a phone would. */
     anchors: [
-      'แบบตื่นเช้าวันจันทร์ อยากนอนต่อ',
-      'แบบบ่าย ๆ ไปได้เรื่อย ๆ',
-      'แบบเลิกเรียนวันศุกร์ พร้อมไปต่อ',
+      'เปิดโหมดประหยัดพลังงานอยู่',
+      'ใช้ได้ แต่อย่าเพิ่งเปิดอะไรหนัก ๆ',
+      'ชาร์จเต็ม พร้อมลุย',
     ],
     go: 'ประมาณนี้',
   },
 
   weight: {
-    note: 'อีกเรื่อง',
-    title: 'แล้วใจตอนนี้ เบาหรือหนัก?',
+    note: 'คำถามที่ 2',
+    title: 'เรื่องที่แบกอยู่ในหัววันนี้ หนักแค่ไหน?',
     hint: 'ลากขึ้นหรือลง',
-    ends: { light: 'เบา', heavy: 'หนัก' },
-    /** Light, middle, heavy. */
+    ends: { light: 'โล่ง', heavy: 'หนักอึ้ง' },
+    /** Light, middle, heavy — as a school bag. */
     anchors: [
-      'แบบเพิ่งส่งงานเสร็จ โล่ง ๆ',
-      'ไม่เบา ไม่หนัก',
-      'แบบมีอะไรค้างอยู่ในอก',
+      'เหมือนกระเป๋าวันไม่มีเรียน',
+      'เหมือนกระเป๋าวันธรรมดา',
+      'เหมือนกระเป๋าวันสอบ ครบทุกวิชา',
     ],
     go: 'ประมาณนี้',
   },
 
   whole: {
     note: 'ใจวันนี้',
-    body: 'ถ้ายังไม่ตรง ขยับได้อีก ลากไปทางไหนก็ได้',
+    body: 'ยังไม่ตรงก็ขยับได้อีก ลากไปทางไหนก็ได้',
     go: 'ใช่แหละ',
   },
 
   topics: {
     note: 'ใจที่',
-    title: 'มาจากเรื่องไหนบ้าง?',
+    title: 'อะไรกินพื้นที่ในหัวเยอะที่สุดวันนี้?',
     body: 'เลือกได้หลายอัน หรือไม่เลือกก็ได้',
-    options: ['เรื่องเรียน', 'เพื่อน', 'ที่บ้าน', 'ความรัก', 'การนอน', 'ตัวเอง', 'ไม่รู้เหมือนกัน'],
+    options: ['เรื่องเรียน', 'เพื่อน', 'ที่บ้าน', 'ความรัก', 'การนอน', 'โซเชียล', 'อนาคต', 'ตัวเอง'],
     go: 'ต่อ',
     none: 'ไม่มีอะไรเป็นพิเศษ',
   },
 
   result: {
     note: 'ใจวันนี้ของเธอ',
-    topicsLabel: 'เรื่องที่อยู่ในใจ',
-    /** What to say, per row: light, in between, heavy. Points at what they chose. */
+    topicsLabel: 'เรื่องที่อยู่ในหัว',
+    /** What to say, per row: light, in between, heavy. */
     lines: [
       'ใจเบาดีวันนี้ เก็บความรู้สึกนี้ไว้นะ',
       'ไม่ได้แย่ แต่ก็มีอะไรให้คิดอยู่บ้าง',
       'วันนี้ใจแบกอะไรไว้เยอะ ไม่ต้องแบกคนเดียวก็ได้นะ',
     ],
+    /** The mood map: where the heart landed. */
+    map: {
+      title: 'ใจเธออยู่ตรงนี้',
+      body: 'ทุกคนเดินไปมาบนแผนที่นี้ได้ทั้งวัน ไม่มีจุดไหนผิด',
+      low: 'แบตน้อย',
+      high: 'แบตเต็ม',
+      light: 'โล่ง',
+      heavy: 'หนัก',
+    },
+    factNote: 'รู้ไหม',
+    factSource: 'ที่มา',
     /** Above the message chosen for their heart (content/th/heart.ts). */
     messageNote: (word: string) => `ถึงใจที่ "${word}"`,
     /** For the heaviest row: the next step is to say it out loud, to the AI. */

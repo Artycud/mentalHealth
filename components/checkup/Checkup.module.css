@@ -384,6 +384,114 @@
   color: var(--paper-ink-soft);
 }
 
+/* The mood map: where the heart landed, on the same four colours as the heart. */
+.map {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 16px 16px 18px;
+  border-radius: 22px 22px 6px 22px;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 18px 36px -24px rgba(200, 51, 106, 0.45);
+}
+
+.mapText {
+  flex: 1;
+}
+
+.mapTitle {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.mapBody {
+  margin-top: 2px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--cream-soft);
+}
+
+.mapField {
+  position: relative;
+  flex-shrink: 0;
+  width: 132px;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  overflow: hidden;
+  /* Light across the top (mint → sun), heavy across the bottom (violet → coral). */
+  background: linear-gradient(to right, rgb(126 224 194), rgb(255 211 107));
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(42, 33, 64, 0.72);
+}
+
+.mapField::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgb(132 146 255), rgb(255 128 110));
+  -webkit-mask-image: linear-gradient(transparent, #000);
+  mask-image: linear-gradient(transparent, #000);
+}
+
+.mapField span {
+  position: absolute;
+  z-index: 1;
+  line-height: 1;
+}
+
+.mapLow { left: 7px; top: 50%; translate: 0 -50%; }
+.mapHigh { right: 7px; top: 50%; translate: 0 -50%; }
+.mapLight { top: 7px; left: 50%; translate: -50% 0; }
+.mapHeavy { bottom: 7px; left: 50%; translate: -50% 0; }
+
+.mapField i {
+  position: absolute;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--pink-ink), 0 4px 10px rgba(42, 33, 64, 0.35);
+  animation: here 2s ease-out infinite;
+}
+
+@keyframes here {
+  0% { box-shadow: 0 0 0 3px var(--pink-ink), 0 0 0 3px rgba(200, 51, 106, 0.5); }
+  100% { box-shadow: 0 0 0 3px var(--pink-ink), 0 0 0 14px rgba(200, 51, 106, 0); }
+}
+
+/* Something true and interesting about a heart like this. */
+.fact {
+  padding: 16px 18px 14px;
+  border-radius: 6px 22px 22px 22px;
+  background: #ffffff;
+  box-shadow: var(--card-shadow);
+}
+
+.factNote {
+  font-family: var(--font-note);
+  font-size: 18px;
+  color: var(--pink-ink);
+}
+
+.factText {
+  margin-top: 2px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--cream);
+}
+
+.factSource {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--cream-soft);
+}
+
 /* The message for the heart they ended on. */
 .message {
   padding: 16px 18px 18px;
@@ -494,6 +602,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .mapField i,
   .top,
   .bottom,
   .orbit {

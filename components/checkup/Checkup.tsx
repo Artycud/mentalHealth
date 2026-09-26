@@ -13,19 +13,21 @@ type Step = 'meet' | 'energy' | 'weight' | 'whole' | 'topics' | 'result';
 
 const HREF: Record<WayId, string> = { self: '/me', vent: '/vent', checkin: '/checkin' };
 const NEUTRAL: [number, number, number] = [214, 204, 220];
-const TOPIC_INKS = ['#6FD7B8', '#FFC94D', '#9BAAFF', '#FF9A85', '#F0588A', '#8FD0FF', '#C9B8D8'];
+const TOPIC_INKS = ['#6FD7B8', '#FFC94D', '#9BAAFF', '#FF9A85', '#F0588A', '#8FD0FF', '#C9B8D8', '#FFB3CB'];
 
 /** Which third of 0 → 1 a value is in. */
 const third = (v: number) => (v < 0.34 ? 0 : v < 0.67 ? 1 : 2);
 
 /**
- * The guided check-up. One persistent heart on one sky; the words and the
- * controls around it change step by step. The heart's size, wobble, weight and
- * colour are written straight to the DOM from one animation loop, so React only
- * re-renders when a step or an answer changes.
+ * The guided check-up (/checkup). One persistent heart; the words and the
+ * controls around it change step by step. The heart's size, wobble and colour
+ * are written straight to the DOM from one animation loop, so React only
+ * re-renders when a step or an answer changes. (On the home, the same two
+ * questions are asked inside the scroll story: components/story/HomeStory.)
  */
 export function Checkup({ careHref }: { careHref: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
 
@@ -52,6 +54,15 @@ export function Checkup({ careHref }: { careHref: string }) {
     if (weight !== null) live.current.weight = weight;
   }, [weight]);
 
+  // The result is taller than a screen: start reading it from its top.
+  useEffect(() => {
+    if (step !== 'result' || !frameRef.current) return;
+    const top = frameRef.current.getBoundingClientRect().top + window.scrollY;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
+  }, [step]);
+
+  // ---- the heart ----
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const t0 = performance.now();
@@ -66,8 +77,7 @@ export function Checkup({ careHref }: { careHref: string }) {
       last = now;
       const s = live.current;
       const t = reduce ? 0 : (now - t0) / 1000;
-
-      // The heart grows in from a point of light on arrival, and steps back for the result.
+      // The heart grows in on arrival, and steps back for the result.
       const target = s.step === 'result' ? 0.78 : 1;
       scale += (target - scale) * Math.min(1, dt * 2.2);
 
@@ -159,241 +169,244 @@ export function Checkup({ careHref }: { careHref: string }) {
       <div className={styles.sky} aria-hidden="true" />
       <div className={styles.grain} aria-hidden="true" />
 
-      <div className={styles.frame}>
-        {/* ---- words above the heart ---- */}
-        <div className={styles.top} key={`top-${step}`}>
-          {step === 'meet' && (
-            <>
-              <p className={styles.note}>{checkup.meet.note}</p>
-              <h1 className={styles.title}>{checkup.meet.title}</h1>
-              <p className={styles.body}>{checkup.meet.body}</p>
-            </>
-          )}
-          {step === 'energy' && (
-            <>
-              <p className={styles.note}>{checkup.energy.note}</p>
-              <h1 className={styles.title}>{checkup.energy.title}</h1>
-            </>
-          )}
-          {step === 'weight' && (
-            <>
-              <p className={styles.note}>{checkup.weight.note}</p>
-              <h1 className={styles.title}>{checkup.weight.title}</h1>
-            </>
-          )}
-          {step === 'whole' && (
-            <>
-              <p className={styles.note}>{checkup.whole.note}</p>
-              <h1 className={styles.bigWord}>{feeling.word}</h1>
-              <p className={styles.body}>{feeling.line}</p>
-            </>
-          )}
-          {step === 'topics' && (
-            <>
-              <p className={styles.note}>
-                {checkup.topics.note} &quot;{feeling.word}&quot;
-              </p>
-              <h1 className={styles.title}>{checkup.topics.title}</h1>
-              <p className={styles.body}>{checkup.topics.body}</p>
-            </>
-          )}
-          {step === 'result' && (
-            <>
-              <p className={styles.note}>{checkup.result.note}</p>
-              <h1 className={styles.bigWord}>{feeling.word}</h1>
-              <p className={styles.body}>{checkup.result.lines[row]}</p>
-            </>
-          )}
-        </div>
-
-        {/* ---- the heart ---- */}
-        <div
-          ref={stageRef}
-          className={styles.stage}
-          data-drag={draggable}
-          onPointerDown={down}
-          onPointerMove={(e) => live.current.dragging && read(e)}
-          onPointerUp={up}
-          onPointerCancel={up}
-          onKeyDown={key}
-          tabIndex={draggable ? 0 : -1}
-          role={draggable ? 'slider' : undefined}
-          aria-label={draggable ? (step === 'energy' ? checkup.energy.title : step === 'weight' ? checkup.weight.title : feeling.word) : undefined}
-          aria-valuemin={draggable ? 0 : undefined}
-          aria-valuemax={draggable ? 100 : undefined}
-          aria-valuenow={
-            draggable ? Math.round(((step === 'weight' ? weight : energy) ?? 0.5) * 100) : undefined
-          }
-        >
-          <div className={styles.glow} aria-hidden="true" />
-
-          {step === 'energy' && (
-            <div className={styles.hTrack} aria-hidden="true">
-              <span>{checkup.energy.ends.low}</span>
-              <span>{checkup.energy.ends.high}</span>
-              {energy !== null && <i style={{ left: `${energy * 100}%` }} />}
-            </div>
-          )}
-          {step === 'weight' && (
-            <div className={styles.vTrack} aria-hidden="true">
-              <span>{checkup.weight.ends.light}</span>
-              <span>{checkup.weight.ends.heavy}</span>
-              {weight !== null && <i style={{ top: `${weight * 100}%` }} />}
-            </div>
-          )}
-          {step === 'whole' && <div className={styles.rings} aria-hidden="true" />}
-
-          <svg className={styles.blob} viewBox="-160 -160 320 320" aria-hidden="true">
-            <defs>
-              <radialGradient id="checkup-fill" cx="38%" cy="32%" r="75%">
-                <stop offset="0%" style={{ stopColor: 'color-mix(in oklab, var(--c) 45%, #FFFFFF)' }} />
-                <stop offset="55%" style={{ stopColor: 'var(--c)' }} />
-                <stop offset="100%" style={{ stopColor: 'color-mix(in oklab, var(--c) 75%, #8A3D63)' }} />
-              </radialGradient>
-            </defs>
-            <path ref={pathRef} fill="url(#checkup-fill)" />
-          </svg>
-
-          {/* What's on their mind circles the heart. */}
-          {(step === 'topics' || step === 'result') && topics.length > 0 && (
-            <div className={styles.orbit} aria-hidden="true">
-              {topics.map((t, i) => (
-                <span
-                  key={t}
-                  className={styles.moon}
-                  style={{
-                    transform: `rotate(${(360 / topics.length) * i}deg) translateX(var(--orbit)) rotate(${-(360 / topics.length) * i}deg)`,
-                    background: TOPIC_INKS[checkup.topics.options.indexOf(t as never) % TOPIC_INKS.length],
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
-        </div>
-
-        {/* ---- words and controls below the heart ---- */}
-        <div className={styles.bottom} key={`bottom-${step}`}>
-          {step === 'meet' && (
-            <button type="button" className={styles.primary} onClick={() => setStep('energy')}>
-              {checkup.meet.go}
-            </button>
-          )}
-
-          {step === 'energy' && (
-            <>
-              <p className={styles.anchor}>
-                {energy === null ? checkup.energy.hint : checkup.energy.anchors[third(energy)]}
-              </p>
-              <button
-                type="button"
-                className={styles.primary}
-                data-off={energy === null}
-                onClick={() => energy !== null && setStep('weight')}
-              >
-                {checkup.energy.go}
-              </button>
-            </>
-          )}
-
-          {step === 'weight' && (
-            <>
-              <p className={styles.anchor}>
-                {weight === null ? checkup.weight.hint : checkup.weight.anchors[third(weight)]}
-              </p>
-              <button
-                type="button"
-                className={styles.primary}
-                data-off={weight === null}
-                onClick={() => weight !== null && setStep('whole')}
-              >
-                {checkup.weight.go}
-              </button>
-            </>
-          )}
-
-          {step === 'whole' && (
-            <>
-              <p className={styles.sub}>{checkup.whole.body}</p>
-              <button type="button" className={styles.primary} onClick={() => setStep('topics')}>
-                {checkup.whole.go}
-              </button>
-            </>
-          )}
-
-          {step === 'topics' && (
-            <>
-              <div className={styles.chips}>
-                {checkup.topics.options.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    className={styles.chip}
-                    aria-pressed={topics.includes(t)}
-                    onClick={() => toggleTopic(t)}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-              <button type="button" className={styles.primary} onClick={() => setStep('result')}>
-                {topics.length ? checkup.topics.go : checkup.topics.none}
-              </button>
-            </>
-          )}
-
-          {step === 'result' && (
-            <div className={styles.result}>
-              {/* A few words for the heart they ended on. */}
-              <div className={styles.message}>
-                <p className={styles.messageNote}>{checkup.result.messageNote(feeling.word)}</p>
-                <p className={styles.messageText}>{feeling.message}</p>
-              </div>
-
-              {topics.length > 0 && (
-                <p className={styles.topicLine}>
-                  <span>{checkup.result.topicsLabel}</span> {topics.join(' · ')}
+      <div>
+        <div ref={frameRef} className={styles.frame}>
+          {/* ---- words above the heart ---- */}
+          <div className={styles.top} key={`top-${step}`}>
+            {step === 'meet' && (
+              <>
+                <p className={styles.note}>{checkup.meet.note}</p>
+                <h1 className={styles.title}>{checkup.meet.title}</h1>
+                <p className={styles.body}>{checkup.meet.body}</p>
+              </>
+            )}
+            {step === 'energy' && (
+              <>
+                <p className={styles.note}>{checkup.energy.note}</p>
+                <h2 className={styles.title}>{checkup.energy.title}</h2>
+              </>
+            )}
+            {step === 'weight' && (
+              <>
+                <p className={styles.note}>{checkup.weight.note}</p>
+                <h2 className={styles.title}>{checkup.weight.title}</h2>
+              </>
+            )}
+            {step === 'whole' && (
+              <>
+                <p className={styles.note}>{checkup.whole.note}</p>
+                <h2 className={styles.bigWord}>{feeling.word}</h2>
+                <p className={styles.body}>{feeling.line}</p>
+              </>
+            )}
+            {step === 'topics' && (
+              <>
+                <p className={styles.note}>
+                  {checkup.topics.note} &quot;{feeling.word}&quot;
                 </p>
-              )}
+                <h2 className={styles.title}>{checkup.topics.title}</h2>
+                <p className={styles.body}>{checkup.topics.body}</p>
+              </>
+            )}
+            {step === 'result' && (
+              <>
+                <p className={styles.note}>{checkup.result.note}</p>
+                <h2 className={styles.bigWord}>{feeling.word}</h2>
+                <p className={styles.body}>{checkup.result.lines[row]}</p>
+              </>
+            )}
+          </div>
 
-              {/* A heavy heart is offered somewhere to put it down, not a phone number. */}
-              {row === 2 && (
-                <Link href={ventHref} className={styles.ventInvite}>
-                  <span className={styles.ventNote}>{checkup.result.vent.note}</span>
-                  <span className={styles.ventTitle}>{checkup.result.vent.title}</span>
-                  <span className={styles.ventBody}>{checkup.result.vent.body}</span>
-                  <span className={styles.ventGo} aria-hidden="true">
-                    <svg width="22" height="22" viewBox="0 0 22 22">
-                      <path d="M7 4 L15 11 L7 18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </Link>
-              )}
+          {/* ---- the heart ---- */}
+          <div
+            ref={stageRef}
+            className={styles.stage}
+            data-drag={draggable}
+            onPointerDown={down}
+            onPointerMove={(e) => live.current.dragging && read(e)}
+            onPointerUp={up}
+            onPointerCancel={up}
+            onKeyDown={key}
+            tabIndex={draggable ? 0 : -1}
+            role={draggable ? 'slider' : undefined}
+            aria-label={draggable ? (step === 'energy' ? checkup.energy.title : step === 'weight' ? checkup.weight.title : feeling.word) : undefined}
+            aria-valuemin={draggable ? 0 : undefined}
+            aria-valuemax={draggable ? 100 : undefined}
+            aria-valuenow={draggable ? Math.round(((step === 'weight' ? weight : energy) ?? 0.5) * 100) : undefined}
+          >
+            <div className={styles.glow} aria-hidden="true" />
 
-              <p className={styles.nextLabel}>{checkup.result.next}</p>
-              {forRow[row].order
-                .filter((id) => !((row === 0 || row === 2) && id === 'vent'))
-                .map((id) => (
-                  <Link key={id} href={id === 'vent' ? ventHref : HREF[id]} className={styles.way} data-way={id}>
-                    <span className={styles.wayTitle}>{checkup.result.ways[id].title}</span>
-                    <span className={styles.wayBody}>{checkup.result.ways[id].body}</span>
-                  </Link>
-                ))}
-
-              <Link href={careHref} className={styles.careQuiet}>
-                {checkup.result.care}
-              </Link>
-
-              <div className={styles.end}>
-                <button type="button" className={styles.textBtn} onClick={restart}>
-                  {checkup.result.again}
-                </button>
-                <Link href="/" className={styles.textBtn}>
-                  {checkup.result.home}
-                </Link>
+            {step === 'energy' && (
+              <div className={styles.hTrack} aria-hidden="true">
+                <span>{checkup.energy.ends.low}</span>
+                <span>{checkup.energy.ends.high}</span>
+                {energy !== null && <i style={{ left: `${energy * 100}%` }} />}
               </div>
-            </div>
-          )}
+            )}
+            {step === 'weight' && (
+              <div className={styles.vTrack} aria-hidden="true">
+                <span>{checkup.weight.ends.light}</span>
+                <span>{checkup.weight.ends.heavy}</span>
+                {weight !== null && <i style={{ top: `${weight * 100}%` }} />}
+              </div>
+            )}
+            {step === 'whole' && <div className={styles.rings} aria-hidden="true" />}
+
+            <svg className={styles.blob} viewBox="-160 -160 320 320" aria-hidden="true">
+              <defs>
+                <radialGradient id="checkup-fill" cx="38%" cy="32%" r="75%">
+                  <stop offset="0%" style={{ stopColor: 'color-mix(in oklab, var(--c) 45%, #FFFFFF)' }} />
+                  <stop offset="55%" style={{ stopColor: 'var(--c)' }} />
+                  <stop offset="100%" style={{ stopColor: 'color-mix(in oklab, var(--c) 75%, #8A3D63)' }} />
+                </radialGradient>
+              </defs>
+              <path ref={pathRef} fill="url(#checkup-fill)" />
+            </svg>
+
+            {/* What's on their mind circles the heart. */}
+            {(step === 'topics' || step === 'result') && topics.length > 0 && (
+              <div className={styles.orbit} aria-hidden="true">
+                {topics.map((t, i) => (
+                  <span
+                    key={t}
+                    className={styles.moon}
+                    style={{
+                      transform: `rotate(${(360 / topics.length) * i}deg) translateX(var(--orbit)) rotate(${-(360 / topics.length) * i}deg)`,
+                      background: TOPIC_INKS[checkup.topics.options.indexOf(t as never) % TOPIC_INKS.length],
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ---- words and controls below the heart ---- */}
+          <div className={styles.bottom} key={`bottom-${step}`}>
+            {step === 'meet' && (
+              <button type="button" className={styles.primary} onClick={() => setStep('energy')}>
+                {checkup.meet.go}
+              </button>
+            )}
+
+            {step === 'energy' && (
+              <>
+                <p className={styles.anchor}>{energy === null ? checkup.energy.hint : checkup.energy.anchors[third(energy)]}</p>
+                <button type="button" className={styles.primary} data-off={energy === null} onClick={() => energy !== null && setStep('weight')}>
+                  {checkup.energy.go}
+                </button>
+              </>
+            )}
+
+            {step === 'weight' && (
+              <>
+                <p className={styles.anchor}>{weight === null ? checkup.weight.hint : checkup.weight.anchors[third(weight)]}</p>
+                <button type="button" className={styles.primary} data-off={weight === null} onClick={() => weight !== null && setStep('whole')}>
+                  {checkup.weight.go}
+                </button>
+              </>
+            )}
+
+            {step === 'whole' && (
+              <>
+                <p className={styles.sub}>{checkup.whole.body}</p>
+                <button type="button" className={styles.primary} onClick={() => setStep('topics')}>
+                  {checkup.whole.go}
+                </button>
+              </>
+            )}
+
+            {step === 'topics' && (
+              <>
+                <div className={styles.chips}>
+                  {checkup.topics.options.map((t) => (
+                    <button key={t} type="button" className={styles.chip} aria-pressed={topics.includes(t)} onClick={() => toggleTopic(t)}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className={styles.primary} onClick={() => setStep('result')}>
+                  {topics.length ? checkup.topics.go : checkup.topics.none}
+                </button>
+              </>
+            )}
+
+            {step === 'result' && (
+              <div className={styles.result}>
+                {/* Where the heart landed, on the map everyone moves around. */}
+                <div className={styles.map}>
+                  <div className={styles.mapText}>
+                    <p className={styles.mapTitle}>{checkup.result.map.title}</p>
+                    <p className={styles.mapBody}>{checkup.result.map.body}</p>
+                  </div>
+                  <div className={styles.mapField} aria-hidden="true">
+                    <span className={styles.mapLow}>{checkup.result.map.low}</span>
+                    <span className={styles.mapHigh}>{checkup.result.map.high}</span>
+                    <span className={styles.mapLight}>{checkup.result.map.light}</span>
+                    <span className={styles.mapHeavy}>{checkup.result.map.heavy}</span>
+                    <i style={{ left: `${(energy ?? 0.5) * 100}%`, top: `${(weight ?? 0.5) * 100}%` }} />
+                  </div>
+                </div>
+
+                {/* A few words for the heart they ended on. */}
+                <div className={styles.message}>
+                  <p className={styles.messageNote}>{checkup.result.messageNote(feeling.word)}</p>
+                  <p className={styles.messageText}>{feeling.message}</p>
+                </div>
+
+                {/* Something true and interesting about a heart like this. */}
+                <div className={styles.fact}>
+                  <p className={styles.factNote}>{checkup.result.factNote}</p>
+                  <p className={styles.factText}>{feeling.fact.text}</p>
+                  <p className={styles.factSource}>
+                    {checkup.result.factSource}: {feeling.fact.source}
+                  </p>
+                </div>
+
+                {topics.length > 0 && (
+                  <p className={styles.topicLine}>
+                    <span>{checkup.result.topicsLabel}</span> {topics.join(' · ')}
+                  </p>
+                )}
+
+                {/* A heavy heart is offered somewhere to put it down, not a phone number. */}
+                {row === 2 && (
+                  <Link href={ventHref} className={styles.ventInvite}>
+                    <span className={styles.ventNote}>{checkup.result.vent.note}</span>
+                    <span className={styles.ventTitle}>{checkup.result.vent.title}</span>
+                    <span className={styles.ventBody}>{checkup.result.vent.body}</span>
+                    <span className={styles.ventGo} aria-hidden="true">
+                      <svg width="22" height="22" viewBox="0 0 22 22">
+                        <path d="M7 4 L15 11 L7 18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  </Link>
+                )}
+
+                <p className={styles.nextLabel}>{checkup.result.next}</p>
+                {forRow[row].order
+                  .filter((id) => !((row === 0 || row === 2) && id === 'vent'))
+                  .map((id) => (
+                    <Link key={id} href={id === 'vent' ? ventHref : HREF[id]} className={styles.way} data-way={id}>
+                      <span className={styles.wayTitle}>{checkup.result.ways[id].title}</span>
+                      <span className={styles.wayBody}>{checkup.result.ways[id].body}</span>
+                    </Link>
+                  ))}
+
+                <Link href={careHref} className={styles.careQuiet}>
+                  {checkup.result.care}
+                </Link>
+
+                <div className={styles.end}>
+                  <button type="button" className={styles.textBtn} onClick={restart}>
+                    {checkup.result.again}
+                  </button>
+                  <Link href="/" className={styles.textBtn}>
+                    {checkup.result.home}
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
