@@ -112,7 +112,7 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
 
         <div className={styles.actions}>
           <SecondaryButton href="/">{common.actions.home}</SecondaryButton>
-          <TextLink href="/checkin">{common.actions.tryCheckin}</TextLink>
+          <TextLink href="/checkup">{common.actions.tryCheckin}</TextLink>
         </div>
       </Screen>
     </div>

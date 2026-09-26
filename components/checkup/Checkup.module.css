@@ -1,0 +1,502 @@
+/* The guided check-up: the same dusk sky as the heart, one persistent heart,
+   and the words around it changing step by step. */
+
+.root {
+  /* Light, like the home: warm white with the school's pink. --cream is TEXT. */
+  --night: #ffffff;
+  --cream: #2a2140;
+  --cream-soft: #5f566f;
+  --cream-faint: rgba(42, 33, 64, 0.14);
+  --paper-ink: #2a2140;
+  --paper-ink-soft: #5f566f;
+  --pink: #f0588a;
+  --pink-ink: #c8336a;
+  --pink-tint: #ffe3ec;
+  --card: #ffffff;
+  --card-shadow: 0 2px 0 rgba(200, 51, 106, 0.08), 0 18px 36px -20px rgba(200, 51, 106, 0.45);
+  --c: rgb(214 204 220);
+
+  position: relative;
+  color: var(--cream);
+}
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(75% 50% at 50% 45%, color-mix(in oklab, var(--c) 45%, transparent) 0%, transparent 70%),
+    radial-gradient(70% 40% at 90% 0%, rgba(255, 143, 181, 0.3) 0%, transparent 70%),
+    linear-gradient(#fffafb 0%, #fff1f5 100%);
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+.frame {
+  display: flex;
+  flex-direction: column;
+  max-width: 460px;
+  height: 100svh;
+  margin-inline: auto;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(22px, env(safe-area-inset-bottom));
+}
+
+.root[data-step='result'] .frame {
+  height: auto;
+  min-height: 100svh;
+}
+
+/* ---- words ---- */
+
+.top {
+  min-height: 132px;
+  animation: rise 520ms var(--ease) both;
+}
+
+.note {
+  font-family: var(--font-note);
+  font-size: 19px;
+  color: color-mix(in oklab, var(--c) 40%, var(--cream));
+}
+
+.title {
+  margin-top: 2px;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.bigWord {
+  margin-top: 0;
+  font-size: 46px;
+  font-weight: 600;
+  line-height: 1.25;
+  display: inline;
+  color: var(--cream);
+  /* A marker stroke in today's colour under the word. */
+  background: linear-gradient(transparent 58%, color-mix(in oklab, var(--c) 75%, transparent) 58%, color-mix(in oklab, var(--c) 75%, transparent) 92%, transparent 92%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.body {
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--cream-soft);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* ---- the heart ---- */
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 250px;
+  margin: 8px -8px;
+  border-radius: 28px;
+  outline-offset: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stage[data-drag='true'] {
+  touch-action: none;
+  cursor: grab;
+}
+
+.stage:focus-visible {
+  outline: 3px solid var(--cream);
+}
+
+.root[data-step='result'] .stage {
+  flex: none;
+  height: 240px;
+}
+
+.glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--c);
+  filter: blur(48px);
+  opacity: 0.45;
+}
+
+.blob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(84%, 320px);
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 16px 26px rgba(138, 61, 99, 0.28));
+}
+
+/* One axis at a time: a line with its two ends named, and where you are on it. */
+.hTrack,
+.vTrack {
+  position: absolute;
+  pointer-events: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--cream-soft);
+}
+
+.hTrack {
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
+  height: 34px;
+  border-top: 2px dashed var(--cream-faint);
+  display: flex;
+  justify-content: space-between;
+  padding-top: 6px;
+}
+
+.vTrack {
+  top: 10px;
+  bottom: 10px;
+  right: 10px;
+  width: 50px;
+  border-left: 2px dashed var(--cream-faint);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.hTrack i,
+.vTrack i {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 0 6px rgba(240, 88, 138, 0.18);
+}
+
+.hTrack i {
+  top: -10px;
+  margin-left: -9px;
+}
+
+.vTrack i {
+  left: -10px;
+  margin-top: -9px;
+}
+
+.rings {
+  position: absolute;
+  inset: 4% 2%;
+  border-radius: 50%;
+  border: 1.5px dashed var(--cream-faint);
+}
+
+/* Topics circle the heart, slowly. */
+.orbit {
+  --orbit: min(40vw, 150px);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  animation: spin 40s linear infinite;
+}
+
+.root[data-step='result'] .orbit {
+  --orbit: min(34vw, 124px);
+}
+
+.moon {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(138, 61, 99, 0.3);
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* ---- controls ---- */
+
+.bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: rise 520ms 120ms var(--ease) both;
+}
+
+.sub,
+.anchor {
+  min-height: 26px;
+  text-align: center;
+  font-size: 16px;
+  color: var(--cream-soft);
+}
+
+.anchor {
+  font-family: var(--font-note);
+  font-size: 20px;
+  color: var(--cream);
+}
+
+.primary {
+  width: 100%;
+  height: 58px;
+  border-radius: 20px 20px 20px 6px;
+  background: var(--pink-ink);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 500;
+  transition:
+    transform var(--d-tap) var(--ease),
+    opacity var(--d-color) var(--ease);
+}
+
+.primary[data-off='true'] {
+  opacity: 0.35;
+}
+
+.primary:active,
+.chip:active,
+.way:active {
+  transform: scale(0.98);
+}
+
+.skip {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+  color: var(--cream-soft);
+  text-decoration: underline;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.chip {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(42, 33, 64, 0.2);
+  background: var(--card);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--cream);
+  transition:
+    background-color var(--d-color) var(--ease),
+    color var(--d-color) var(--ease),
+    transform var(--d-tap) var(--ease);
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--pink-ink);
+  border-color: var(--pink-ink);
+  color: #ffffff;
+}
+
+/* ---- result ---- */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.topicLine {
+  font-size: 15px;
+  color: var(--cream);
+}
+
+.topicLine span {
+  color: var(--cream-soft);
+  margin-right: 6px;
+}
+
+.nextLabel {
+  margin-top: 10px;
+  font-family: var(--font-note);
+  font-size: 19px;
+  color: color-mix(in oklab, var(--c) 40%, var(--cream));
+}
+
+.way {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--paper-ink);
+  text-decoration: none;
+  box-shadow: var(--card-shadow);
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.way:hover {
+  color: var(--paper-ink);
+}
+
+.way[data-way='vent'] { rotate: 0.8deg; border-radius: 22px 22px 6px 22px; }
+.way[data-way='checkin'] { rotate: -0.6deg; border-radius: 6px 22px 22px 22px; }
+.way[data-way='self'] { rotate: -1deg; border-radius: 22px 22px 22px 6px; }
+
+.wayTitle {
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 500;
+}
+
+.wayBody {
+  margin-top: 2px;
+  font-size: 15px;
+  color: var(--paper-ink-soft);
+}
+
+/* The message for the heart they ended on. */
+.message {
+  padding: 16px 18px 18px;
+  border-radius: 22px 22px 22px 6px;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: inset 4px 0 0 var(--c), 0 18px 36px -24px rgba(200, 51, 106, 0.45);
+}
+
+.messageNote {
+  font-family: var(--font-note);
+  font-size: 17px;
+  color: color-mix(in oklab, var(--c) 40%, var(--cream));
+}
+
+.messageText {
+  margin-top: 4px;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--cream);
+}
+
+/* For a heavy heart: somewhere to put it down. A panel you can tell is touchable. */
+.ventInvite {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 70px 18px 20px;
+  border-radius: 22px 22px 6px 22px;
+  background: var(--pink-ink);
+  color: #ffffff;
+  text-decoration: none;
+  box-shadow: 0 18px 30px -18px rgba(200, 51, 106, 0.85);
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.ventInvite:hover {
+  color: #ffffff;
+}
+
+.ventInvite:active {
+  transform: scale(0.98);
+}
+
+.ventNote {
+  font-family: var(--font-note);
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.ventTitle {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.ventBody {
+  margin-top: 2px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.ventGo {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-top: -21px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* CUD Care: always one tap away, never pushed. */
+.careQuiet {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--pink-ink);
+}
+
+.careQuiet:hover {
+  color: var(--cream);
+}
+
+.end {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.textBtn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 15px;
+  color: var(--cream-soft);
+  text-decoration: underline;
+}
+
+.textBtn:hover {
+  color: var(--cream);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top,
+  .bottom,
+  .orbit {
+    animation: none;
+  }
+}

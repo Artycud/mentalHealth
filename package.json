@@ -28,7 +28,8 @@
     "db:backup": "node --env-file-if-exists=.env.local scripts/backup-db.mjs",
     "db:reset": "node -e \"for(const f of ['app.db','app.db-journal','app.db-wal','app.db-shm'])require('fs').rmSync('data/'+f,{force:true});console.log('data/app.db removed')\"",
     "check:theme": "node --no-warnings scripts/check-theme.mjs",
-    "test:moment": "node --experimental-strip-types --no-warnings scripts/test-new-flowers.mjs"
+    "test:moment": "node --experimental-strip-types --no-warnings scripts/test-new-flowers.mjs",
+    "test:vent": "node --experimental-strip-types --no-warnings scripts/test-vent.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

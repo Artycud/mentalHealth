@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
+import { HeartTheme } from '@/components/heart/HeartTheme';
 import { PhoneQuiz, type QuizQuestion } from '@/components/quiz/PhoneQuiz';
 import { common } from '@/content/th/common';
 import { questionNote, questions } from '@/content/th/questions';
@@ -24,12 +25,14 @@ export function CheckinFlow() {
         id: q.id,
         note: questionNote,
         headline: q.headline,
-        choices: q.choices.map((c) => ({ id: c.id, label: c.label, icon: c.icon })),
+        // No moon icons: full → empty read as a gauge of how bad things are.
+        choices: q.choices.map((c) => ({ id: c.id, label: c.label })),
       })),
     [],
   );
 
   return (
+    <HeartTheme>
     <PhoneQuiz
       questions={quiz}
       finishLabel={common.actions.seeResult}
@@ -47,5 +50,6 @@ export function CheckinFlow() {
         router.push('/result');
       }}
     />
+    </HeartTheme>
   );
 }

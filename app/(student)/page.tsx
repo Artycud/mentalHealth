@@ -1,66 +1,63 @@
+import type { Viewport } from 'next';
 import { connection } from 'next/server';
 
-import { HomeScene } from '@/components/illustrations/scenes';
-import { PrimaryButton } from '@/components/ui/buttons';
-import { CudCareBlock } from '@/components/ui/CudCareBlock';
-import { FestivalSection } from '@/components/ui/FestivalSection';
-import { Screen } from '@/components/ui/Screen';
-import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
+import { Landing, type Round } from '@/components/landing/Landing';
 import { festivalOrder, festivals } from '@/content/th/booth';
-import { common, home } from '@/content/th/common';
-import { getEventText } from '@/lib/events';
-import { getActiveFestival } from '@/lib/settings';
+import { placeholders } from '@/content/th/common';
+import { greetingFor } from '@/content/th/heart';
+import { getEvent } from '@/lib/events';
+import { formatDateRange } from '@/lib/thai-date';
 
-import styles from './home.module.css';
+export const viewport: Viewport = { themeColor: '#FFF8FA', colorScheme: 'light' };
 
-/** Keep it this short: the student came from a QR code, so get them in (BRIEF §8). */
+/** Today in Bangkok, as YYYY-MM-DD. */
+function bangkokToday(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
+}
+
+/** The hour in Bangkok, for the small greeting above the check-up button. */
+function bangkokHour(): number {
+  return Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
+}
+
+const dayNumber = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000;
+
+/**
+ * User Mode home: the event's front door. It asks nothing; it tells the student
+ * what the week is and when the next round is. Dates come from lib/events.ts,
+ * so an edit in the admin panel shows here on the next load.
+ */
 export default async function HomePage() {
-  // Which booth is live, and when it runs, can change at any moment from the admin
-  // panel, so this page is built per request and never prerendered. (`connection`
-  // is how Next.js says so; the database read below does not, by itself.)
   await connection();
-  const active = await getActiveFestival();
-  const theme = active === 'none' ? undefined : festivals[active];
-  const event = active === 'none' ? undefined : await getEventText(active);
+  const today = bangkokToday();
+  let nextFound = false;
 
-  // A festival with no content yet shows only the next-booth pills (§8).
-  const live =
-    active !== 'none' && theme?.ready && theme.home
-      ? {
-          id: theme.id,
-          name: theme.name,
-          blurb: theme.home.blurb,
-          date: event?.date ?? '',
-          playLabel: common.actions.playBooth,
-          href: '/booth',
-        }
-      : undefined;
-
-  // "Next" means later in the running order; with no booth live, all of them.
-  const activeIndex = active === 'none' ? -1 : festivalOrder.indexOf(active);
-  const upcoming = festivalOrder.slice(activeIndex + 1).map((id) => festivals[id].name);
+  const rounds: Round[] = [];
+  for (const id of festivalOrder) {
+    const e = await getEvent(id);
+    let state: Round['state'] = 'later';
+    let inDays: number | undefined;
+    if (e.end < today) state = 'past';
+    else if (e.start <= today) state = 'today';
+    else if (!nextFound) {
+      state = 'next';
+      inDays = dayNumber(e.start) - dayNumber(today);
+    }
+    if (state === 'today' || state === 'next') nextFound = true;
+    rounds.push({
+      id,
+      name: festivals[id].name,
+      date: formatDateRange(e.start, e.end),
+      time: e.time,
+      place: e.place,
+      state,
+      inDays,
+    });
+  }
 
   return (
-    <Screen festival={live ? theme?.id : undefined}>
-      <WordmarkHeader />
-
-      <div className={styles.scene}>
-        <HomeScene />
-      </div>
-
-      <div className={styles.intro}>
-        <h1 className={styles.headline}>{home.headline}</h1>
-        <p className={styles.lead}>{home.body}</p>
-        <div className={styles.cta}>
-          <PrimaryButton href="/checkin">{common.actions.startCheckin}</PrimaryButton>
-        </div>
-      </div>
-
-      <FestivalSection live={live} upcoming={upcoming} />
-      <CudCareBlock variant="home" />
-
-      <p className={styles.privacy}>{common.privacyNote}</p>
-      <footer className={styles.footer}>{common.footer}</footer>
-    </Screen>
+    <main data-home="heart">
+      <Landing rounds={rounds} careHref={placeholders.cudCareHref} greeting={greetingFor(bangkokHour())} />
+    </main>
   );
 }

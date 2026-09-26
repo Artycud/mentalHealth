@@ -1,0 +1,48 @@
+/* The User Mode look (home, check-up) laid over the older student screens.
+   Those screens are built from the base components (answer cards, progress row,
+   buttons, CUD Care block), which read the base tokens; redefining the tokens
+   here turns them into the light pink identity without touching the components,
+   so the booth, which uses the same components, keeps its own look. */
+
+.theme {
+  --ink: #2a2140;
+  --ink-soft: #5f566f;
+  --ink-muted: #5f566f;
+  --note-pink: #c8336a;
+  --riso-pink: #f0588a;
+  --riso-blue: #9baaff;
+  --sunflower: #ffc94d;
+  --paper: #fff8fa;
+  --paper-raised: #ffffff;
+  --paper-surface: transparent;
+  --pink-tint: #ffe3ec;
+  --track: rgba(42, 33, 64, 0.1);
+  --line: rgba(42, 33, 64, 0.12);
+  --slab-shadow: 0 2px 0 rgba(200, 51, 106, 0.08), 0 18px 36px -20px rgba(200, 51, 106, 0.45);
+  /* The primary button, as on the home and the check-up. */
+  --button: #c8336a;
+
+  position: relative;
+  color: var(--ink);
+}
+
+/* The same sky as the home and the check-up. */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(70% 40% at 85% 6%, rgba(255, 143, 181, 0.3) 0%, transparent 70%),
+    radial-gradient(60% 40% at 8% 40%, rgba(255, 201, 77, 0.14) 0%, transparent 70%),
+    linear-gradient(#fffafb 0%, #fff1f5 100%);
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}

@@ -90,6 +90,13 @@ CREATE TABLE IF NOT EXISTS auth_lock (
   updated_at   TEXT NOT NULL
 );
 
+-- VENT's global ceiling (lib/vent/cap.ts): a count per minute, nothing else. What a
+-- student writes in VENT is never stored anywhere, so it has no table at all.
+CREATE TABLE IF NOT EXISTS vent_tick (
+  minute TEXT PRIMARY KEY,
+  count  INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_session_started ON session (started_at);
 CREATE INDEX IF NOT EXISTS idx_session_booth ON session (mode, festival, completed_at);
 `;

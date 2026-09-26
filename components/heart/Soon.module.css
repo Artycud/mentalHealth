@@ -1,0 +1,69 @@
+.root {
+  --c: rgb(126 224 194);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 460px;
+  min-height: 100dvh;
+  margin-inline: auto;
+  padding: 32px 24px max(32px, env(safe-area-inset-bottom));
+  color: #2a2140;
+}
+
+.root[data-id='self'] {
+  --c: rgb(255 211 107);
+}
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(75% 45% at 50% 28%, color-mix(in oklab, var(--c) 45%, transparent) 0%, transparent 70%),
+    linear-gradient(#fffafb, #fff1f5);
+}
+
+.orb {
+  width: 180px;
+  aspect-ratio: 1;
+  margin: 48px auto 36px;
+  border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%;
+  background: radial-gradient(circle at 38% 32%, color-mix(in oklab, var(--c) 45%, #fff), var(--c) 55%, color-mix(in oklab, var(--c) 75%, #8a3d63));
+  box-shadow: 0 20px 50px -10px color-mix(in oklab, var(--c) 70%, transparent);
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.body {
+  margin-top: 10px;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.note {
+  margin-top: 12px;
+  font-size: 15px;
+  color: #5f566f;
+}
+
+.back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58px;
+  margin-top: auto;
+  border-radius: 20px 20px 6px 20px;
+  border: 2px solid #c8336a;
+  color: #c8336a;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: #c8336a;
+}

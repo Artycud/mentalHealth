@@ -1,5 +1,19 @@
 .scene {
+  display: flex;
+  justify-content: center;
   margin-top: 16px;
+}
+
+/* The heart grows in once, from a point, like the check-up's does. */
+.heart {
+  animation: grow 700ms var(--ease) 80ms backwards;
+}
+
+@keyframes grow {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
 }
 
 .headline {

@@ -246,3 +246,9 @@ svg {
     --ink-speckle: url('/textures/ink-speckle-2x.png');
   }
 }
+
+/* The light home and check-up paint their own sky; match the page behind it
+   so an overscroll never flashes paper. */
+body:has([data-home='heart']) {
+  background: #fff8fa;
+}

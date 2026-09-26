@@ -3,9 +3,10 @@
 // It only reads pages (it writes nothing to the database), so it is safe to run
 // against a database someone else is using.
 //
-//   - The private screens (check-in, result) carry the base identity only: no festival
-//     scene, icon or colours, however a booth is set up.
-//   - The festival appears where it should: on the home page and the booth screens.
+//   - Every User Mode page (home, check-up, check-in, result, and the pages still to
+//     come) carries the User Mode look and no festival scene, icon or colours,
+//     however a booth is set up. The festival belongs to the booth screens only.
+//   - The festival appears where it should: on the booth screens.
 //   - Reduced motion really is still: nothing runs on the TV, the kiosk or the phone.
 //   - The TV keeps its shape: nothing scrolls, and the water band is there.
 import fs from 'node:fs';
@@ -50,22 +51,24 @@ const running = (page) =>
   page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running').length);
 
 try {
-  // ---- the private moment is base-only
-  for (const [name, url] of [['check-in', '/checkin'], ['result', '/result']]) {
+  // ---- User Mode is Mental Health Week's own look, never a festival's
+  for (const [name, url] of [
+    ['home', '/'],
+    ['check-up', '/checkup'],
+    ['check-in', '/checkin'],
+    ['result', '/result'],
+    ['รู้จักตัวเอง', '/me'],
+    ['ระบาย', '/vent'],
+  ]) {
     const page = await open(url);
     check(`${name} carries no festival layer`, (await festivalMarks(page)) === 0);
     const gloss = await page.evaluate(() => getComputedStyle(document.body).getPropertyValue('--fest-glow').trim());
     check(`${name} has no festival colours in reach`, gloss === '', `--fest-glow was "${gloss}"`);
+    check(`${name} wears the User Mode look`, (await page.$("[data-home='heart']")) !== null);
     await page.close();
   }
 
   // ---- and the festival is where it belongs
-  {
-    const page = await open('/');
-    check('the home page has the festival section', (await festivalMarks(page)) === 1);
-    check('and its small moon mark', (await page.$('main[data-festival] section svg')) !== null);
-    await page.close();
-  }
   {
     const page = await open('/booth/display?demo=1', { w: 1920, h: 1080 });
     check('the TV is a festival screen', (await festivalMarks(page)) >= 1);

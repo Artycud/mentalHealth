@@ -1,0 +1,167 @@
+/* The home's other two panels, in the same frosted, touchable language as the
+   check-up's invitation (HeartInvite.module.css). */
+
+.panels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 18px 16px 20px;
+  border-radius: 28px 28px 8px 28px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 2px 0 rgba(200, 51, 106, 0.08),
+    0 24px 44px -26px rgba(200, 51, 106, 0.55),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.85);
+  color: #2a2140;
+  text-decoration: none;
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.panel[data-panel='vent'] {
+  border-radius: 28px 8px 28px 28px;
+}
+
+.panel:hover {
+  color: #2a2140;
+}
+
+.panel:active {
+  transform: scale(0.985);
+}
+
+.panel:focus-visible {
+  outline: 3px solid #f0588a;
+  outline-offset: 4px;
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+}
+
+.note {
+  font-family: var(--font-note);
+  font-size: 18px;
+  line-height: 1.4;
+  color: #c8336a;
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* ---- MBTI: four tiles, each turning on its own beat ---- */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  max-height: 78px;
+  border-radius: 38% 62% 55% 45% / 50% 42% 58% 50%;
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 600;
+  color: #2a2140;
+  box-shadow: 0 12px 20px -14px rgba(138, 61, 99, 0.6);
+}
+
+.tile[data-i='0'] { background: radial-gradient(circle at 35% 30%, #d8f6ec, #6fd7b8); border-radius: 50% 50% 42% 58% / 55% 45% 55% 45%; }
+.tile[data-i='1'] { background: radial-gradient(circle at 35% 30%, #fff1c9, #ffc94d); border-radius: 44% 56% 58% 42% / 48% 56% 44% 52%; }
+.tile[data-i='2'] { background: radial-gradient(circle at 35% 30%, #e6eaff, #9baaff); }
+.tile[data-i='3'] { background: radial-gradient(circle at 35% 30%, #ffe2dc, #ff9a85); border-radius: 56% 44% 50% 50% / 44% 54% 46% 56%; }
+
+.letter {
+  display: block;
+  animation: turn 420ms var(--ease) both;
+}
+
+@keyframes turn {
+  from {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+}
+
+/* ---- VENT: a note that is being written ---- */
+
+.paper {
+  display: block;
+  min-height: 76px;
+  padding: 14px 16px;
+  border-radius: 18px 18px 18px 6px;
+  background: #ffffff;
+  box-shadow: 0 10px 20px -16px rgba(138, 61, 99, 0.6);
+  font-size: 17px;
+  line-height: 1.6;
+  color: #2a2140;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: #f0588a;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---- foot ---- */
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.footText {
+  font-size: 15px;
+  color: #5f566f;
+}
+
+.go {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #c8336a;
+  color: #ffffff;
+  box-shadow: 0 10px 18px -10px rgba(200, 51, 106, 0.9);
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.panel:hover .go {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter,
+  .caret {
+    animation: none;
+  }
+}

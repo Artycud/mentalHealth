@@ -1,0 +1,440 @@
+/* The User Mode home: the same dusk sky as the check-up, with everyone's hearts
+   drifting in it, then the event told plainly underneath. */
+
+.root {
+  /* Light, like a morning: warm white with the school's pink running through it.
+     --cream is the TEXT colour here (the names stayed from the dusk draft). */
+  --night: #ffffff;
+  --cream: #2a2140;
+  --cream-soft: #5f566f;
+  --cream-faint: rgba(42, 33, 64, 0.12);
+  --paper-ink: #2a2140;
+  --pink: #f0588a;
+  --pink-ink: #c8336a;
+  --pink-tint: #ffe3ec;
+  --mint: #6fd7b8;
+  --mint-ink: #0e7f60;
+  --sun: #ffc94d;
+  --sun-ink: #9a6400;
+  --violet: #9baaff;
+  --coral: #ff9a85;
+  --coral-ink: #c4452f;
+  --card: #ffffff;
+  --card-shadow: 0 2px 0 rgba(200, 51, 106, 0.08), 0 18px 36px -20px rgba(200, 51, 106, 0.45);
+
+  position: relative;
+  color: var(--cream);
+  overflow-x: clip;
+}
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(70% 40% at 85% 8%, rgba(255, 143, 181, 0.35) 0%, transparent 70%),
+    radial-gradient(60% 40% at 10% 35%, rgba(255, 201, 77, 0.2) 0%, transparent 70%),
+    radial-gradient(80% 45% at 70% 70%, rgba(111, 215, 184, 0.16) 0%, transparent 70%),
+    linear-gradient(#fffafb 0%, #fff1f5 100%);
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+/* ---------- hero ---------- */
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  max-width: 520px;
+  margin-inline: auto;
+  padding: max(28px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
+}
+
+/* The invitation sits in the middle of what is left of the first screen, with
+   the hearts around its edges: never behind the words above it. */
+.invite {
+  position: relative;
+  margin-block: auto;
+  padding-block: 8px 12px;
+}
+
+.hearts {
+  position: absolute;
+  /* Out to the sides and below, never above: the words sit there. */
+  inset: 0 -30px -40px;
+  pointer-events: none;
+}
+
+.heroText {
+  position: relative;
+  z-index: 1;
+}
+
+.kicker {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--pink-ink);
+}
+
+.title {
+  margin-top: 2px;
+  font-size: clamp(46px, 14vw, 64px);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.lead {
+  margin-top: 12px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--cream-soft);
+}
+
+.scroll {
+  margin-top: auto;
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--cream-soft);
+}
+
+.scrollLine {
+  width: 1.5px;
+  height: 28px;
+  background: linear-gradient(var(--cream-soft), transparent);
+  animation: drip 2.4s ease-in-out infinite;
+  transform-origin: top;
+}
+
+@keyframes drip {
+  0% {
+    transform: scaleY(0);
+  }
+  60%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+/* ---------- sections ---------- */
+
+.section {
+  max-width: 520px;
+  margin-inline: auto;
+  padding: 64px 24px 0;
+  scroll-margin-top: 16px;
+}
+
+.note {
+  font-family: var(--font-note);
+  font-size: 20px;
+  color: var(--pink-ink);
+}
+
+.sectionTitle {
+  margin-top: 2px;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.sectionBody {
+  margin-top: 6px;
+  font-size: 16px;
+  color: var(--cream-soft);
+}
+
+/* ---- every round has ---- */
+
+.every {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.everyItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px 14px 12px;
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+}
+
+.art {
+  width: 104px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.everyTitle {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.everyItem[data-item='music'] .everyTitle { color: var(--mint-ink); }
+.everyItem[data-item='food'] .everyTitle { color: var(--sun-ink); }
+.everyItem[data-item='booth'] .everyTitle { color: var(--coral-ink); }
+
+.everyBody {
+  margin-top: 2px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--cream-soft);
+}
+
+.bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: eq 1.4s ease-in-out infinite;
+}
+
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.musicNote {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.steam {
+  animation: steam 2.4s ease-in-out infinite;
+}
+
+@keyframes steam {
+  0% {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+.sway {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sway 5s ease-in-out infinite;
+}
+
+.sway2 {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sway 5s ease-in-out infinite reverse;
+}
+
+@keyframes sway {
+  50% {
+    transform: rotate(6deg) translateY(-3px);
+  }
+}
+
+/* ---- the three rounds ---- */
+
+.timeline {
+  position: relative;
+  margin: 22px 0 0;
+  padding: 0 0 0 30px;
+  list-style: none;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  bottom: 12px;
+  border-left: 2px dashed var(--cream-faint);
+}
+
+.round {
+  position: relative;
+  padding-bottom: 34px;
+}
+
+.round:last-child {
+  padding-bottom: 0;
+}
+
+.node {
+  position: absolute;
+  left: -30px;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--night);
+  box-shadow: inset 0 0 0 2px var(--cream-soft);
+}
+
+.round[data-round='loykrathong'] { --round: var(--mint); --round-ink: var(--mint-ink); }
+.round[data-round='christmas'] { --round: var(--sun); --round-ink: var(--sun-ink); }
+.round[data-round='cny-valentine'] { --round: var(--coral); --round-ink: var(--coral-ink); }
+
+.round[data-state='next'] .node,
+.round[data-state='today'] .node {
+  background: var(--round);
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--round) 25%, transparent);
+}
+
+.round[data-state='past'] {
+  opacity: 0.5;
+}
+
+.roundHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roundDate {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--round-ink);
+}
+
+.tag {
+  padding: 1px 10px 2px;
+  border-radius: 999px;
+  background: var(--round);
+  color: var(--paper-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tagPast {
+  font-size: 12px;
+  color: var(--cream-soft);
+}
+
+.roundName {
+  margin-top: 2px;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.roundTheme {
+  margin-top: 2px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--cream);
+}
+
+.roundWhere {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--cream-soft);
+}
+
+/* ---- CUD Care ---- */
+
+.care {
+  max-width: 472px;
+  margin: 64px auto 0;
+  padding: 26px 24px 28px;
+  border-radius: 26px 26px 8px 26px;
+  background: var(--pink-tint);
+  box-shadow: inset 0 0 0 1.5px rgba(240, 88, 138, 0.3);
+}
+
+@media (max-width: 520px) {
+  .care {
+    margin-inline: 24px;
+  }
+}
+
+.careTitle {
+  margin-top: 10px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.careBody {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--cream-soft);
+}
+
+.careLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  margin-top: 14px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.careLink:hover {
+  color: #ffffff;
+}
+
+/* ---- footer ---- */
+
+.footer {
+  max-width: 520px;
+  margin: 48px auto 0;
+  padding: 0 24px max(36px, env(safe-area-inset-bottom));
+  font-size: 14px;
+  color: var(--cream-soft);
+}
+
+.council {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--cream-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollLine,
+  .bar,
+  .musicNote,
+  .steam,
+  .sway,
+  .sway2 {
+    animation: none;
+  }
+}
