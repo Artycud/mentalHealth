@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import styles from './HeartTheme.module.css';
+import { Sky } from './Sky';
 
 /**
  * Puts a student screen in the User Mode look: the light sky, and the base
@@ -10,8 +11,7 @@ import styles from './HeartTheme.module.css';
 export function HeartTheme({ children }: { children: ReactNode }) {
   return (
     <div className={styles.theme} data-home="heart">
-      <div className={styles.sky} aria-hidden="true" />
-      <div className={styles.grain} aria-hidden="true" />
+      <Sky />
       {children}
     </div>
   );

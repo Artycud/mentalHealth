@@ -3,22 +3,17 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
+import { BackButton } from '@/components/heart/BackButton';
 import { LiveHeart } from '@/components/heart/LiveHeart';
+import palette from '@/components/heart/palette.module.css';
 import { feelings, heart } from '@/content/th/heart';
 import { vent } from '@/content/th/vent';
-import type { Feeling, VentMessage, VentResponse } from '@/lib/vent/types';
+import { haptic } from '@/lib/haptics';
+import { moodColour, rgb } from '@/lib/heart';
+import { BACK } from '@/lib/nav';
+import type { VentMessage, VentResponse } from '@/lib/vent/types';
 
 import styles from './Vent.module.css';
-
-/** Where each feeling the AI notices sits on the check-up's heart (energy, weight). */
-const FEELING_AT: Record<Feeling, [number, number]> = {
-  light: [0.6, 0.12],
-  okay: [0.5, 0.35],
-  tired: [0.15, 0.68],
-  heavy: [0.35, 0.88],
-  tense: [0.85, 0.8],
-  mixed: [0.5, 0.55],
-};
 
 type Item =
   | { id: number; kind: 'me'; text: string }
@@ -44,7 +39,9 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
   const [items, setItems] = useState<Item[]>([]);
   const [draft, setDraft] = useState('');
   const [waiting, setWaiting] = useState(false);
-  const [mood, setMood] = useState<[number, number]>(startAt);
+  // One colour for the whole conversation, with a reason: the heart the check-up
+  // gave them, or the week's pink. It never shifts on its own.
+  const colour = feel ? rgb(moodColour(startAt[0], startAt[1])) : 'rgb(255 143 181)';
   const [ended, setEnded] = useState(false);
 
   const endRef = useRef<HTMLDivElement>(null);
@@ -94,10 +91,8 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
     }
 
     if (answer.kind === 'reply') {
-      if (answer.feeling) setMood(FEELING_AT[answer.feeling]);
       setItems((l) => [...l, { id: nextId++, kind: 'ai', heard: answer.heard, lines: answer.lines, concern: answer.concern, mock: answer.mock }]);
     } else if (answer.kind === 'care') {
-      setMood(FEELING_AT.heavy);
       setItems((l) => [...l, { id: nextId++, kind: 'care' }]);
     } else {
       setItems((l) => [...l, { id: nextId++, kind: 'problem', text: answer.kind === 'busy' ? vent.busy : vent.unavailable }]);
@@ -110,6 +105,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
     const list: Item[] = [...items.filter((i) => i.kind !== 'problem'), { id: nextId++, kind: 'me', text }];
     setItems(list);
     setDraft('');
+    haptic('done');
     void ask(list);
   };
 
@@ -127,25 +123,23 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
 
   const restart = () => {
     setEnded(false);
-    setMood(startAt);
   };
 
   if (ended) {
     return (
       <div className={styles.root}>
-        <div className={styles.sky} aria-hidden="true" />
         <div className={styles.endedWrap}>
-          <LiveHeart energy={0.5} weight={0.15} className={styles.floatAway} />
+          <LiveHeart energy={0.5} weight={0.15} colour={colour} className={styles.floatAway} />
           <h1 className={styles.title}>{vent.ended.title}</h1>
           <p className={styles.body}>{vent.ended.body}</p>
           <div className={styles.endedActions}>
-            <button type="button" className={styles.primary} onClick={restart}>
+            <button type="button" className={`${palette.primary} ${styles.primary}`} data-press onClick={restart}>
               {vent.ended.again}
             </button>
-            <Link href="/" className={styles.textBtn}>
+            <Link href="/" transitionTypes={BACK} className={styles.textBtn} data-press>
               {vent.ended.home}
             </Link>
-            <Link href={careHref} className={styles.careLink}>
+            <Link href={careHref} className={`${palette.pill} ${styles.careLink}`} data-press>
               {vent.ended.care}
             </Link>
           </div>
@@ -156,22 +150,18 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
 
   return (
     <div className={styles.root} data-talking={talking}>
-      <div className={styles.sky} aria-hidden="true" />
-      <div className={styles.grain} aria-hidden="true" />
 
       <header className={styles.bar}>
-        <Link href="/" className={styles.textBtn}>
-          {vent.back}
-        </Link>
+        <BackButton href="/" />
         {talking && (
-          <button type="button" className={styles.endBtn} onClick={finish}>
+          <button type="button" className={styles.endBtn} data-press onClick={finish}>
             {vent.end}
           </button>
         )}
       </header>
 
       <div className={styles.heartWrap}>
-        <LiveHeart energy={mood[0]} weight={mood[1]} listening={waiting} className={styles.heart} />
+        <LiveHeart energy={startAt[0]} weight={startAt[1]} colour={colour} listening={waiting} className={styles.heart} />
         {waiting && (
           <p className={styles.listening} role="status">
             {vent.listening}
@@ -199,6 +189,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
                   key={s}
                   type="button"
                   className={styles.sample}
+                  data-press
                   onClick={() => {
                     setDraft(s.replace(/…$/, ''));
                     inputRef.current?.focus();
@@ -213,9 +204,10 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
 
         {items.map((item) =>
           item.kind === 'me' ? (
-            <p key={item.id} className={styles.me}>
-              {item.text}
-            </p>
+            <figure key={item.id} className={styles.me}>
+              <figcaption className={styles.meNote}>{vent.wrote}</figcaption>
+              <blockquote className={styles.meText}>{item.text}</blockquote>
+            </figure>
           ) : item.kind === 'ai' ? (
             <div key={item.id} className={styles.ai}>
               {item.heard && (
@@ -243,14 +235,14 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
               <p className={styles.careBody}>{vent.care.body}</p>
               <p className={styles.careHonest}>{vent.care.honest}</p>
               <div className={styles.careLinks}>
-                <Link href={careHref} className={styles.carePrimary}>
+                <Link href={careHref} className={`${palette.primary} ${styles.carePrimary}`} data-press>
                   {vent.care.cudCare}
                 </Link>
-                <a href={`tel:${vent.care.hotline.tel}`} className={styles.careTel}>
+                <a href={`tel:${vent.care.hotline.tel}`} className={`${palette.card} ${styles.careTel}`} data-press>
                   <b>{vent.care.hotline.label}</b>
                   <span>{vent.care.hotline.detail}</span>
                 </a>
-                <a href={`tel:${vent.care.emergency.tel}`} className={styles.careTel}>
+                <a href={`tel:${vent.care.emergency.tel}`} className={`${palette.card} ${styles.careTel}`} data-press>
                   <b>{vent.care.emergency.label}</b>
                 </a>
               </div>
@@ -259,7 +251,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
           ) : (
             <div key={item.id} className={styles.problem}>
               <p>{item.text}</p>
-              <button type="button" className={styles.textBtn} onClick={retry}>
+              <button type="button" className={styles.textBtn} data-press onClick={retry}>
                 {vent.retry}
               </button>
             </div>
@@ -295,7 +287,13 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
             }
           }}
         />
-        <button type="submit" className={styles.send} disabled={!draft.trim() || waiting || capped} aria-label={vent.composer.send}>
+        <button
+          type="submit"
+          className={styles.send}
+          data-press
+          disabled={!draft.trim() || waiting || capped}
+          aria-label={vent.composer.send}
+        >
           <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
             <path d="M11 18 L11 5 M5 10 L11 4 L17 10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

@@ -26,23 +26,4 @@
   color: var(--ink);
 }
 
-/* The same sky as the home and the check-up. */
-.sky {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(70% 40% at 85% 6%, rgba(255, 143, 181, 0.3) 0%, transparent 70%),
-    radial-gradient(60% 40% at 8% 40%, rgba(255, 201, 77, 0.14) 0%, transparent 70%),
-    linear-gradient(#fffafb 0%, #fff1f5 100%);
-}
-
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
-  mix-blend-mode: multiply;
-  opacity: 0.5;
-}
+/* The sky (and its grain, without a blend mode) is components/heart/Sky. */

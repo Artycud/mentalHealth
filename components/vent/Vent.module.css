@@ -1,16 +1,10 @@
 /* ระบาย: the same light sky as the home, a heart that listens at the top, the
    conversation on the sky itself (the student's words on a slab, the answer
-   straight on the page), and a writing slab pinned to the bottom. */
+   straight on the page), and a writing pill pinned to the bottom.
+   Colours from components/heart/palette.module.css: the send button is the
+   one rose thing, unless the care block is showing. */
 
 .root {
-  --ink: #2a2140;
-  --soft: #5f566f;
-  --faint: rgba(42, 33, 64, 0.12);
-  --pink: #f0588a;
-  --pink-ink: #c8336a;
-  --pink-tint: #ffe3ec;
-  --card-shadow: 0 2px 0 rgba(200, 51, 106, 0.08), 0 18px 36px -20px rgba(200, 51, 106, 0.45);
-
   position: relative;
   display: flex;
   flex-direction: column;
@@ -21,25 +15,7 @@
   color: var(--ink);
 }
 
-.sky {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(70% 38% at 50% 12%, rgba(155, 170, 255, 0.22) 0%, transparent 70%),
-    radial-gradient(60% 40% at 90% 60%, rgba(255, 143, 181, 0.18) 0%, transparent 70%),
-    linear-gradient(#fffafb 0%, #fff1f5 100%);
-}
 
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
-  mix-blend-mode: multiply;
-  opacity: 0.5;
-}
 
 /* ---- top ---- */
 
@@ -54,9 +30,14 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
   font-size: 15px;
-  color: var(--soft);
+  color: var(--ink-soft);
   text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 .textBtn:hover {
@@ -64,14 +45,17 @@
 }
 
 .endBtn {
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
   border-radius: 999px;
-  border: 1.5px solid var(--faint);
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--card);
+  box-shadow: var(--edge), 0 1px 0 rgba(120, 72, 60, 0.1), 0 6px 10px -8px rgba(90, 50, 40, 0.4);
   font-size: 14px;
   font-weight: 500;
   color: var(--ink);
+  cursor: pointer;
+  transition: transform 180ms var(--ease);
 }
 
 /* The heart: large while nothing has been said, then small and pinned above
@@ -86,13 +70,17 @@
   /* Full width, so the fade behind the heart never shows an edge. */
   margin-inline: -20px;
   padding: 4px 20px 10px;
-  background: linear-gradient(#fff9fb 70%, rgba(255, 249, 251, 0));
+}
+
+/* Once there is a conversation the heart is pinned above it, so the words
+   scrolling under it fade out instead of running into it. */
+.root[data-talking='true'] .heartWrap {
+  background: linear-gradient(rgba(255, 247, 246, 0.94) 68%, rgba(255, 247, 246, 0));
 }
 
 .heart {
   width: 150px;
   height: 150px;
-  filter: drop-shadow(0 14px 24px rgba(138, 61, 99, 0.25));
   transition: width 400ms var(--ease), height 400ms var(--ease);
 }
 
@@ -108,7 +96,7 @@
   margin-top: 2px;
   font-family: var(--font-note);
   font-size: 17px;
-  color: var(--pink-ink);
+  color: var(--accent);
 }
 
 .dots {
@@ -148,8 +136,8 @@
 
 .note {
   font-family: var(--font-note);
-  font-size: 19px;
-  color: var(--pink-ink);
+  font-size: 18px;
+  color: var(--ink-soft);
 }
 
 .title {
@@ -163,56 +151,70 @@
   margin-top: 8px;
   font-size: 16px;
   line-height: 1.6;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 .privacy {
   margin-top: 10px;
   font-size: 13px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 .samplesLabel {
   margin-top: 22px;
   font-size: 14px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 .samples {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .sample {
-  padding: 8px 14px 9px;
-  border-radius: 16px 16px 16px 4px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 0 0 1.5px var(--faint);
+  padding: 10px 16px 11px;
+  border: 0;
+  border-radius: 18px 18px 18px 4px;
+  background: var(--card-blush);
+  box-shadow: var(--edge), var(--lift-1);
   font-size: 15px;
   color: var(--ink);
   text-align: left;
-  transition: transform var(--d-tap) var(--ease);
+  cursor: pointer;
+  transition:
+    transform 180ms var(--ease),
+    box-shadow 180ms var(--ease);
 }
 
 .sample:active {
   transform: scale(0.98);
+  transition-duration: var(--d-tap);
 }
 
-/* What the student wrote: their own slab of paper, on the right. */
+/* What the student wrote: kept as a quoted note on the page, not a chat bubble. */
 .me {
-  align-self: flex-end;
-  max-width: 86%;
-  padding: 12px 16px 13px;
-  border-radius: 20px 20px 6px 20px;
-  background: var(--pink-tint);
+  margin: 0;
+  padding: 2px 0 2px 16px;
+  border-left: 3px solid var(--accent-soft);
+  animation: rise 300ms var(--ease) both;
+}
+
+.meNote {
+  font-family: var(--font-note);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.meText {
+  margin: 2px 0 0;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.65;
+  color: var(--ink-soft);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  animation: rise 300ms var(--ease) both;
 }
 
 /* The answer: no bubble. It starts with what it heard, then arrives a line at a
@@ -233,7 +235,7 @@
 .heardNote {
   font-family: var(--font-note);
   font-size: 16px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 .mark {
@@ -261,19 +263,19 @@
 .concern {
   margin-top: 4px;
   font-size: 14px;
-  color: var(--soft);
+  color: var(--ink-soft);
   animation: rise 600ms var(--ease) both;
   animation-delay: calc(var(--i, 0) * 550ms);
 }
 
 .concern a {
-  color: var(--pink-ink);
+  color: var(--accent);
 }
 
 .mock {
   margin-top: 2px;
   font-size: 12px;
-  color: var(--soft);
+  color: var(--ink-soft);
   opacity: 0.8;
 }
 
@@ -282,12 +284,12 @@
   flex-direction: column;
   align-items: flex-start;
   font-size: 15px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 .capped {
   font-size: 15px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 /* ---- the care screen: reviewed words, never the AI's ---- */
@@ -295,15 +297,15 @@
 .care {
   padding: 20px;
   border-radius: 22px 6px 22px 22px;
-  background: var(--pink-tint);
-  box-shadow: inset 0 0 0 1.5px rgba(240, 88, 138, 0.3);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--accent-ring), var(--lift-1);
   animation: rise 500ms var(--ease) both;
 }
 
 .careNote {
   font-family: var(--font-note);
   font-size: 17px;
-  color: var(--pink-ink);
+  color: var(--accent);
 }
 
 .careTitle {
@@ -322,7 +324,7 @@
 .careHonest {
   margin-top: 8px;
   font-size: 13px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 .careLinks {
@@ -333,32 +335,17 @@
 }
 
 .carePrimary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 50px;
-  border-radius: 18px 18px 18px 6px;
-  background: var(--pink-ink);
-  color: #ffffff;
-  font-family: var(--font-heading);
-  font-size: 17px;
-  font-weight: 500;
-  text-decoration: none;
+  width: 100%;
+  min-height: 52px;
 }
 
-.carePrimary:hover {
-  color: #ffffff;
-}
 
 .careTel {
   display: flex;
   flex-direction: column;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: #ffffff;
-  color: var(--ink);
+  padding: 12px 16px;
+  border-radius: 16px;
   font-size: 15px;
-  text-decoration: none;
 }
 
 .careTel b {
@@ -368,13 +355,13 @@
 
 .careTel span {
   font-size: 13px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 .careStay {
   margin-top: 14px;
   font-size: 14px;
-  color: var(--soft);
+  color: var(--ink-soft);
 }
 
 /* ---- writing ---- */
@@ -387,22 +374,23 @@
   align-items: flex-end;
   gap: 10px;
   margin: 0 -8px;
-  padding: 10px 8px max(14px, env(safe-area-inset-bottom));
-  background: linear-gradient(rgba(255, 241, 245, 0), #fff1f5 28%);
+  padding: 12px 8px max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(rgba(255, 243, 244, 0), #fff3f4 30%);
 }
 
 .input {
   flex: 1;
-  min-height: 52px;
+  min-height: 54px;
   max-height: 150px;
-  padding: 14px 16px;
+  padding: 15px 18px;
   border: 0;
-  border-radius: 22px 22px 22px 6px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: var(--card-shadow), inset 0 0 0 1.5px rgba(255, 255, 255, 0.9);
+  border-radius: 24px 24px 24px 8px;
+  background: var(--card);
+  box-shadow: var(--edge), var(--lift-1), inset 0 2px 4px rgba(42, 33, 64, 0.05);
   font: 400 16px/1.5 var(--font-body);
   color: var(--ink);
   resize: none;
+  transition: box-shadow var(--d-color) var(--ease);
 }
 
 .input::placeholder {
@@ -411,30 +399,36 @@
 
 .input:focus {
   outline: none;
-  box-shadow: var(--card-shadow), inset 0 0 0 2px var(--pink);
+  box-shadow: inset 0 0 0 2px var(--accent), var(--lift-2);
 }
 
 .send {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
+  border: 0;
   border-radius: 50%;
-  background: var(--pink-ink);
+  background: linear-gradient(180deg, #d4437a 0%, var(--accent) 100%);
+  box-shadow: var(--accent-lift), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   color: #ffffff;
-  box-shadow: 0 10px 18px -10px rgba(200, 51, 106, 0.9);
+  cursor: pointer;
   transition:
-    transform var(--d-tap) var(--ease),
-    opacity var(--d-color) var(--ease);
+    transform 180ms var(--ease),
+    opacity var(--d-color) var(--ease),
+    box-shadow 180ms var(--ease);
 }
 
 .send:disabled {
   opacity: 0.35;
+  box-shadow: none;
+  cursor: default;
 }
 
 .send:active:not(:disabled) {
-  transform: scale(0.94);
+  transform: scale(0.92);
+  transition-duration: var(--d-tap);
 }
 
 /* ---- after "จบการคุย" ---- */
@@ -473,19 +467,28 @@
 
 .primary {
   width: 100%;
-  height: 58px;
-  border-radius: 20px 20px 20px 6px;
-  background: var(--pink-ink);
-  color: #ffffff;
-  font-family: var(--font-heading);
-  font-size: 19px;
-  font-weight: 500;
 }
 
 .careLink {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--pink-ink);
+  margin-top: 10px;
+}
+
+@media (hover: hover) {
+  .sample:hover,
+  .endBtn:hover {
+    transform: translateY(-2px);
+  }
+
+  .send:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+}
+
+.sample:focus-visible,
+.endBtn:focus-visible,
+.send:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
 }
 
 @keyframes rise {
@@ -497,6 +500,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .heart {
+    transition: none;
+  }
+
+  .sample,
+  .endBtn,
+  .send {
     transition: none;
   }
 

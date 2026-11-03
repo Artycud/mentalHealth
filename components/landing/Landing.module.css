@@ -1,110 +1,98 @@
-/* The User Mode home: the same dusk sky as the check-up, with everyone's hearts
-   drifting in it, then the event told plainly underneath. */
+/* The User Mode home. Colours come from components/heart/palette.module.css
+   (set on the page by components/heart/UserPage): one rose accent for the
+   check-up card and the next round, soft pastel paper for everything else. */
 
 .root {
-  /* Light, like a morning: warm white with the school's pink running through it.
-     --cream is the TEXT colour here (the names stayed from the dusk draft). */
-  --night: #ffffff;
-  --cream: #2a2140;
-  --cream-soft: #5f566f;
-  --cream-faint: rgba(42, 33, 64, 0.12);
-  --paper-ink: #2a2140;
-  --pink: #f0588a;
-  --pink-ink: #c8336a;
-  --pink-tint: #ffe3ec;
-  --mint: #6fd7b8;
-  --mint-ink: #0e7f60;
-  --sun: #ffc94d;
-  --sun-ink: #9a6400;
-  --violet: #9baaff;
-  --coral: #ff9a85;
-  --coral-ink: #c4452f;
-  --card: #ffffff;
-  --card-shadow: 0 2px 0 rgba(200, 51, 106, 0.08), 0 18px 36px -20px rgba(200, 51, 106, 0.45);
-
   position: relative;
-  color: var(--cream);
   overflow-x: clip;
 }
 
-.sky {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(70% 40% at 85% 8%, rgba(255, 143, 181, 0.35) 0%, transparent 70%),
-    radial-gradient(60% 40% at 10% 35%, rgba(255, 201, 77, 0.2) 0%, transparent 70%),
-    radial-gradient(80% 45% at 70% 70%, rgba(111, 215, 184, 0.16) 0%, transparent 70%),
-    linear-gradient(#fffafb 0%, #fff1f5 100%);
-}
-
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
-  mix-blend-mode: multiply;
-  opacity: 0.5;
-}
-
-/* ---------- hero ---------- */
-
-
-
-
+/* ---------- the event ---------- */
 
 .kicker {
   font-family: var(--font-heading);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: var(--pink-ink);
+  color: var(--ink-soft);
 }
 
 .title {
-  margin-top: 2px;
-  font-size: clamp(46px, 14vw, 64px);
+  margin-top: 4px;
+  font-size: clamp(42px, 12.5vw, 58px);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
+}
+
+/* A hand-drawn marker stroke under the words. */
+.underlined {
+  position: relative;
+  display: inline-block;
+  z-index: 0;
+}
+
+.squiggle {
+  position: absolute;
+  z-index: -1;
+  left: -2%;
+  bottom: -0.14em;
+  width: 104%;
+  height: 0.3em;
+  opacity: 0.9;
 }
 
 .lead {
-  margin-top: 12px;
-  font-size: 17px;
-  line-height: 1.65;
-  color: var(--cream-soft);
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink-soft);
 }
 
-
-
+/* ---------- the check-up, after the intro ----------
+   Pulled up by half a screen, so it scrolls into the lower half of the intro
+   while the question sits in the top half: one screen, nothing on top of
+   anything, and no empty stretch before it. Above the intro's hearts. */
+.check {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+  margin: -50svh auto 0;
+  padding: 0 20px;
+}
 
 /* ---------- sections ---------- */
 
 .section {
   max-width: 520px;
   margin-inline: auto;
-  padding: 64px 24px 0;
+  padding: 64px 20px 0;
   scroll-margin-top: 16px;
+}
+
+/* Below the fold: the phone skips laying these out and painting them (their
+   little looping drawings included) until they are about to scroll in. */
+.later {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 520px;
 }
 
 .note {
   font-family: var(--font-note);
-  font-size: 20px;
-  color: var(--pink-ink);
+  font-size: 19px;
+  color: var(--ink-soft);
 }
 
 .sectionTitle {
   margin-top: 2px;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 600;
   line-height: 1.35;
 }
 
 .sectionBody {
   margin-top: 6px;
-  font-size: 16px;
-  color: var(--cream-soft);
+  font-size: 15px;
+  color: var(--ink-soft);
 }
 
 /* ---- every round has ---- */
@@ -121,21 +109,24 @@
 .everyItem {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 14px 18px 14px 12px;
-  border-radius: 24px;
-  background: var(--card);
-  box-shadow: var(--card-shadow);
+  gap: 14px;
+  padding: 14px 18px 14px 10px;
+  border-radius: 22px;
+  box-shadow: var(--edge), var(--lift-1);
 }
 
+.everyItem[data-item='music'] { background: var(--card-mint); border-radius: 22px 22px 22px 6px; }
+.everyItem[data-item='food'] { background: var(--card-sun); border-radius: 22px 6px 22px 22px; }
+.everyItem[data-item='booth'] { background: var(--card-coral); border-radius: 6px 22px 22px 22px; }
+
 .art {
-  width: 104px;
+  width: 96px;
   flex-shrink: 0;
   overflow: visible;
 }
 
 .everyTitle {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 600;
 }
 
@@ -147,7 +138,7 @@
   margin-top: 2px;
   font-size: 15px;
   line-height: 1.6;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
 }
 
 .bar {
@@ -212,124 +203,149 @@
   }
 }
 
-/* ---- the three rounds ---- */
+/* ---- the three rounds: a row of cards, flicked with the thumb ---- */
 
-.timeline {
-  position: relative;
-  margin: 22px 0 0;
-  padding: 0 0 0 30px;
-  list-style: none;
+.carousel {
+  margin: 18px -20px 0;
 }
 
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 7px;
-  top: 12px;
-  bottom: 12px;
-  border-left: 2px dashed var(--cream-faint);
+.rounds {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 6px 20px 18px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 20px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rounds::-webkit-scrollbar {
+  display: none;
 }
 
 .round {
-  position: relative;
-  padding-bottom: 34px;
+  flex: 0 0 min(78%, 340px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 20px;
+  border-radius: 24px 24px 24px 8px;
+  background: var(--round-card);
+  box-shadow: var(--edge), var(--lift-1);
 }
 
-.round:last-child {
-  padding-bottom: 0;
-}
+.round[data-round='loykrathong'] { --round-card: var(--card-mint); --round-ink: var(--mint-ink); }
+.round[data-round='christmas'] { --round-card: var(--card-sun); --round-ink: var(--sun-ink); }
+.round[data-round='cny-valentine'] { --round-card: var(--card-coral); --round-ink: var(--coral-ink); }
 
-.node {
-  position: absolute;
-  left: -30px;
-  top: 6px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--night);
-  box-shadow: inset 0 0 0 2px var(--cream-soft);
-}
-
-.round[data-round='loykrathong'] { --round: var(--mint); --round-ink: var(--mint-ink); }
-.round[data-round='christmas'] { --round: var(--sun); --round-ink: var(--sun-ink); }
-.round[data-round='cny-valentine'] { --round: var(--coral); --round-ink: var(--coral-ink); }
-
-.round[data-state='next'] .node,
-.round[data-state='today'] .node {
-  background: var(--round);
-  box-shadow: 0 0 0 6px color-mix(in oklab, var(--round) 25%, transparent);
+/* The round that is on or next is the one lifted, and the only one with rose. */
+.round[data-state='next'],
+.round[data-state='today'] {
+  box-shadow: var(--edge), inset 0 0 0 2px var(--accent-ring), var(--lift-2);
 }
 
 .round[data-state='past'] {
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 .roundHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 6px 10px;
 }
 
 .roundDate {
   font-family: var(--font-heading);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--round-ink);
 }
 
 .tag {
-  padding: 1px 10px 2px;
+  padding: 2px 10px 3px;
   border-radius: 999px;
-  background: var(--round);
-  color: var(--paper-ink);
+  background: var(--accent);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
 }
 
 .tagPast {
   font-size: 12px;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
 }
 
 .roundName {
-  margin-top: 2px;
-  font-size: 28px;
+  margin-top: 8px;
+  font-size: 26px;
   font-weight: 600;
 }
 
 .roundTheme {
-  margin-top: 2px;
-  font-size: 16px;
+  margin-top: 4px;
+  font-size: 15px;
   line-height: 1.6;
-  color: var(--cream);
+  color: var(--ink-soft);
 }
 
-.roundWhere {
-  margin-top: 10px;
-  font-size: 13px;
-  color: var(--cream-soft);
+/* Where you are in the row: 32px targets around small dots. */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.dot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dot::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(42, 33, 64, 0.18);
+  transition:
+    width 240ms var(--ease),
+    background-color 240ms var(--ease);
+}
+
+.dot[aria-current='true']::before {
+  width: 22px;
+  background: var(--accent);
+}
+
+.dot:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -4px;
+  border-radius: 12px;
 }
 
 /* ---- CUD Care ---- */
 
 .care {
-  max-width: 472px;
-  margin: 64px auto 0;
-  padding: 26px 24px 28px;
-  border-radius: 26px 26px 8px 26px;
-  background: var(--pink-tint);
-  box-shadow: inset 0 0 0 1.5px rgba(240, 88, 138, 0.3);
-}
-
-@media (max-width: 520px) {
-  .care {
-    margin-inline: 24px;
-  }
+  padding: 22px 22px 24px;
+  border-radius: var(--r-care-home);
+  background: var(--card-mint);
+  box-shadow: var(--edge), var(--lift-1);
 }
 
 .careTitle {
   margin-top: 10px;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 500;
   line-height: 1.4;
 }
@@ -337,26 +353,11 @@
 .careBody {
   margin-top: 4px;
   font-size: 15px;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
 }
 
 .careLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: 46px;
   margin-top: 14px;
-  padding: 0 20px;
-  border-radius: 999px;
-  background: var(--pink);
-  color: #ffffff;
-  font-family: var(--font-heading);
-  font-size: 16px;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.careLink:hover {
-  color: #ffffff;
 }
 
 /* ---- footer ---- */
@@ -364,15 +365,12 @@
 .footer {
   max-width: 520px;
   margin: 48px auto 0;
-  padding: 0 24px max(36px, env(safe-area-inset-bottom));
-  font-size: 14px;
-  color: var(--cream-soft);
+  padding: 0 20px max(36px, env(safe-area-inset-bottom));
 }
 
 .council {
-  margin-top: 4px;
   font-size: 13px;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -382,5 +380,9 @@
   .sway,
   .sway2 {
     animation: none;
+  }
+
+  .rounds {
+    scroll-behavior: auto;
   }
 }

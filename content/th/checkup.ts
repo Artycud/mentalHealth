@@ -25,7 +25,7 @@ export const checkup = {
   energy: {
     note: 'คำถามที่ 1',
     title: 'ถ้าใจเป็นแบตมือถือ ตอนนี้เหลือเท่าไหร่?',
-    hint: 'ลากไปซ้ายหรือขวา',
+    hint: 'ลากตรงไหนก็ได้ ไปซ้ายหรือขวา',
     ends: { low: 'ใกล้หมด', high: 'เต็มหลอด' },
     /** Low, middle, high — said the way a phone would. */
     anchors: [
@@ -39,7 +39,7 @@ export const checkup = {
   weight: {
     note: 'คำถามที่ 2',
     title: 'เรื่องที่แบกอยู่ในหัววันนี้ หนักแค่ไหน?',
-    hint: 'ลากขึ้นหรือลง',
+    hint: 'ลากตรงไหนก็ได้ ขึ้นหรือลง',
     ends: { light: 'โล่ง', heavy: 'หนักอึ้ง' },
     /** Light, middle, heavy — as a school bag. */
     anchors: [
@@ -87,16 +87,16 @@ export const checkup = {
     factSource: 'ที่มา',
     /** Above the message chosen for their heart (content/th/heart.ts). */
     messageNote: (word: string) => `ถึงใจที่ "${word}"`,
-    /** For the heaviest row: the next step is to say it out loud, to the AI. */
+    /** For the heaviest row: the next step is to say it out loud (VENT; the body still says an AI answers). */
     vent: {
       note: 'ไม่ต้องเก็บไว้คนเดียว',
-      title: 'เล่าให้ AI ฟังก่อนไหม',
-      body: 'พิมพ์สิ่งที่ค้างอยู่ออกมา แล้วได้คำตอบจากสิ่งที่เขียนจริง ๆ ไม่เก็บข้อความ',
+      title: 'เล่าออกมาก่อนไหม',
+      body: 'พิมพ์สิ่งที่ค้างอยู่ออกมา มี AI ช่วยตอบจากสิ่งที่เขียนจริง ๆ ไม่เก็บข้อความ',
     },
     next: 'ลองต่อด้วยอันนี้ไหม',
     ways: {
       vent: { title: 'ระบายออกมา', body: 'พิมพ์สิ่งที่ค้างในใจ แล้วได้คำตอบจากสิ่งที่เขียนจริง ๆ' },
-      checkin: { title: 'เช็กให้ละเอียดขึ้น', body: '8 คำถามเรื่องเรียน การนอน เพื่อน ที่บ้าน' },
+      checkin: { title: 'อยากรู้ว่ามาจากเรื่องไหน?', body: 'ต่อจากที่เพิ่งตอบ: เช็กละเอียด 8 คำถาม เรื่องเรียน การนอน เพื่อน ที่บ้าน' },
       self: { title: 'รู้จักตัวเองอีกนิด', body: 'ตอบไม่กี่ข้อ แล้วดูว่าเป็นคนแบบไหน' },
     },
     /** A quiet way to a person, always there, never pushed. */

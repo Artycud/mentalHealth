@@ -1,0 +1,206 @@
+/* The User Mode palette, shared by the home, the check-up and VENT.
+
+   One vivid colour: --accent (the school's rose). It is used ONLY for what can
+   be acted on next (each screen's primary action, the send button), for what
+   is selected or current (a picked chip, the next round), and for focus rings.
+   Everything else sits on soft pastel paper, so the eye goes straight to the
+   one thing that is rose.
+
+   Surfaces are card stock, not frosted glass: a solid pastel sheet, a hairline
+   edge, a thin darker lip below and a soft warm contact shadow. */
+
+.palette {
+  /* text */
+  --ink: #2a2140;
+  --ink-soft: #5f566f;
+  --ink-line: rgba(42, 33, 64, 0.1);
+
+  /* the one accent */
+  --accent: #c8336a;
+  --accent-deep: #a8285a;
+  --accent-soft: #ffe3ec;
+  --accent-ring: rgba(200, 51, 106, 0.28);
+
+  /* paper */
+  --card: #fffdfb;
+  --card-blush: #fff0f2;
+  --card-lilac: #f1f0ff;
+  --card-mint: #e9f8f1;
+  --card-sun: #fff5da;
+  --card-coral: #ffeee9;
+
+  /* inks that sit on those papers (all ≥ 4.5:1 on their card) */
+  --mint: #6fd7b8;
+  --mint-ink: #0b7458;
+  --sun: #ffc94d;
+  --sun-ink: #8a5900;
+  --coral: #ff9a85;
+  --coral-ink: #b43d28;
+  --lilac: #9baaff;
+  --lilac-ink: #4a46a8;
+  --blush: #ff8fb5;
+
+  /* depth: resting, and lifted (hover / the primary card) */
+  --edge: inset 0 0 0 1px rgba(42, 33, 64, 0.06);
+  --lift-1:
+    0 1px 0 rgba(120, 72, 60, 0.1),
+    0 2px 0 rgba(120, 72, 60, 0.05),
+    0 14px 24px -18px rgba(90, 50, 40, 0.45);
+  --lift-2:
+    0 1px 0 rgba(120, 72, 60, 0.1),
+    0 4px 0 rgba(120, 72, 60, 0.05),
+    0 22px 34px -18px rgba(90, 50, 40, 0.5);
+  --accent-lift: 0 2px 0 var(--accent-deep), 0 14px 22px -12px rgba(200, 51, 106, 0.6);
+
+  color: var(--ink);
+}
+
+/* A card you can press: lifts on hover where there is a mouse, settles on press. */
+.card {
+  display: block;
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: var(--edge), var(--lift-1);
+  color: var(--ink);
+  text-decoration: none;
+  touch-action: manipulation;
+  transition:
+    transform 180ms var(--ease),
+    box-shadow 180ms var(--ease),
+    background-color 180ms var(--ease);
+}
+
+.card:hover {
+  color: var(--ink);
+}
+
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--edge), var(--lift-2);
+  }
+}
+
+.card:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: var(--d-tap);
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* The round "go" mark on a secondary card: white disc, rose chevron. */
+.go {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--accent);
+  box-shadow: 0 1px 0 rgba(120, 72, 60, 0.12), 0 8px 14px -10px rgba(90, 50, 40, 0.5);
+  transition: transform 180ms var(--ease);
+}
+
+@media (hover: hover) {
+  .card:hover .go {
+    transform: translateX(3px);
+  }
+}
+
+/* The one primary action on a screen. */
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: var(--r-primary);
+  background: linear-gradient(180deg, #d4437a 0%, var(--accent) 100%);
+  box-shadow: var(--accent-lift), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 180ms var(--ease),
+    box-shadow 180ms var(--ease),
+    opacity var(--d-color) var(--ease);
+}
+
+.primary:hover {
+  color: #ffffff;
+}
+
+@media (hover: hover) {
+  .primary:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.primary:active {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: 0 1px 0 var(--accent-deep), 0 8px 14px -10px rgba(200, 51, 106, 0.6);
+  transition-duration: var(--d-tap);
+}
+
+.primary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* A quiet pill: secondary, but clearly a button (white, rose outline). */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1.5px var(--accent-ring), 0 8px 14px -12px rgba(90, 50, 40, 0.45);
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 180ms var(--ease),
+    background-color 180ms var(--ease);
+}
+
+.pill:hover {
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .pill:hover {
+    transform: translateY(-2px);
+    background: var(--accent-soft);
+  }
+}
+
+.pill:active {
+  transform: scale(0.97);
+  transition-duration: var(--d-tap);
+}
+
+.pill:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

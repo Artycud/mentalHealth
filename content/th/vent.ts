@@ -29,6 +29,8 @@ export const vent = {
     max: 800,
   },
 
+  /** Above the student's own words, kept as a quoted note, not a chat bubble. */
+  wrote: 'เธอเขียนว่า',
   heard: 'ได้ยินว่า',
   listening: 'กำลังฟังอยู่',
   /** Shown in development only, so a template reply is never mistaken for the AI. */

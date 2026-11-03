@@ -1,43 +1,12 @@
-/* The guided check-up: the same dusk sky as the heart, one persistent heart,
-   and the words around it changing step by step. */
+/* The guided check-up: one persistent heart, and the words around it sliding
+   step by step. Colours from components/heart/palette.module.css (set by
+   components/heart/UserPage); rose is only on the primary button, a picked
+   topic, the "you are here" dot, and the heavy heart's way to VENT. */
 
 .root {
-  /* Light, like the home: warm white with the school's pink. --cream is TEXT. */
-  --night: #ffffff;
-  --cream: #2a2140;
-  --cream-soft: #5f566f;
-  --cream-faint: rgba(42, 33, 64, 0.14);
-  --paper-ink: #2a2140;
-  --paper-ink-soft: #5f566f;
-  --pink: #f0588a;
-  --pink-ink: #c8336a;
-  --pink-tint: #ffe3ec;
-  --card: #ffffff;
-  --card-shadow: 0 2px 0 rgba(200, 51, 106, 0.08), 0 18px 36px -20px rgba(200, 51, 106, 0.45);
   --c: rgb(214 204 220);
-
   position: relative;
-  color: var(--cream);
-}
-
-.sky {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(75% 50% at 50% 45%, color-mix(in oklab, var(--c) 45%, transparent) 0%, transparent 70%),
-    radial-gradient(70% 40% at 90% 0%, rgba(255, 143, 181, 0.3) 0%, transparent 70%),
-    linear-gradient(#fffafb 0%, #fff1f5 100%);
-}
-
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
-  mix-blend-mode: multiply;
-  opacity: 0.5;
+  color: var(--ink);
 }
 
 .frame {
@@ -46,7 +15,7 @@
   max-width: 460px;
   height: 100svh;
   margin-inline: auto;
-  padding: max(24px, env(safe-area-inset-top)) 24px max(22px, env(safe-area-inset-bottom));
+  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
 }
 
 .root[data-step='result'] .frame {
@@ -54,33 +23,72 @@
   min-height: 100svh;
 }
 
-/* ---- words ---- */
+/* ---- back ---- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: -6px;
+}
+
+/* ---- words: they slide, the heart stays ---- */
 
 .top {
   min-height: 132px;
-  animation: rise 520ms var(--ease) both;
+  margin-top: 6px;
+  touch-action: pan-y;
+  animation: in-right 420ms var(--ease) both;
+}
+
+.bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  touch-action: pan-y;
+  animation: in-right 420ms 60ms var(--ease) both;
+}
+
+.root[data-dir='back'] .top,
+.root[data-dir='back'] .bottom {
+  animation-name: in-left;
+}
+
+@keyframes in-right {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+}
+
+@keyframes in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-36px);
+  }
 }
 
 .note {
   font-family: var(--font-note);
-  font-size: 19px;
-  color: color-mix(in oklab, var(--c) 40%, var(--cream));
+  font-size: 18px;
+  color: var(--ink-soft);
 }
 
 .title {
   margin-top: 2px;
-  font-size: 30px;
+  font-size: 29px;
   font-weight: 600;
   line-height: 1.35;
 }
 
+/* The result word: the biggest thing on the screen. */
 .bigWord {
   margin-top: 0;
-  font-size: 46px;
+  font-size: 50px;
   font-weight: 600;
   line-height: 1.25;
   display: inline;
-  color: var(--cream);
+  color: var(--ink);
   /* A marker stroke in today's colour under the word. */
   background: linear-gradient(transparent 58%, color-mix(in oklab, var(--c) 75%, transparent) 58%, color-mix(in oklab, var(--c) 75%, transparent) 92%, transparent 92%);
   box-decoration-break: clone;
@@ -91,14 +99,7 @@
   margin-top: 8px;
   font-size: 16px;
   line-height: 1.6;
-  color: var(--cream-soft);
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
+  color: var(--ink-soft);
 }
 
 /* ---- the heart ---- */
@@ -119,8 +120,12 @@
   cursor: grab;
 }
 
+.stage[data-drag='true']:active {
+  cursor: grabbing;
+}
+
 .stage:focus-visible {
-  outline: 3px solid var(--cream);
+  outline: 3px solid var(--accent);
 }
 
 .root[data-step='result'] .stage {
@@ -128,28 +133,50 @@
   height: 240px;
 }
 
+/* A wash of the heart's colour behind it: a gradient, not a blur filter, so
+   it costs nothing while the colour changes. */
 .glow {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 58%;
+  width: 92%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: var(--c);
-  filter: blur(48px);
-  opacity: 0.45;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--c) 55%, transparent) 0%, color-mix(in oklab, var(--c) 18%, transparent) 55%, transparent 100%);
+  pointer-events: none;
 }
 
-.blob {
+/* The glass bowl the heart sits in (painted: bright rim, soft inner shade). */
+.glass {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(72%, 270px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.25) 70%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -18px 30px -18px rgba(138, 61, 99, 0.2);
+  pointer-events: none;
+}
+
+.blobBox {
   position: absolute;
   left: 50%;
   top: 50%;
   width: min(84%, 320px);
+  aspect-ratio: 1;
   transform: translate(-50%, -50%);
-  overflow: visible;
   pointer-events: none;
-  filter: drop-shadow(0 16px 26px rgba(138, 61, 99, 0.28));
+}
+
+.blob {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* One axis at a time: a line with its two ends named, and where you are on it. */
@@ -159,7 +186,7 @@
   pointer-events: none;
   font-size: 14px;
   font-weight: 500;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
 }
 
 .hTrack {
@@ -167,7 +194,7 @@
   right: 10px;
   bottom: 8px;
   height: 34px;
-  border-top: 2px dashed var(--cream-faint);
+  border-top: 2px dashed var(--ink-line);
   display: flex;
   justify-content: space-between;
   padding-top: 6px;
@@ -178,38 +205,54 @@
   bottom: 10px;
   right: 10px;
   width: 50px;
-  border-left: 2px dashed var(--cream-faint);
+  border-left: 2px dashed var(--ink-line);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-end;
 }
 
+/* The handle: a little jelly bead in the accent, the thing to move. */
 .hTrack i,
 .vTrack i {
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: var(--pink);
-  box-shadow: 0 0 0 6px rgba(240, 88, 138, 0.18);
+  background: radial-gradient(circle at 35% 30%, #ef7aa3, var(--accent) 70%);
+  box-shadow:
+    0 0 0 5px var(--accent-soft),
+    0 6px 10px -4px rgba(168, 40, 90, 0.6);
+}
+
+/* The handle is there from the start, faint, so it is clear what to move. */
+.hTrack i[data-ghost='true'],
+.vTrack i[data-ghost='true'] {
+  opacity: 0.5;
+  animation: nudge 1.8s ease-in-out infinite;
+}
+
+@keyframes nudge {
+  50% {
+    transform: scale(1.18);
+  }
 }
 
 .hTrack i {
-  top: -10px;
-  margin-left: -9px;
+  top: -12px;
+  margin-left: -11px;
 }
 
 .vTrack i {
-  left: -10px;
-  margin-top: -9px;
+  left: -12px;
+  margin-top: -11px;
 }
 
 .rings {
   position: absolute;
   inset: 4% 2%;
   border-radius: 50%;
-  border: 1.5px dashed var(--cream-faint);
+  border: 1.5px dashed var(--ink-line);
 }
 
 /* Topics circle the heart, slowly. */
@@ -233,7 +276,7 @@
   height: 18px;
   margin: -9px 0 0 -9px;
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(138, 61, 99, 0.3);
+  box-shadow: inset 0 -3px 4px rgba(42, 33, 64, 0.18), 0 3px 6px rgba(138, 61, 99, 0.3);
 }
 
 @keyframes spin {
@@ -244,58 +287,55 @@
 
 /* ---- controls ---- */
 
-.bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  animation: rise 520ms 120ms var(--ease) both;
-}
-
 .sub,
 .anchor {
   min-height: 26px;
   text-align: center;
-  font-size: 16px;
-  color: var(--cream-soft);
+  font-size: 15px;
+  color: var(--ink-soft);
 }
 
 .anchor {
   font-family: var(--font-note);
   font-size: 20px;
-  color: var(--cream);
+  color: var(--ink);
+}
+
+/* The battery or the bag, beside the words for where the answer is. */
+.meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.gauge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.gauge b {
+  min-width: 3.2ch;
+  text-align: left;
+}
+
+.gauge[data-empty='true'] {
+  opacity: 0.45;
 }
 
 .primary {
   width: 100%;
-  height: 58px;
-  border-radius: 20px 20px 20px 6px;
-  background: var(--pink-ink);
-  color: #ffffff;
-  font-family: var(--font-heading);
-  font-size: 19px;
-  font-weight: 500;
-  transition:
-    transform var(--d-tap) var(--ease),
-    opacity var(--d-color) var(--ease);
 }
 
 .primary[data-off='true'] {
-  opacity: 0.35;
-}
-
-.primary:active,
-.chip:active,
-.way:active {
-  transform: scale(0.98);
-}
-
-.skip {
-  align-self: center;
-  min-height: 44px;
-  padding: 0 16px;
-  font-size: 15px;
-  color: var(--cream-soft);
-  text-decoration: underline;
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: default;
 }
 
 .chips {
@@ -307,23 +347,42 @@
 }
 
 .chip {
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 16px;
+  border: 0;
   border-radius: 999px;
-  border: 1.5px solid rgba(42, 33, 64, 0.2);
   background: var(--card);
+  box-shadow: var(--edge), 0 1px 0 rgba(120, 72, 60, 0.1), 0 6px 10px -8px rgba(90, 50, 40, 0.4);
   font-size: 15px;
   font-weight: 500;
-  color: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
   transition:
     background-color var(--d-color) var(--ease),
     color var(--d-color) var(--ease),
-    transform var(--d-tap) var(--ease);
+    transform 180ms var(--ease);
+}
+
+@media (hover: hover) {
+  .chip:hover {
+    transform: translateY(-2px);
+    background: var(--card-blush);
+  }
+}
+
+.chip:active {
+  transform: scale(0.96);
+  transition-duration: var(--d-tap);
+}
+
+.chip:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .chip[aria-pressed='true'] {
-  background: var(--pink-ink);
-  border-color: var(--pink-ink);
+  background: var(--accent);
+  box-shadow: 0 2px 0 var(--accent-deep), 0 8px 12px -8px rgba(200, 51, 106, 0.6);
   color: #ffffff;
 }
 
@@ -335,64 +394,78 @@
   gap: 14px;
 }
 
-.topicLine {
-  font-size: 15px;
-  color: var(--cream);
-}
-
-.topicLine span {
-  color: var(--cream-soft);
-  margin-right: 6px;
-}
-
 .nextLabel {
-  margin-top: 10px;
+  margin-top: 12px;
   font-family: var(--font-note);
   font-size: 19px;
-  color: color-mix(in oklab, var(--c) 40%, var(--cream));
+  color: var(--ink-soft);
 }
 
+/* Where to go next: whole cards, the arrow only says so. */
 .way {
   display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 16px 18px 20px;
+}
+
+.way[data-way='vent'] { background: var(--card-blush); rotate: 0.6deg; border-radius: 22px 22px 6px 22px; }
+.way[data-way='checkin'] { background: var(--card-mint); rotate: -0.5deg; border-radius: 6px 22px 22px 22px; }
+.way[data-way='self'] { background: var(--card-lilac); rotate: -0.8deg; border-radius: 22px 22px 22px 6px; }
+
+.wayWords {
+  display: flex;
+  flex: 1;
   flex-direction: column;
-  padding: 18px 20px;
-  border-radius: 20px;
-  background: var(--card);
-  color: var(--paper-ink);
-  text-decoration: none;
-  box-shadow: var(--card-shadow);
-  transition: transform var(--d-tap) var(--ease);
 }
-
-.way:hover {
-  color: var(--paper-ink);
-}
-
-.way[data-way='vent'] { rotate: 0.8deg; border-radius: 22px 22px 6px 22px; }
-.way[data-way='checkin'] { rotate: -0.6deg; border-radius: 6px 22px 22px 22px; }
-.way[data-way='self'] { rotate: -1deg; border-radius: 22px 22px 22px 6px; }
 
 .wayTitle {
   font-family: var(--font-heading);
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 500;
 }
 
 .wayBody {
   margin-top: 2px;
-  font-size: 15px;
-  color: var(--paper-ink-soft);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* The dots around the heart, named in their own colours. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  margin: -4px 0 4px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
 }
 
 /* The mood map: where the heart landed, on the same four colours as the heart. */
 .map {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
   padding: 16px 16px 16px 18px;
   border-radius: 22px 22px 6px 22px;
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 18px 36px -24px rgba(200, 51, 106, 0.45);
+  background: var(--card);
+  box-shadow: var(--edge), var(--lift-1);
 }
 
 .mapText {
@@ -401,7 +474,7 @@
 
 .mapTitle {
   font-family: var(--font-heading);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 500;
   line-height: 1.35;
 }
@@ -410,21 +483,40 @@
   margin-top: 2px;
   font-size: 14px;
   line-height: 1.55;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
 }
 
+.mapFrame {
+  display: grid;
+  grid-template-columns: auto minmax(0, 170px) auto;
+  grid-template-areas:
+    '. light .'
+    'low field high'
+    '. heavy .';
+  align-items: center;
+  justify-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.mapLight { grid-area: light; }
+.mapLow { grid-area: low; }
+.mapHigh { grid-area: high; }
+.mapHeavy { grid-area: heavy; }
+
 .mapField {
+  grid-area: field;
   position: relative;
-  flex-shrink: 0;
-  width: 132px;
+  width: 100%;
   aspect-ratio: 1;
   border-radius: 20px;
   overflow: hidden;
   /* Light across the top (mint → sun), heavy across the bottom (violet → coral). */
   background: linear-gradient(to right, rgb(126 224 194), rgb(255 211 107));
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(42, 33, 64, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(42, 33, 64, 0.06);
 }
 
 .mapField::before {
@@ -436,17 +528,6 @@
   mask-image: linear-gradient(transparent, #000);
 }
 
-.mapField span {
-  position: absolute;
-  z-index: 1;
-  line-height: 1;
-}
-
-.mapLow { left: 7px; top: 50%; translate: 0 -50%; }
-.mapHigh { right: 7px; top: 50%; translate: 0 -50%; }
-.mapLight { top: 7px; left: 50%; translate: -50% 0; }
-.mapHeavy { bottom: 7px; left: 50%; translate: -50% 0; }
-
 .mapField i {
   position: absolute;
   z-index: 2;
@@ -455,90 +536,105 @@
   translate: -50% -50%;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 0 0 3px var(--pink-ink), 0 4px 10px rgba(42, 33, 64, 0.35);
+  box-shadow: 0 0 0 3px var(--accent), 0 4px 10px rgba(42, 33, 64, 0.35);
+}
+
+/* "You are here": a ring that pulses out, on its own layer. */
+.mapField i::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
   animation: here 2s ease-out infinite;
 }
 
 @keyframes here {
-  0% { box-shadow: 0 0 0 3px var(--pink-ink), 0 0 0 3px rgba(200, 51, 106, 0.5); }
-  100% { box-shadow: 0 0 0 3px var(--pink-ink), 0 0 0 14px rgba(200, 51, 106, 0); }
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
 }
 
 /* Something true and interesting about a heart like this. */
 .fact {
   padding: 16px 18px 14px;
   border-radius: 6px 22px 22px 22px;
-  background: #ffffff;
-  box-shadow: var(--card-shadow);
+  background: var(--card-sun);
+  box-shadow: var(--edge), var(--lift-1);
 }
 
 .factNote {
   font-family: var(--font-note);
   font-size: 18px;
-  color: var(--pink-ink);
+  color: var(--sun-ink);
 }
 
 .factText {
   margin-top: 2px;
   font-size: 16px;
   line-height: 1.65;
-  color: var(--cream);
+  color: var(--ink);
 }
 
 .factSource {
   margin-top: 8px;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
 }
 
-/* The message for the heart they ended on. */
+/* The message for the heart they ended on: a note pinned in today's colour. */
 .message {
   padding: 16px 18px 18px;
   border-radius: 22px 22px 22px 6px;
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: inset 4px 0 0 var(--c), 0 18px 36px -24px rgba(200, 51, 106, 0.45);
+  background: var(--card);
+  box-shadow: inset 5px 0 0 var(--c), var(--edge), var(--lift-1);
 }
 
 .messageNote {
   font-family: var(--font-note);
   font-size: 17px;
-  color: color-mix(in oklab, var(--c) 40%, var(--cream));
+  color: var(--ink-soft);
 }
 
 .messageText {
   margin-top: 4px;
   font-size: 18px;
   line-height: 1.6;
-  color: var(--cream);
+  color: var(--ink);
 }
 
-/* For a heavy heart: somewhere to put it down. A panel you can tell is touchable. */
+/* For a heavy heart: somewhere to put it down. The one rose card here. */
 .ventInvite {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 18px 70px 18px 20px;
+  padding: 18px 72px 18px 20px;
   border-radius: 22px 22px 6px 22px;
-  background: var(--pink-ink);
+  background: linear-gradient(180deg, #d4437a 0%, var(--accent) 100%);
+  box-shadow: var(--accent-lift);
   color: #ffffff;
-  text-decoration: none;
-  box-shadow: 0 18px 30px -18px rgba(200, 51, 106, 0.85);
-  transition: transform var(--d-tap) var(--ease);
 }
 
 .ventInvite:hover {
   color: #ffffff;
 }
 
-.ventInvite:active {
-  transform: scale(0.98);
+@media (hover: hover) {
+  .ventInvite:hover {
+    box-shadow: var(--accent-lift);
+  }
 }
 
 .ventNote {
   font-family: var(--font-note);
   font-size: 16px;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .ventTitle {
@@ -551,35 +647,20 @@
 .ventBody {
   margin-top: 2px;
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .ventGo {
   position: absolute;
   right: 16px;
   top: 50%;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  margin-top: -21px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  margin-top: -22px;
 }
 
 /* CUD Care: always one tap away, never pushed. */
 .careQuiet {
   align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
   margin-top: 4px;
-  font-size: 15px;
-  color: var(--pink-ink);
-}
-
-.careQuiet:hover {
-  color: var(--cream);
 }
 
 .end {
@@ -592,17 +673,24 @@
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  padding: 0 4px;
+  border: 0;
+  background: none;
   font-size: 15px;
-  color: var(--cream-soft);
+  color: var(--ink-soft);
   text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 .textBtn:hover {
-  color: var(--cream);
+  color: var(--ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mapField i,
+  .hTrack i,
+  .vTrack i,
+  .mapField i::after,
   .top,
   .bottom,
   .orbit {

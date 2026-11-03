@@ -33,8 +33,8 @@ export const landing = {
     check: {
       ask: 'อยากรู้ไหม ใจตอนนี้เป็นยังไง',
       title: 'เช็กใจตอนนี้',
-      tap: 'แตะที่ใจ',
       sub: 'ตอบ 2 คำถาม แล้วรู้ว่าวันนี้ใจเธอสีอะไร',
+      go: 'เริ่มเลย',
     },
   },
 
@@ -54,9 +54,14 @@ export const landing = {
     next: 'รอบถัดไป',
     inDays: (n: number) => (n === 1 ? 'พรุ่งนี้แล้ว' : `อีก ${n} วัน`),
     past: 'ผ่านไปแล้ว',
+    /** For screen readers: the row of round cards. */
+    label: 'กำหนดการ 3 รอบ',
+    /** Said once, for all three rounds. */
+    where: (place: string, time: string) => `ทุกรอบ ${place} · ${time}`,
   },
 
-  /** The two panels under the check-up. */
+  /** Under the check-up: VENT, then a person (CUD Care), then MBTI. */
+  onward: 'อยากไปต่อ',
   more: {
     mbti: {
       note: 'อยากรู้ไหม',
@@ -65,8 +70,9 @@ export const landing = {
     },
     vent: {
       note: 'มีอะไรค้างอยู่ในใจไหม',
-      title: 'ระบายให้ AI ฟัง',
-      foot: 'ตอบจากที่เขียนจริง ๆ · ไม่เก็บข้อความ',
+      title: 'อยากระบาย พิมพ์มาเลย',
+      /** Still says plainly that an AI answers, just quietly. */
+      foot: 'มี AI ช่วยตอบ · ไม่เก็บข้อความ',
     },
   },
 
@@ -77,7 +83,6 @@ export const landing = {
   },
 
   footer: {
-    where: 'โถงโรงอาหาร · พักเที่ยง',
     council: 'โปรเจกต์ของสภานักเรียน CUD',
   },
 } as const;

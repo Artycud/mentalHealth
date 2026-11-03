@@ -2,12 +2,16 @@
 
 import { useEffect, useRef } from 'react';
 
+import { prefersReducedMotion, subscribe } from '@/lib/frame';
 import { blobPath, moodColour, rgb } from '@/lib/heart';
+
+import { HeartGlyph } from './HeartGlyph';
+import { useInView } from './useInView';
 
 /**
  * The check-up's heart, for a screen that only shows one: a given energy and
- * weight, its colour from the same mood map, breathing slowly. Stops under
- * reduced motion.
+ * weight, its colour from the same mood map, breathing slowly. Breathes on the
+ * shared frame loop only while on screen; still under reduced motion.
  */
 export function StillHeart({
   energy,
@@ -20,39 +24,28 @@ export function StillHeart({
   size?: number;
   className?: string;
 }) {
+  const boxRef = useRef<HTMLSpanElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const colour = rgb(moodColour(energy, weight));
+  const inView = useInView(boxRef, '0px');
 
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!inView || prefersReducedMotion()) return;
     const t0 = performance.now();
-    let raf = 0;
-    const frame = (now: number) => {
-      const t = reduce ? 0 : (now - t0) / 1000;
-      pathRef.current?.setAttribute('d', blobPath({ energy, weight, t, scale: 1, pullAngle: 0, pull: 0 }));
-      if (!reduce) raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, [energy, weight]);
+    return subscribe((now, info) => {
+      if (info.skip) return;
+      pathRef.current?.setAttribute('d', blobPath({ energy, weight, t: (now - t0) / 1000, scale: 1, pullAngle: 0, pull: 0 }));
+    });
+  }, [energy, weight, inView]);
 
   return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="-160 -160 320 320"
-      aria-hidden="true"
-      style={{ overflow: 'visible', display: 'block', filter: 'drop-shadow(0 16px 26px rgba(138, 61, 99, 0.28))' }}
-    >
-      <defs>
-        <radialGradient id="still-heart" cx="38%" cy="32%" r="75%">
-          <stop offset="0%" style={{ stopColor: `color-mix(in oklab, ${colour} 45%, #FFFFFF)` }} />
-          <stop offset="55%" style={{ stopColor: colour }} />
-          <stop offset="100%" style={{ stopColor: `color-mix(in oklab, ${colour} 75%, #8A3D63)` }} />
-        </radialGradient>
-      </defs>
-      <path ref={pathRef} fill="url(#still-heart)" d={blobPath({ energy, weight, t: 0, scale: 1, pullAngle: 0, pull: 0 })} />
-    </svg>
+    <span ref={boxRef} className={className} style={{ display: 'block', width: size, height: size }}>
+      <HeartGlyph
+        pathRef={pathRef}
+        colour={colour}
+        d={blobPath({ energy, weight, t: 0, scale: 1, pullAngle: 0, pull: 0 })}
+        style={{ display: 'block', width: '100%', height: '100%' }}
+      />
+    </span>
   );
 }

@@ -1,6 +1,7 @@
 import type { Viewport } from 'next';
 import { connection } from 'next/server';
 
+import { UserPage } from '@/components/heart/UserPage';
 import { Landing, type Round } from '@/components/landing/Landing';
 import { festivalOrder, festivals } from '@/content/th/booth';
 import { placeholders } from '@/content/th/common';
@@ -56,8 +57,8 @@ export default async function HomePage() {
   }
 
   return (
-    <main data-home="heart">
+    <UserPage>
       <Landing rounds={rounds} careHref={placeholders.cudCareHref} greeting={greetingFor(bangkokHour())} />
-    </main>
+    </UserPage>
   );
 }
