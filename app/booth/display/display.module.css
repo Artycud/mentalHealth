@@ -10,7 +10,6 @@
 
 .stage {
   position: relative;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
   width: 100vw;
@@ -18,35 +17,10 @@
   height: 100dvh;
   /* The bottom 31vh belongs to the river band, which is laid over it. */
   padding: 3.2vh 3.5vw 31vh;
-  --ink: #2a2140;
-  --ink-soft: #5f566f;
-  --ink-muted: #5f566f;
-  --note-pink: #c8336a;
-  --riso-pink: #f0588a;
-  --paper-raised: #ffffff;
-  --pink-tint: #ffe3ec;
-  --sun-tint: #fff1cc;
-  --track: #f1e4eb;
-  --line: rgba(200, 51, 106, 0.08);
-  background:
-    radial-gradient(70% 40% at 85% 8%, rgba(255, 143, 181, 0.35) 0%, transparent 70%),
-    radial-gradient(60% 40% at 10% 35%, rgba(255, 201, 77, 0.2) 0%, transparent 70%),
-    radial-gradient(80% 45% at 70% 70%, rgba(111, 215, 184, 0.16) 0%, transparent 70%),
-    linear-gradient(#fffafb 0%, #fff1f5 100%);
+  background: var(--paper-surface);
   color: var(--ink);
   overflow: hidden;
   overflow: clip;
-}
-
-.stage::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
-  mix-blend-mode: multiply;
-  opacity: 0.5;
-  pointer-events: none;
 }
 
 .head {
@@ -89,11 +63,10 @@
   gap: 0.7vh;
   margin-left: 1.2vw;
   padding: 0.3vh 1vw;
-  border: 2px solid var(--note-pink);
+  border: 2px solid var(--ink);
   border-radius: 999px;
   font-size: 2vh;
   font-weight: 600;
-  color: var(--note-pink);
 }
 
 .liveDot {
