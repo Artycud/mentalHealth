@@ -6,16 +6,16 @@ import { createClient, type Client } from '@libsql/client';
 /**
  * The database, and the one place its address is decided.
  *
- * `DATABASE_URL` picks where the data lives, and nothing else in the codebase
- * knows or cares:
+ * `DATABASE_URL` (or Turso's `TURSO_DATABASE_URL`) picks where the data lives,
+ * and nothing else in the codebase knows or cares:
  *   file:./data/app.db        a single file — a school server, or this laptop
  *   libsql://name.turso.io    a hosted database — Vercel, which has no disk of
  *                             its own that survives from one request to the next
- * (with `DATABASE_AUTH_TOKEN` for the hosted one). The same code, the same
- * schema and the same queries run against both. That is the reason for libSQL
+ * (with `DATABASE_AUTH_TOKEN` or `TURSO_AUTH_TOKEN` for the hosted one). The
+ * same code, schema and queries run against both. That is the reason for libSQL
  * rather than a native SQLite driver, which cannot work on Vercel at all, and it
- * is what lets the project move to the school's own server later by changing one
- * line of configuration and copying one file.
+ * is what lets the project move to the school's own server later by changing
+ * one line of configuration and copying one file.
  *
  * Imports are relative with `.ts` so scripts/test-db.mjs can load this in plain
  * Node.
@@ -25,12 +25,12 @@ let client: Client | undefined;
 let ready: Promise<Client> | undefined;
 
 function resolveUrl(): string {
-  const configured = process.env.DATABASE_URL;
+  const configured = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL;
   if (configured) return configured;
   // On Vercel there is no persistent disk, so a file: default would look like it
   // works and then quietly lose every answer. Refuse instead.
   if (process.env.VERCEL) {
-    throw new Error('DATABASE_URL is not set. On Vercel it must point at a hosted libSQL database.');
+    throw new Error('DATABASE_URL or TURSO_DATABASE_URL is not set. On Vercel it must point at a hosted libSQL database.');
   }
   return 'file:./data/app.db';
 }
@@ -114,7 +114,8 @@ export function db(): Promise<Client> {
       if (url.startsWith('file:') && !url.includes(':memory:')) {
         fs.mkdirSync(path.dirname(path.resolve(url.slice('file:'.length))), { recursive: true });
       }
-      const c = createClient({ url, authToken: process.env.DATABASE_AUTH_TOKEN });
+      const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
+      const c = createClient({ url, authToken });
       await c.executeMultiple(SCHEMA);
       // The festival that is live before anyone has touched the admin panel (§3).
       await c.execute({
@@ -133,7 +134,7 @@ export function db(): Promise<Client> {
 
 /** The database file on this machine, or null for a hosted database. */
 export function databaseFile(): string | null {
-  const url = process.env.DATABASE_URL || (process.env.VERCEL ? '' : 'file:./data/app.db');
+  const url = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || (process.env.VERCEL ? '' : 'file:./data/app.db');
   return url.startsWith('file:') && !url.includes(':memory:') ? path.resolve(url.slice('file:'.length)) : null;
 }
 

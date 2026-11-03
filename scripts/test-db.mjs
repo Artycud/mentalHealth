@@ -7,7 +7,8 @@
 import fs from 'node:fs';
 
 const FILE = 'data/test-db.db';
-process.env.DATABASE_URL = `file:./${FILE}`;
+delete process.env.DATABASE_URL;
+process.env.TURSO_DATABASE_URL = `file:./${FILE}`;
 for (const suffix of ['', '-journal', '-wal', '-shm']) fs.rmSync(FILE + suffix, { force: true });
 
 const { db, closeDb } = await import('../lib/db.ts');

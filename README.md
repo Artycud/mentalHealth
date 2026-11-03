@@ -84,10 +84,10 @@ made-up figures can never appear on the real wall).
 
 Everything is set with environment variables; see [`.env.example`](.env.example).
 
-- `DATABASE_URL`: where the data lives. `file:./data/app.db` is a single file (a
-  school server, or your laptop). `libsql://…` is a hosted database (Vercel).
-  The same code runs against either.
-- `DATABASE_AUTH_TOKEN`: only for a hosted database.
+- `DATABASE_URL` (or Turso's `TURSO_DATABASE_URL`): where the data lives.
+  `file:./data/app.db` is a single file (a school server, or your laptop);
+  `libsql://…` is a hosted database (Vercel). The same code runs against either.
+- `DATABASE_AUTH_TOKEN` (or Turso's `TURSO_AUTH_TOKEN`): only for a hosted database.
 - `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET`: **optional.** Normally the
   admin is set up in the browser and none of these are needed. A server that prefers to
   set the admin itself can: `npm run admin:setup -- --write` asks for a password and
@@ -111,9 +111,10 @@ The site is a Node app with a database, so it needs a host that can run Node.
    (there is a free tier), in a region near Thailand.
 2. Import this repository into Vercel.
 3. Set `DATABASE_URL` and `DATABASE_AUTH_TOKEN` in the project's environment
-   variables. (The admin is set up in the browser on first visit; on Vercel the setup code
-   is in the function's log.) On Vercel, leaving `DATABASE_URL` unset is an error on purpose: a
-   file would appear to work and then quietly lose every answer.
+   variables (or use Turso's `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`). The
+   admin is set up in the browser on first visit; on Vercel the setup code is in
+   the function's log. On Vercel, leaving both URL variables unset is an error
+   on purpose: a file would appear to work and then quietly lose every answer.
 4. Choose a region near Thailand (Singapore) for the function.
 
 The tables are created automatically on the first request.
