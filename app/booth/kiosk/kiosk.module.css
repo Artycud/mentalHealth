@@ -3,6 +3,8 @@
    Sized in vh like the TV so it fills whatever it runs on. */
 
 .stage {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   width: 100vw;
@@ -10,10 +12,35 @@
   height: 100dvh;
   padding: 3.5vh max(4vw, env(safe-area-inset-left)) max(3.5vh, env(safe-area-inset-bottom))
     max(4vw, env(safe-area-inset-right));
-  background: var(--paper-surface);
+  --ink: #2a2140;
+  --ink-soft: #5f566f;
+  --ink-muted: #5f566f;
+  --note-pink: #c8336a;
+  --riso-pink: #f0588a;
+  --paper-raised: #ffffff;
+  --pink-tint: #ffe3ec;
+  --sun-tint: #fff1cc;
+  --track: #f1e4eb;
+  --line: rgba(200, 51, 106, 0.08);
+  background:
+    radial-gradient(70% 40% at 85% 8%, rgba(255, 143, 181, 0.35) 0%, transparent 70%),
+    radial-gradient(60% 40% at 10% 35%, rgba(255, 201, 77, 0.2) 0%, transparent 70%),
+    radial-gradient(80% 45% at 70% 70%, rgba(111, 215, 184, 0.16) 0%, transparent 70%),
+    linear-gradient(#fffafb 0%, #fff1f5 100%);
   color: var(--ink);
   overflow: hidden;
   overflow: clip;
+}
+
+.stage::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: url('/textures/paper-grain.png') 0 0 / 192px 192px repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* The idle screen ends in a slim river, so the stage keeps the room for it. */
@@ -244,8 +271,9 @@
   min-height: 9vh;
   margin-top: 4vh;
   padding: 0 4vw;
-  border-radius: 3vh 3vh 3vh 1vh;
-  background: var(--ink);
+  border-radius: 999px;
+  background: var(--note-pink);
+  box-shadow: 0 1.4vh 2vh -1.2vh rgba(200, 51, 106, 0.75);
   font-family: var(--font-heading);
   font-size: 3.6vh;
   font-weight: 500;
@@ -262,7 +290,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--note-pink);
   border-radius: inherit;
   pointer-events: none;
   animation: ripple 2.8s ease-out infinite;
@@ -340,7 +368,7 @@
   position: relative;
   box-shadow:
     0 0.4vh 0 var(--line),
-    0 2vh 3vh -2vh rgba(27, 43, 94, 0.32);
+    0 2vh 3vh -2vh rgba(200, 51, 106, 0.3);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 3.6vh;
@@ -557,8 +585,9 @@
   width: 100%;
   min-height: 9vh;
   margin-top: 2vh;
-  border-radius: 3vh 3vh 3vh 1vh;
-  background: var(--ink);
+  border-radius: 999px;
+  background: var(--note-pink);
+  box-shadow: 0 1.4vh 2vh -1.2vh rgba(200, 51, 106, 0.75);
   font-family: var(--font-heading);
   font-size: 3.4vh;
   font-weight: 500;
