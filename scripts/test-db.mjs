@@ -15,9 +15,9 @@ const { db, closeDb } = await import('../lib/db.ts');
 const { ApiError, CREATE_CAP_PER_MINUTE, completeSession, createSession, saveAnswer } = await import('../lib/session.ts');
 const { getActiveFestival, setActiveFestival } = await import('../lib/settings.ts');
 const { DEFAULT_EVENTS, getEvent, getEventText, setEvent } = await import('../lib/events.ts');
-const { bangkokDayStartUtc, demoWallData, getWallData } = await import('../lib/booth-wall.ts');
+const { OKAY_MIN, OKAY_SKIP_NEWEST, bangkokDayStartUtc, demoWallData, getWallData, okayShare } = await import('../lib/booth-wall.ts');
 const { questions } = await import('../content/th/questions.ts');
-const { flowerFromChoices, loykrathongQuiz } = await import('../content/th/booth.ts');
+const { flowerFromChoices, loykrathongQuiz, okayQuestion } = await import('../content/th/booth.ts');
 const { scoreCheckin } = await import('../lib/scoring.ts');
 
 let fail = 0;
@@ -141,6 +141,42 @@ const checkinAnswers = ['d', 'b', 'c', 'b', 'b', 'b', 'd', 'c']; // the brief's 
   const nextMorning = await getWallData('loykrathong', at('2026-11-20T02:00:00Z'));
   eq('by 09:00 on the 20th, "today" is only the result made after midnight', [nextMorning.today, nextMorning.total], [1, 3]);
   eq('and the river is newest first', nextMorning.recent.map((r) => r.tint), [0, 2, 3]); // marigold 0, orchid 2, lotus 3
+}
+
+// ---- 5b. The honest question ("โอเคไหม"), and its guard on the TV ----
+{
+  const { id } = await createSession({ mode: 'booth', device: 'tablet' });
+  const pairs = loykrathongQuiz.map((q, i) => ({ questionId: q.id, choiceId: q.choices[[0, 1, 2][i]].id }));
+  for (const p of pairs) await saveAnswer(id, p.questionId, p.choiceId);
+  await saveAnswer(id, okayQuestion.id, 'hide');
+  eq('the honest question is stored on a booth session', (await one('SELECT choice_id FROM answer WHERE session_id = ? AND question_id = ?', [id, okayQuestion.id])).choice_id, 'hide');
+  eq('it never changes the flower', (await completeSession(id)).flower, flowerFromChoices(pairs).id);
+  eq('and flowerFromChoices sets it aside', flowerFromChoices([...pairs, { questionId: okayQuestion.id, choiceId: 'hide' }])?.id, flowerFromChoices(pairs).id);
+  const other = await createSession({ mode: 'booth', device: 'tablet' });
+  await rejects('an unknown choice for it is refused', () => saveAnswer(other.id, okayQuestion.id, 'zzz'), 400, 'unknown_answer');
+  const checkin = await createSession({ mode: 'checkin' });
+  await rejects('and it is refused on a check-in', () => saveAnswer(checkin.id, okayQuestion.id, 'hide'), 400, 'unknown_answer');
+
+  // The guard: the newest OKAY_SKIP_NEWEST results never count, nothing shows below
+  // OKAY_MIN, and the share is a whole "n in 10".
+  await c.execute('DELETE FROM session');
+  const base = Date.parse('2026-11-19T04:30:00Z'); // 11.30 in Bangkok, a booth day
+  const put = async (i, choice) => {
+    const sid = crypto.randomUUID();
+    const at = new Date(base + i * 60_000).toISOString();
+    await c.execute({ sql: "INSERT INTO session (id, mode, festival, started_at, completed_at, booth_result) VALUES (?, 'booth', 'loykrathong', ?, ?, 'lotus')", args: [sid, at, at] });
+    await c.execute({ sql: 'INSERT INTO answer (session_id, question_id, choice_id, answered_at) VALUES (?, ?, ?, ?)', args: [sid, okayQuestion.id, choice, at] });
+  };
+  const now = base + 3_600_000;
+  for (let i = 0; i < 14; i += 1) await put(i, i % 2 ? 'hide' : 'real');
+  eq(`14 answers: with the newest ${OKAY_SKIP_NEWEST} set aside only 9 remain, so nothing is shown`, (await getWallData('loykrathong', now)).okay, null);
+  await put(14, 'real');
+  eq('at 15 the oldest 10 count: 5 of them "hide", shown as 5 in 10', (await getWallData('loykrathong', now)).okay, { inTen: 5, answered: 10 });
+  for (let i = 15; i < 20; i += 1) await put(i, 'hide');
+  eq('five "hide" answers just now do not move it (7 of the oldest 15 → 5 in 10)', (await getWallData('loykrathong', now)).okay, { inTen: 5, answered: 15 });
+  eq(`under ${OKAY_MIN} answers there is no share at all`, okayShare([{ choice: 'hide', n: 9 }]), null);
+  eq('it rounds to a whole number in ten', okayShare([{ choice: 'hide', n: 3 }, { choice: 'real', n: 7 }, { choice: 'depends', n: 4 }]), { inTen: 2, answered: 14 });
+  check('the demo wall has a share to lay out', demoWallData().okay !== null);
 }
 
 // ---- 6. The cap on new sessions ----

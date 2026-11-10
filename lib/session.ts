@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { festivals, flowerFromChoices, loykrathongQuiz } from '../content/th/booth.ts';
+import { festivals, flowerFromChoices, loykrathongQuiz, okayQuestion } from '../content/th/booth.ts';
 import { questions } from '../content/th/questions.ts';
 
 import { db } from './db.ts';
@@ -126,6 +126,9 @@ function isKnownAnswer(session: SessionRow, questionId: string, choiceId: string
   // Booth: only Loy Krathong has a quiz yet. A session recorded under any other
   // festival has nothing to answer.
   if (session.festival !== 'loykrathong') return false;
+  // The honest "โอเคไหม" question is stored like the quiz's own, but never scored
+  // (flowerFromChoices sets it aside).
+  if (questionId === okayQuestion.id) return okayQuestion.choices.some((c) => c.id === choiceId);
   const q = loykrathongQuiz.find((x) => x.id === questionId);
   return !!q?.choices.some((c) => c.id === choiceId);
 }

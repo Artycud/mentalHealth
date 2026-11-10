@@ -1,0 +1,19 @@
+/* Out of the way, over the head row's right end, and only while the mouse moves. */
+.full {
+  position: fixed;
+  top: 2vh;
+  right: 2vw;
+  z-index: 50;
+  padding: 1vh 1.6vw;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-heading);
+  font-size: 2vh;
+  font-weight: 500;
+}
+
+:global(html[data-cursor-idle]),
+:global(html[data-cursor-idle] *) {
+  cursor: none;
+}

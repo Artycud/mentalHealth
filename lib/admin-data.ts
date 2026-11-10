@@ -1,5 +1,5 @@
 import { admin, WIPE_WORD } from '../content/th/admin.ts';
-import { festivals, loykrathongFlowers, loykrathongQuiz } from '../content/th/booth.ts';
+import { festivals, loykrathongFlowers, loykrathongQuiz, okayQuestion } from '../content/th/booth.ts';
 import { questions, topicLabels } from '../content/th/questions.ts';
 
 import { db } from './db.ts';
@@ -128,7 +128,9 @@ function where(f: Filters, alias = ''): { sql: string; args: (string | number)[]
 // ---- labels ----
 
 const checkinById = new Map(questions.map((q) => [q.id, q]));
-const boothById = new Map(loykrathongQuiz.map((q) => [q.id, q]));
+/** The booth's questions as the admin shows them: the quiz, then the unscored honest one. */
+const boothQuestions = [...loykrathongQuiz, okayQuestion];
+const boothById = new Map<string, (typeof boothQuestions)[number]>(boothQuestions.map((q) => [q.id, q]));
 
 /** The question's Thai headline, or its id if it is no longer in the content. */
 export function questionLabel(questionId: string): string {
@@ -240,7 +242,7 @@ function median(values: number[]): number | null {
   return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
 }
 
-async function answerStats(f: Filters, all: typeof questions | typeof loykrathongQuiz, mode: Mode): Promise<QuestionStat[]> {
+async function answerStats(f: Filters, all: typeof questions | typeof boothQuestions, mode: Mode): Promise<QuestionStat[]> {
   const counts = new Map<string, number>();
   // A filter for the other mode leaves this one empty, by design.
   if (!f.mode || f.mode === mode) {
@@ -338,7 +340,7 @@ export async function getAdminData(f: Filters, nowMs = Date.now()): Promise<Admi
     states: order.map((state) => ({ state, count: stateCounts.get(state) ?? 0 })),
     flowers: loykrathongFlowers.map((fl) => ({ id: fl.id, name: fl.name, count: flowerCounts.get(fl.id) ?? 0 })),
     checkinQuestions: await answerStats(f, questions, 'checkin'),
-    boothQuestions: await answerStats(f, loykrathongQuiz, 'booth'),
+    boothQuestions: await answerStats(f, boothQuestions, 'booth'),
     sessions: shown.map((r) => ({
       id: r.id,
       mode: r.mode,

@@ -1,31 +1,40 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { IdleBackdrop, QuizArt } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
 import { FlowerArt } from '@/components/booth/FlowerArt';
+import { KeepAwake } from '@/components/booth/KeepAwake';
+import { QrCode } from '@/components/booth/QrCode';
+import { WallFlower } from '@/components/booth/WallFlower';
 import { FestivalRiver } from '@/components/festival/registry';
 import {
   BackChevron,
   CheckBadge,
-  SuggestionMarker,
   Wordmark,
 } from '@/components/illustrations/icons';
 import { BoothMarigold } from '@/components/illustrations/scenes';
 import {
-  boothNext,
   boothQuizTitle,
   flowerFromAnswers,
+  hiddenLabel,
   kiosk,
   loykrathongQuiz,
+  okayQuestion,
+  okayReply,
+  okayReplyLabel,
+  qrInvite,
   withDok,
   type BoothAnswer,
   type FestivalTheme,
+  type OkayChoiceId,
 } from '@/content/th/booth';
-import { common } from '@/content/th/common';
+import { common, cudCare } from '@/content/th/common';
 import type { EventText } from '@/lib/events';
 import { createTracker, type Tracker } from '@/lib/track';
+import type { Tint } from '@/lib/types';
 
 import styles from './kiosk.module.css';
 
@@ -33,25 +42,56 @@ type Stage =
   | { kind: 'idle' }
   /** `dir` is which way the last move went, so the slide can follow it. */
   | { kind: 'quiz'; step: number; answers: BoothAnswer[]; dir: 1 | -1 }
-  | { kind: 'result'; answers: BoothAnswer[] };
+  | { kind: 'result'; answers: BoothAnswer[]; okay: OkayChoiceId };
+
+/** Today's count of one flower, for the staff's stock line on the idle screen. */
+export interface StockLine {
+  id: string;
+  name: string;
+  tint: Tint;
+  count: number;
+}
 
 /** How long a tapped answer stays visibly selected before the next question. */
 const SELECT_MS = 260;
 
+/** The three flower questions, then the honest one (never scored). */
+const STEPS = loykrathongQuiz.length + 1;
+const OKAY_STEP = loykrathongQuiz.length;
+
 /**
- * The booth kiosk. Runs unattended on an iPad or laptop for two hours while a
- * queue of students uses it one after another.
+ * The booth kiosk: the one iPad at the booth. Staff hold it, hand it to each
+ * student for four taps, and take it back to give out the flower.
  *
- * Two things follow from that, and drive the whole component:
- *  - It must always return to a clean start. The result auto-resets after
- *    kiosk.resetSeconds of no touching, so a student who walks off does not
- *    leave their answer on screen for the next person — which is also a privacy
- *    point (§12). Any touch restarts the count, so a student still reading is
- *    never cut off.
+ * What follows from that:
+ *  - It must always return to a clean start. Staff tap "คนต่อไป"; if nobody does,
+ *    the result resets itself after kiosk.resetSeconds of no touching, so a
+ *    student's answer is never left up for the next person — which is also a
+ *    privacy point (§12). Any touch restarts the count.
  *  - Nothing persists in the browser between students. State lives in memory
- *    only, and the session write in phase 4 is anonymous like every other.
+ *    only, and the session it writes is anonymous like every other.
+ *  - It never reloads blind. The stock line refreshes only after the server has
+ *    answered a ping, so a dropped Wi-Fi can never turn the iPad into a browser
+ *    error page in the middle of the booth (see components/booth/AutoRefresh).
+ *
+ * The booth's one idea is that looking okay and being okay are not the same thing,
+ * and that both are normal. So after the three flower questions it asks one honest,
+ * unscored question, and every result says the other side of its flower and
+ * answers that question warmly, with a route to CUD Care (§12) and a QR code to the
+ * main site for the deeper questions later.
  */
-export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText }) {
+export function Kiosk({
+  theme,
+  event,
+  stock,
+  qrUrl,
+}: {
+  theme: FestivalTheme;
+  event: EventText;
+  stock: StockLine[];
+  qrUrl: string;
+}) {
+  const router = useRouter();
   const [stage, setStage] = useState<Stage>({ kind: 'idle' });
   const [remaining, setRemaining] = useState<number>(kiosk.resetSeconds);
   /** The answer just tapped, held on screen for SELECT_MS before moving on. */
@@ -65,23 +105,35 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
   // A pending move must never fire after the kiosk has been reset or unmounted.
   useEffect(() => () => clearTimeout(advance.current), []);
 
+  /** Re-reads the stock line, but only once the server has answered. */
+  const refreshStock = useCallback(async () => {
+    try {
+      const response = await fetch('/api/booth/ping', { cache: 'no-store' });
+      if (response.ok) router.refresh();
+    } catch {
+      /* offline: keep the last numbers; the quiz itself never needs the network */
+    }
+  }, [router]);
+
   const reset = useCallback(() => {
     clearTimeout(advance.current);
     tracker.current = null;
     setPicked(null);
     setStage({ kind: 'idle' });
-  }, []);
+    // A moment later, so the result just sent has reached the server first.
+    setTimeout(() => void refreshStock(), 1200);
+  }, [refreshStock]);
 
   /** Entering the result also arms the countdown, so the effect below only ever
    *  runs the timer. Resetting `remaining` inside the effect instead would set
    *  state during render and cascade an extra render every time. */
-  const finish = useCallback((answers: BoothAnswer[]) => {
+  const finish = useCallback((answers: BoothAnswer[], okay: OkayChoiceId) => {
     tracker.current?.complete();
     setRemaining(kiosk.resetSeconds);
-    setStage({ kind: 'result', answers });
+    setStage({ kind: 'result', answers, okay });
   }, []);
 
-  // Auto-reset the result for the next student in the queue.
+  // Auto-reset the result for the next student, if staff have not already.
   useEffect(() => {
     if (stage.kind !== 'result') return;
     const tick = setInterval(() => {
@@ -124,7 +176,7 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
                 setStage({
                   kind: 'quiz',
                   step: stage.step - 1,
-                  answers: stage.answers.slice(0, -1),
+                  answers: stage.answers.slice(0, stage.step - 1),
                   dir: -1,
                 });
               }
@@ -133,9 +185,9 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
             <BackChevron />
           </button>
           <span className={styles.segments} aria-hidden="true">
-            {loykrathongQuiz.map((q, i) => (
+            {Array.from({ length: STEPS }, (_, i) => (
               <span
-                key={q.id}
+                key={i}
                 className={`${styles.segment} ${
                   i < stage.step ? styles.done : i === stage.step ? styles.current : ''
                 }`}
@@ -157,8 +209,10 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
   );
 
   if (stage.kind === 'idle') {
+    const given = stock.reduce((sum, f) => sum + f.count, 0);
     return (
       <main className={`${styles.stage} ${styles.withShore}`} data-festival={theme.id}>
+        <KeepAwake />
         {head}
         <div className={styles.idle}>
           <div className={styles.idleText}>
@@ -177,6 +231,21 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
             >
               {kiosk.idleAction}
             </button>
+            {/* For the staff holding the iPad: what has gone out today, so they can
+                see a flower running low. The same anonymous counts the TV shows. */}
+            <p className={styles.stock}>
+              <span className={styles.stockTitle}>
+                {kiosk.stockTitle} {given}
+              </span>
+              {stock.map((f) => (
+                <span key={f.id} className={styles.stockItem}>
+                  <span className={styles.stockMark} aria-hidden="true">
+                    <WallFlower tint={f.tint} />
+                  </span>
+                  {f.name.replace(/^ดอก/, '')} {f.count}
+                </span>
+              ))}
+            </p>
           </div>
 
           <div className={styles.idleArt}>
@@ -199,9 +268,11 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
   }
 
   if (stage.kind === 'quiz') {
-    const question = loykrathongQuiz[stage.step];
+    const isOkay = stage.step === OKAY_STEP;
+    const question = isOkay ? okayQuestion : loykrathongQuiz[stage.step];
     return (
       <main className={styles.stage} data-festival={theme.id}>
+        <KeepAwake />
         {head}
         {/* Re-keyed per question so each one slides in from the side it came. */}
         <div className={styles.quiz} key={question.id} data-dir={stage.dir}>
@@ -228,14 +299,16 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
                     if (picked) return; // one tap per question
                     setPicked(choice.id);
                     tracker.current?.answer(question.id, choice.id);
-                    const answers = [...stage.answers, { axis: question.axis, value: choice.value }];
                     advance.current = setTimeout(() => {
                       setPicked(null);
-                      if (stage.step + 1 < loykrathongQuiz.length) {
-                        setStage({ kind: 'quiz', step: stage.step + 1, answers, dir: 1 });
-                      } else {
-                        finish(answers);
+                      if (isOkay) {
+                        finish(stage.answers, choice.id as OkayChoiceId);
+                        return;
                       }
+                      const q = loykrathongQuiz[stage.step];
+                      const value = q.choices.find((c) => c.id === choice.id)?.value ?? 0;
+                      const answers = [...stage.answers, { axis: q.axis, value }];
+                      setStage({ kind: 'quiz', step: stage.step + 1, answers, dir: 1 });
                     }, SELECT_MS);
                   }}
                 >
@@ -267,6 +340,7 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
       data-festival={theme.id}
       onPointerDown={() => setRemaining(kiosk.resetSeconds)}
     >
+      <KeepAwake />
       {head}
       <div className={styles.result}>
         <div className={styles.resultText}>
@@ -274,9 +348,17 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
           <h1 className={`${styles.flowerName} ${styles.rise}`}>{flower.name}</h1>
           <p className={`${styles.resultBody} ${styles.rise}`}>{flower.body}</p>
 
-          <div className={`${styles.wish} ${styles.rise}`}>
-            <span className={styles.wishLabel}>{kiosk.wishLabel}</span>
-            <span className={styles.wishText}>{flower.wish}</span>
+          {/* The other side of the flower: even this one has tired days. */}
+          <div className={`${styles.hidden} ${styles.rise}`}>
+            <span className={styles.smallLabel}>{hiddenLabel}</span>
+            <span className={styles.hiddenText}>{flower.hidden}</span>
+          </div>
+
+          {/* The honest question, answered back warmly, with a route to CUD Care. */}
+          <div className={`${styles.reply} ${styles.rise}`}>
+            <span className={styles.smallLabel}>{okayReplyLabel}</span>
+            <span className={styles.replyText}>{okayReply[stage.okay]}</span>
+            <span className={styles.care}>{cudCare.result.body}</span>
           </div>
 
           <div className={`${styles.ticket} ${styles.rise}`}>
@@ -291,23 +373,19 @@ export function Kiosk({ theme, event }: { theme: FestivalTheme; event: EventText
           <div className={styles.artStack}>
             <FlowerArt flower={flower} />
           </div>
-          <p className={`${styles.fact} ${styles.rise}`}>
-            {flower.name} · {flower.fact}
-          </p>
+          <p className={`${styles.wishLine} ${styles.rise}`}>“{flower.wish}”</p>
 
-          <section className={`${styles.next} ${styles.rise}`}>
-            <h2 className={styles.nextTitle}>{boothNext.title}</h2>
-            {boothNext.items.map((item, i) => (
-              <div key={item} className={styles.nextRow}>
-                <SuggestionMarker
-                  variant={(i % 3) as 0 | 1 | 2}
-                  size={26}
-                  style={{ marginTop: 0 }}
-                />
-                <span>{item}</span>
-              </div>
-            ))}
-          </section>
+          {/* The bridge to the main site: the booth is the quick part; the deeper
+              questions are for later, in the student's own time. */}
+          <div className={`${styles.qrCard} ${styles.rise}`}>
+            <div className={styles.qrBox}>
+              <QrCode value={qrUrl} label={qrInvite.title} />
+            </div>
+            <div className={styles.qrText}>
+              <span className={styles.qrTitle}>{qrInvite.title}</span>
+              <span className={styles.qrBody}>{qrInvite.body}</span>
+            </div>
+          </div>
         </div>
       </div>
 

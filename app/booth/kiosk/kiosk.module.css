@@ -1,5 +1,5 @@
-/* Booth kiosk — the device students actually touch. Landscape iPad or laptop,
-   standing up, in a queue, often with someone watching over their shoulder.
+/* Booth kiosk — the one iPad at the booth. Staff hold it and hand it to each
+   student, landscape, standing up, often with someone watching over a shoulder.
    Sized in vh like the TV so it fills whatever it runs on. */
 
 .stage {
@@ -14,6 +14,14 @@
   color: var(--ink);
   overflow: hidden;
   overflow: clip;
+  /* It is passed from hand to hand all day, so the iPad's own gestures must not
+     get in the way: no rubber-band or pull-to-refresh, no text selection, no
+     long-press callout. Pinch-zoom stays (§13); touch-action: manipulation on the
+     buttons (globals.css) already removes the double-tap delay. */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* The idle screen ends in a slim river, so the stage keeps the room for it. */
@@ -66,7 +74,7 @@
   height: auto;
 }
 
-/* Progress: 3 questions, same ink/pink/track language as the phone (§7). */
+/* Progress: 4 steps (3 questions and the honest one), same ink/pink/track language as the phone (§7). */
 .progress {
   display: flex;
   align-items: center;
@@ -268,6 +276,43 @@
   animation: ripple 2.8s ease-out infinite;
 }
 
+/* For the staff holding the iPad: today's flowers so far, small and quiet. */
+.stock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6vh 1.4vw;
+  margin-top: 3.2vh;
+  font-size: 1.9vh;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.stockTitle {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.stockItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4vw;
+  white-space: nowrap;
+}
+
+.stockMark {
+  display: inline-block;
+  width: 2.6vh;
+  height: 2.6vh;
+}
+
+.stockMark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* ---- Quiz: words on the left, big answers on the right ---- */
 
 .quiz {
@@ -444,30 +489,56 @@
   margin-top: 1vh;
 }
 
-/* A wish from the flower. Tinted block with one sharp corner, the same
+.smallLabel {
+  font-size: 2vh;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* The other side of the flower: an open note with a pink rule, not a card, so it
+   reads as part of the flower's description rather than a warning. */
+.hidden {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2vh;
+  margin-top: 1.6vh;
+  padding-left: 1.4vw;
+  border-left: 0.6vh solid var(--riso-pink);
+}
+
+.hiddenText {
+  font-size: 2.6vh;
+  line-height: 1.55;
+  text-wrap: balance;
+}
+
+/* The answer to the honest question. Tinted block with one sharp corner, the same
    treatment as the CUD Care block — a warm note, not a card (§7). */
-.wish {
+.reply {
   display: flex;
   flex-direction: column;
   gap: 0.3vh;
-  margin-top: 2vh;
-  padding: 1.6vh 1.8vw;
+  margin-top: 1.8vh;
+  padding: 1.5vh 1.8vw;
   border-radius: 3vh 3vh 1vh 3vh;
   background: var(--pink-tint);
   color: var(--ink);
 }
 
-.wishLabel {
+.replyText {
+  font-family: var(--font-heading);
+  font-size: 2.9vh;
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+/* The route to CUD Care that every result keeps (§12). */
+.care {
+  margin-top: 0.4vh;
   font-size: 2.1vh;
   line-height: 1.5;
   color: var(--ink-soft);
-}
-
-.wishText {
-  font-family: var(--font-heading);
-  font-size: 3vh;
-  font-weight: 500;
-  line-height: 1.45;
 }
 
 .ticket {
@@ -507,48 +578,62 @@
    however wide the column is. */
 .artStack {
   align-self: center;
-  height: 36vh;
+  height: 30vh;
   aspect-ratio: 1;
 }
 
-/* One true thing about the real flower, as a small caption under it. */
-.fact {
+/* The flower's wish, as a handwritten caption under it. */
+.wishLine {
   text-align: center;
-  font-size: 2.1vh;
+  font-family: var(--font-note);
+  font-size: 2.6vh;
+  line-height: 1.45;
+  color: var(--note-pink);
+  text-wrap: balance;
+}
+
+/* The bridge to the main site: a QR code to keep for later. A raised slab, so it
+   reads as something to pick up, beside a short reason to. */
+.qrCard {
+  display: flex;
+  align-items: center;
+  gap: 1.6vw;
+  margin-top: 1.2vh;
+  padding: 1.4vh 1.4vw;
+  border-radius: 3vh;
+  background: var(--paper-raised);
+  box-shadow:
+    0 0.4vh 0 var(--line),
+    0 2vh 3vh -2vh rgba(27, 43, 94, 0.28);
+}
+
+.qrBox {
+  flex-shrink: 0;
+  width: 17vh;
+}
+
+.qrText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  min-width: 0;
+}
+
+.qrTitle {
+  font-family: var(--font-heading);
+  font-size: 2.7vh;
+  font-weight: 500;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.qrBody {
+  font-size: 2.2vh;
   line-height: 1.5;
   color: var(--ink-soft);
 }
 
-/* Open rows, not cards, and never numbered: they are things you can do, not
-   steps you must take (§7). */
-.next {
-  display: flex;
-  flex-direction: column;
-  margin-top: 0.6vh;
-}
-
-.nextTitle {
-  margin-bottom: 0.6vh;
-  font-size: 2.6vh;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-.nextRow {
-  display: flex;
-  align-items: center;
-  gap: 1vw;
-  padding: 1vh 0;
-  border-top: 1.5px solid var(--line);
-  font-size: 2.3vh;
-  line-height: 1.5;
-}
-
-.nextRow:last-child {
-  border-bottom: 1.5px solid var(--line);
-}
-
-/* Full-width so the next student in the queue cannot miss it. */
+/* "คนต่อไป": full-width, so staff can reach it without looking. */
 .again {
   flex-shrink: 0;
   display: flex;
@@ -585,8 +670,9 @@
 .resultText > :nth-child(3) { animation-delay: 180ms; }
 .resultText > :nth-child(4) { animation-delay: 240ms; }
 .resultText > :nth-child(5) { animation-delay: 300ms; }
-.fact { animation-delay: 340ms; }
-.next { animation-delay: 400ms; }
+.resultText > :nth-child(6) { animation-delay: 360ms; }
+.wishLine { animation-delay: 340ms; }
+.qrCard { animation-delay: 420ms; }
 
 @keyframes rise {
   from {

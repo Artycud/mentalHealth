@@ -41,6 +41,7 @@ export function IdleBackdrop() {
  *  0  a sunrise: pink sun, blue moon still up, a horizon line
  *  1  three overlapping coins: the multiply blend doing what it does best
  *  2  an evening out: a moon, a string of lanterns, water
+ *  3  the honest question: a smiling paper face held up, the real colour behind it
  */
 export function QuizArt({ step }: { step: number }) {
   return (
@@ -83,6 +84,26 @@ export function QuizArt({ step }: { step: number }) {
             <rect x="190" y="76" width="24" height="32" rx="9" fill="var(--riso-pink)" className="mul" />
           </g>
           <path d="M8 208 C70 184 130 232 200 206 C270 180 330 226 392 198" className="ln" />
+        </>
+      )}
+      {step === 3 && (
+        <>
+          {/* The honest question: a smiling paper face held up in front, and the
+              real colour of the day peeking out from behind it. */}
+          <g className={s.floatB}>
+            <Cut d={circlePath(236, 118, 78)} fill="var(--riso-blue)" speckle="sp-q3" />
+          </g>
+          <g className={s.floatA}>
+            <Cut d={circlePath(170, 126, 74)} fill="var(--paper-raised)" speckle="sp-q3" />
+            <circle cx="146" cy="112" r="6" fill="var(--ink)" />
+            <circle cx="194" cy="112" r="6" fill="var(--ink)" />
+            <path d="M138 142 C156 164 186 164 204 142" className="ln" />
+            {/* The stick it is held up by. */}
+            <path d="M170 200 L170 236" className="ln" />
+          </g>
+          <g className={s.floatC}>
+            <Cut d={circlePath(300, 66, 16)} fill="var(--riso-pink)" speckle="sp-q3" mul shadow={false} />
+          </g>
         </>
       )}
     </svg>

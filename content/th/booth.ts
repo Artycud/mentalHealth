@@ -105,6 +105,14 @@ export interface Flower {
   fact: string;
   /** A short wish for the student. Draft — never advice. */
   wish: string;
+  /**
+   * The other side of this flower's strength: the quiet way a student like this
+   * can be tired without showing it. Every result says it, so the booth's one idea
+   * (looking okay and being okay are not the same thing) reaches everyone, not
+   * only those who answer the honest question that way. DRAFT, for council review;
+   * never a diagnosis, never "you are fine" (BRIEF §12).
+   */
+  hidden: string;
   /** False while the name is a placeholder rather than a real flower. */
   named: boolean;
   /**
@@ -124,6 +132,7 @@ export const loykrathongFlowers: Flower[] = [
     body: 'นิ่ง สงบ ปล่อยวางเก่ง',
     fact: 'น้ำกลิ้งหลุดจากใบบัวได้ ไม่เปียกติด',
     wish: 'ขอให้เรื่องที่หนักใจ ไหลผ่านไปเหมือนน้ำบนใบบัว',
+    hidden: 'ดูนิ่ง ๆ แต่ใต้น้ำอาจมีอะไรวุ่นอยู่ก็ได้ และนั่นก็ไม่เป็นไรเลย',
     named: true,
   },
   {
@@ -133,6 +142,7 @@ export const loykrathongFlowers: Flower[] = [
     body: 'ใจดี ห่วงใยคนรอบตัว',
     fact: 'ชื่อแปลว่า "รัก" ตรง ๆ เลย',
     wish: 'ขอให้วันนี้ได้รักตัวเองเพิ่มอีกนิด',
+    hidden: 'ห่วงคนอื่นเก่ง จนบางทีลืมถามใจตัวเองว่าโอเคไหม',
     named: true,
   },
   {
@@ -142,6 +152,7 @@ export const loykrathongFlowers: Flower[] = [
     body: 'ยิ้มง่าย อยู่กับเพื่อนได้นาน ไม่จางไปไหน',
     fact: 'ตากแห้งเก็บไว้นานแค่ไหนก็ยังสีเดิม',
     wish: 'ขอให้ความรู้สึกดี ๆ ของวันนี้อยู่กับคุณไปนาน ๆ',
+    hidden: 'ยิ้มให้ทุกคนได้ แต่ไม่ต้องยิ้มตลอดเวลาก็ได้นะ',
     named: true,
   },
   {
@@ -153,6 +164,7 @@ export const loykrathongFlowers: Flower[] = [
     body: 'สีสด ทนแดด อยู่ได้นาน',
     fact: 'ปลูกง่าย ชอบแดดจัด ๆ',
     wish: 'ขอให้มีแรงใจสู้แดดสู้ฝนไปได้อีกนาน',
+    hidden: 'ทนแดดเก่ง จนบางทีลืมว่าตัวเองก็เหนื่อยได้',
     named: true,
   },
   {
@@ -162,6 +174,7 @@ export const loykrathongFlowers: Flower[] = [
     body: 'ไม่เหมือนใคร มีสไตล์เป็นของตัวเอง',
     fact: 'ดอกบานอยู่ได้นานหลายวัน บางชนิดหลายสัปดาห์',
     wish: 'ขอให้ได้เป็นตัวเองในแบบที่ไม่เหมือนใคร',
+    hidden: 'ไม่เหมือนใคร เลยบางทีรู้สึกว่าไม่มีใครเข้าใจ ซึ่งหลายคนก็เคยรู้สึกแบบนี้',
     named: true,
   },
   {
@@ -171,6 +184,7 @@ export const loykrathongFlowers: Flower[] = [
     body: 'เงียบ ๆ แต่อบอุ่น อยู่ตรงไหนก็หอมไกล',
     fact: 'หอมแรง ได้กลิ่นตั้งแต่ไกล',
     wish: 'ขอให้มีเรื่องดี ๆ ให้จำ มากกว่าเรื่องที่อยากลืม',
+    hidden: 'อบอุ่นแบบเงียบ ๆ เรื่องในใจเลยมักเก็บไว้เงียบ ๆ ด้วย',
     named: true,
   },
 ];
@@ -267,6 +281,71 @@ export const loykrathongQuiz: BoothQuestion[] = [
   },
 ];
 
+export type OkayChoiceId = 'real' | 'hide' | 'depends';
+
+export interface OkayQuestion {
+  id: 'ok';
+  note: string;
+  headline: string;
+  choices: { id: OkayChoiceId; label: string; mark: ChoiceMark }[];
+}
+
+/**
+ * The booth's one honest question, asked after the three flower questions.
+ *
+ * The booth is the quick, in-event part of the week, and its one idea is that
+ * looking okay and being okay are not the same thing, and both are normal. This
+ * asks it lightly, about a habit ("what do you usually answer?") rather than a
+ * state, so it never reads as a screening item (BRIEF §12).
+ *
+ * It is never scored: the flower comes from the three quiz answers only, so
+ * `npm run check:booth` and the flower stock are untouched. It is stored like any
+ * other answer (an anonymous choice id), and the TV shows only a guarded total of
+ * it (lib/booth-wall.ts). DRAFT copy, for council review.
+ */
+export const okayQuestion: OkayQuestion = {
+  id: 'ok',
+  note: 'ข้อนี้ไม่มีผลกับดอกไม้ ตอบตามจริงได้เลย',
+  // A word joiner (U+2060) inside "โอเคไหม", so a line never breaks between โอเค
+  // and ไหม: Thai has no spaces, and the browser's dictionary sees two words.
+  headline: 'ถ้ามีคนถามว่า "โอเค\u2060ไหม" ปกติคุณตอบว่า...',
+  choices: [
+    { id: 'real', label: 'โอเค และโอเคจริง ๆ', mark: 'circle' },
+    { id: 'hide', label: 'บอกว่าโอเค แต่จริง ๆ ไม่ค่อย', mark: 'drop' },
+    { id: 'depends', label: 'แล้วแต่ว่าใครถาม', mark: 'leaf' },
+  ],
+};
+
+/** Is this one of okayQuestion's choice ids? */
+export const isOkayChoice = (id: string): id is OkayChoiceId =>
+  okayQuestion.choices.some((c) => c.id === id);
+
+/**
+ * What the result says back to that answer. Every answer gets a warm line, so
+ * none of them is the "wrong" one, and none of them is a verdict. DRAFT.
+ */
+export const okayReply: Record<OkayChoiceId, string> = {
+  real: 'ดีใจด้วยนะ วันนี้ลองถามเพื่อนข้าง ๆ ดูบ้าง ว่าเขาโอเคจริงไหม',
+  hide: 'หลายคนก็ตอบแบบนี้ ไม่โอเคก็ได้นะ เป็นเรื่องปกติมาก ๆ',
+  depends: 'แปลว่าคุณรู้ว่าพูดกับใครได้ ถ้ายังไม่มีใครแบบนั้น ก็ไม่เป็นไรนะ',
+};
+
+/** The label above okayReply on a result. */
+export const okayReplyLabel = 'เรื่อง "โอเคไหม"';
+
+/** The label above a flower's `hidden` line on a result. */
+export const hiddenLabel = 'อีกด้านของดอกนี้';
+
+/**
+ * The bridge from the booth to the main site, shown beside a QR code on the TV and
+ * on the kiosk's result. The booth is the quick part; the deeper questions are on
+ * the site, for later, in a student's own time.
+ */
+export const qrInvite = {
+  title: 'อยากรู้ว่าใจจริง ๆ เป็นยังไง?',
+  body: 'สแกนเก็บไว้ เช็กใจตอนว่าง ๆ',
+} as const;
+
 /** One answer, as the kiosk stores it and the server will recompute from. */
 export interface BoothAnswer {
   axis: Axis;
@@ -303,16 +382,20 @@ export function flowerFromAnswers(answers: BoothAnswer[]): Flower {
 /**
  * The flower for a set of stored answers (question id + choice id). This is what
  * the server runs to recompute a booth result from what it saved (BRIEF §3), and
- * what the phone runs to show one. Returns null unless every question is answered
- * exactly once with a choice that exists.
+ * what the phone runs to show one. Returns null unless every quiz question is
+ * answered exactly once with a choice that exists. An answer to okayQuestion may be
+ * among the pairs and is ignored.
  */
 export function flowerFromChoices(
   pairs: { questionId: string; choiceId: string }[],
 ): Flower | null {
-  if (pairs.length !== loykrathongQuiz.length) return null;
+  // The honest question (okayQuestion) is stored with the rest but never scored,
+  // so it is set aside here: the flower is only ever the three quiz answers.
+  const scored = pairs.filter((p) => p.questionId !== okayQuestion.id);
+  if (scored.length !== loykrathongQuiz.length) return null;
   const answers: BoothAnswer[] = [];
   for (const question of loykrathongQuiz) {
-    const matches = pairs.filter((p) => p.questionId === question.id);
+    const matches = scored.filter((p) => p.questionId === question.id);
     if (matches.length !== 1) return null;
     const choice = question.choices.find((c) => c.id === matches[0].choiceId);
     if (!choice) return null;
@@ -346,17 +429,48 @@ export const tv = {
   /** The quiet screen for a new flower: the note above it, and the line below. */
   newNote: 'ดอกไม้ดอกใหม่',
   newLine: 'มีคนเพิ่งได้ดอกนี้ ลอยลงแม่น้ำแล้ว',
+  /** A laptop driving the TV: shown only while the mouse moves, until full screen. */
+  fullscreen: 'เต็มจอ',
+  /**
+   * The awareness band. DRAFT copy, for council review. A line that states a fact
+   * carries its source and says only what the source found (BRIEF §0); the rest is
+   * plain encouragement and needs none.
+   */
+  awareness: {
+    note: 'เรื่องใจ',
+    /** The guarded total of okayQuestion's "hide" answers (lib/booth-wall.ts). */
+    stat: (n: number) => `วันนี้ ${n} ใน 10 คนที่มาบูธ`,
+    statLine: 'บอกว่า "โอเค" ทั้งที่จริง ๆ ไม่ค่อยโอเค',
+    statTail: 'ไม่ได้มีแค่คุณคนเดียวนะ',
+    lines: [
+      { text: 'ไม่โอเคก็ได้นะ ใจเราก็มีวันเหนื่อย เหมือนร่างกาย' },
+      {
+        text: 'ทั่วโลก วัยรุ่นอายุ 10–19 ปี ราว 1 ใน 7 คน มีภาวะทางสุขภาพจิต เรื่องใจจึงใกล้ตัวกว่าที่คิด',
+        source: 'WHO, Mental health of adolescents, 2024',
+      },
+      { text: 'ลองถามเพื่อนสักคนว่า "โอเคจริงไหม" แล้วตั้งใจฟังคำตอบ' },
+      {
+        // The same finding as content/th/heart.ts's หนัก ๆ fact.
+        text: 'แค่เรียกชื่อความรู้สึกออกมา เช่น "ตอนนี้เศร้า" สมองส่วนที่ตื่นตัวกับอารมณ์ก็ทำงานเบาลงได้แล้ว',
+        source: 'Lieberman et al., Psychological Science, 2007',
+      },
+      { text: 'การขอให้ใครช่วย ไม่ได้แปลว่าอ่อนแอ' },
+    ] as { text: string; source?: string }[],
+  },
 } as const;
 
 /** Copy for the kiosk, which is read standing up by a queue. */
 export const kiosk = {
   idleTitle: 'คุณเป็นดอกไม้แบบไหน?',
-  idleBody: 'ตอบ 3 ข้อ แล้วรับดอกไม้ไปแต่งกระทง',
+  idleBody: 'ตอบ 4 ข้อ ดูว่าดอกไม้ของคุณซ่อนอะไรไว้ แล้วรับดอกไม้ไปแต่งกระทง',
   idleAction: 'เริ่มเลย',
   resultNote: 'ดอกไม้ของคุณคือ',
   wishLabel: 'คำอวยพรจากดอกไม้',
   ticketTitle: 'โชว์หน้านี้ที่บูธ',
-  again: 'เล่นอีกครั้ง',
+  /** Staff hold the iPad: after a result, they tap this for the next student. */
+  again: 'คนต่อไป',
+  /** The staff-facing stock line on the idle screen: today's flowers so far. */
+  stockTitle: 'แจกไปวันนี้',
   back: 'ย้อนกลับ',
   /**
    * Seconds of no touching on the result before it resets for the next student.

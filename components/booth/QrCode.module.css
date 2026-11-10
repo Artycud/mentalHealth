@@ -1,0 +1,10 @@
+/* The card's corner is rounded a little, like the booth's paper cards, but never
+   into the quiet zone's edge modules: the radius is well inside the four-module
+   margin at every size it is drawn. */
+.qr {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 6%;
+}

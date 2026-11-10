@@ -77,10 +77,82 @@
   animation: pulse 1.8s ease-in-out infinite;
 }
 
+/* AutoRefresh marks <html data-stale> when the server has not answered for a
+   while: the "สด" badge greys and stops pulsing, so nobody reads stale numbers as
+   live. It comes back by itself when the server does. */
+:global(html[data-stale]) .live {
+  border-color: var(--ink-muted);
+  color: var(--ink-muted);
+}
+
+:global(html[data-stale]) .liveDot {
+  background: var(--ink-muted);
+  animation: none;
+}
+
+/* Everything above the river: the headline and the counts on the left, the QR
+   card on the right. The card spans both rows and is aligned to the top, so it
+   ends well above the moon that rises over the water at the bottom right. */
+.top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr;
+  column-gap: 3vw;
+  flex-grow: 1;
+  min-height: 0;
+}
+
 /* Headline block */
 .intro {
   flex-shrink: 0;
   margin-top: 2.4vh;
+}
+
+/* The bridge to the main site. White behind the code for the camera's sake; a
+   raised slab of paper around it, so it reads as part of the booth. 24vh is
+   about 15 cm on a 50–55" TV: a phone reads it from a couple of metres. */
+.qrCard {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2vh;
+  width: 32vh;
+  margin-top: 2.4vh;
+  padding: 1.8vh 1.8vh 2vh;
+  border-radius: 3vh;
+  background: var(--paper-raised);
+  box-shadow:
+    0 0.5vh 0 var(--line),
+    0 2.4vh 3.6vh -2.4vh rgba(27, 43, 94, 0.3);
+  text-align: center;
+}
+
+.qrTitle {
+  font-family: var(--font-heading);
+  font-size: 2.7vh;
+  font-weight: 500;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.qrBox {
+  width: 24vh;
+}
+
+/* A phrase of the QR card's copy: lines break between phrases, never inside one. */
+.phrase {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.qrBody {
+  font-size: 2.2vh;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  text-wrap: balance;
 }
 
 .note {
@@ -106,11 +178,12 @@
 /* Counts + distribution. Grows to absorb the leftover height and centres itself
    in it, so the screen never reads as a top-heavy block above empty paper. */
 .middle {
+  grid-column: 1;
   display: flex;
   align-items: center;
   gap: 3vw;
   margin-top: 2.6vh;
-  flex-grow: 1;
+  min-width: 0;
 }
 
 .count {
@@ -120,7 +193,9 @@
 /* The number sits on a pink blob and a blue circle, like a riso poster numeral. */
 .countArt {
   position: relative;
-  height: 28vh;
+  /* min() so a 4:3 screen, where the QR card takes a bigger share of the width,
+     still leaves the bars room. */
+  height: min(28vh, 17vw);
   aspect-ratio: 300 / 250;
 }
 
@@ -221,6 +296,74 @@
   font-size: 3.4vh;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---- Awareness slides: they take turns with the bars (components/booth/TvRotate) ---- */
+
+.aware {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1vh;
+  /* In vh, like the type, so a line is the same length of words on any screen. */
+  max-width: min(100%, 92vh);
+}
+
+.awareNote {
+  font-family: var(--font-note);
+  font-size: 3vh;
+  line-height: 1.4;
+  color: var(--note-pink);
+}
+
+.awareText {
+  font-family: var(--font-heading);
+  font-size: 4.4vh;
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.awareSource {
+  margin-top: 0.6vh;
+  font-size: 2vh;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.awareStat {
+  font-family: var(--font-heading);
+  font-size: 5.6vh;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.awareTail {
+  font-family: var(--font-note);
+  font-size: 3.2vh;
+  line-height: 1.4;
+  color: var(--note-pink);
+}
+
+/* Ten people as ten dots: the ones who say "okay" while not okay are filled. A
+   picture the room gets before it reads the words. */
+.people {
+  display: flex;
+  gap: 1.4vh;
+  margin: 0.6vh 0 0.8vh;
+}
+
+.person {
+  width: 4.4vh;
+  height: 4.4vh;
+  border-radius: 50%;
+  border: 0.5vh solid var(--ink);
+  background: var(--paper-raised);
+}
+
+.personOn {
+  border-color: var(--riso-pink);
+  background: var(--riso-pink);
 }
 
 /* The river band, full width along the bottom. The festival draws the water into

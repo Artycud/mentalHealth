@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import { createClient } from '@libsql/client';
 import puppeteer from 'puppeteer-core';
 
-import { flowerFromChoices, loykrathongQuiz } from '../content/th/booth.ts';
+import { flowerFromChoices, kiosk as kioskCopy, loykrathongQuiz, okayQuestion, okayReply } from '../content/th/booth.ts';
 import { questions } from '../content/th/questions.ts';
 import { buildResult } from '../content/th/results.ts';
 import { scoreCheckin } from '../lib/scoring.ts';
@@ -258,8 +258,10 @@ const letters = ['a', 'b', 'c', 'd'];
         await page.goto(`${BASE}/booth`, { waitUntil: 'networkidle0' });
         for (let q = 0; q < 3; q += 1) {
           await (await answerButtons(page))[idx[q]].click();
-          if (q < 2) await waitCounter(page, q + 2);
+          await waitCounter(page, q + 2);
         }
+        // The honest question, which never changes the flower: vary it anyway.
+        await (await answerButtons(page))[(a + b + c) % okayQuestion.choices.length].click();
         await page.waitForFunction(() => document.querySelector('button[aria-disabled="false"]'), { timeout: 3000 });
         await page.click('button[aria-disabled="false"]');
         await page.waitForFunction((n) => document.querySelector('h1')?.textContent.trim() === n, { timeout: 4000 }, want.name).catch(() => {});
@@ -292,8 +294,8 @@ const letters = ['a', 'b', 'c', 'd'];
 
   // -- back from the result restarts the quiz rather than doing nothing
   await page.evaluate(() => history.back());
-  await page.waitForFunction(() => [...document.querySelectorAll('span')].some((s) => /^\d\/3$/.test(s.textContent.trim())), { timeout: 4000 }).catch(() => {});
-  check('back from a booth result returns to the quiz', /^\d\/3$/.test(await page.evaluate(() => [...document.querySelectorAll('span')].map((s) => s.textContent.trim()).find((t) => /^\d\/3$/.test(t)) ?? '')));
+  await page.waitForFunction(() => [...document.querySelectorAll('span')].some((s) => /^\d\/4$/.test(s.textContent.trim())), { timeout: 4000 }).catch(() => {});
+  check('back from a booth result returns to the quiz', /^\d\/4$/.test(await page.evaluate(() => [...document.querySelectorAll('span')].map((s) => s.textContent.trim()).find((t) => /^\d\/4$/.test(t)) ?? '')));
   await page.close();
 }
 
@@ -342,6 +344,7 @@ const letters = ['a', 'b', 'c', 'd'];
   await sleep(1500);
   check('loading the TV does not replay old results as new flowers', (await tvPage.$('[role="status"]')) === null);
   check('the TV shows a real, non-invented count', (await tvPage.evaluate(() => !document.body.innerText.includes('ตัวอย่าง'))));
+  check('the TV shows a QR code to the main site', (await tvPage.$('aside svg[role="img"]')) !== null);
   await shot(tvPage, 'tv-live-before');
 
   const kioskFrom = created.length;
@@ -355,8 +358,17 @@ const letters = ['a', 'b', 'c', 'd'];
     await sleep(400); // the slide-in
     await (await answerButtons(kiosk))[0].click();
   }
+  // Fourth, the honest question: "บอกว่าโอเค แต่จริง ๆ ไม่ค่อย".
+  await kiosk.waitForFunction((h) => document.querySelector('h1')?.textContent.trim() === h, { timeout: 4000 }, okayQuestion.headline);
+  check('the kiosk asks the honest question fourth', (await heading(kiosk)) === okayQuestion.headline);
+  await sleep(400);
+  await (await answerButtons(kiosk))[1].click();
   await kiosk.waitForFunction((n) => document.querySelector('h1')?.textContent.trim() === n, { timeout: 5000 }, flowerWanted.name);
-  check(`the kiosk shows the right flower (${flowerWanted.name})`, (await heading(kiosk)) === flowerWanted.name);
+  check(`the kiosk shows the right flower (${flowerWanted.name}), unchanged by the honest answer`, (await heading(kiosk)) === flowerWanted.name);
+  const resultText = await kiosk.evaluate(() => document.body.innerText);
+  check("the result says the flower's other side", resultText.includes(flowerWanted.hidden));
+  check('and answers the honest question warmly, with CUD Care', resultText.includes(okayReply.hide) && resultText.includes('CUD Care'));
+  check('and has a QR code to the main site', (await kiosk.$('svg[role="img"]')) !== null);
   await sleep(900);
   await shot(kiosk, 'kiosk-result');
 
@@ -366,6 +378,11 @@ const letters = ['a', 'b', 'c', 'd'];
       (r) => r.length >= 1,
     ))[0];
     check('the kiosk saved its result, as a tablet-sized device', !!s && s.booth_result === flowerWanted.id, JSON.stringify(s));
+    const honest = await eventually(
+      () => rows('SELECT choice_id FROM answer WHERE session_id = ? AND question_id = ?', [created[kioskFrom] ?? '', okayQuestion.id]),
+      (r) => r.length >= 1,
+    );
+    check('and the honest answer, as an anonymous choice id', honest[0]?.choice_id === 'hide', JSON.stringify(honest));
   }
 
   // -- the TV notices, on its own, without reloading. Headless Chrome shows only
@@ -393,8 +410,14 @@ const letters = ['a', 'b', 'c', 'd'];
   await shot(tvPage, 'tv-live-after');
 
   // -- the kiosk puts itself back to idle for the next student
-  await kiosk.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('เล่นอีกครั้ง'))?.click());
-  check('"play again" returns the kiosk to its idle screen', (await heading(kiosk)) === 'คุณเป็นดอกไม้แบบไหน?');
+  await kiosk.evaluate((label) => [...document.querySelectorAll('button')].find((b) => b.textContent.includes(label))?.click(), kioskCopy.again);
+  check(`"${kioskCopy.again}" returns the kiosk to its idle screen`, (await heading(kiosk)) === 'คุณเป็นดอกไม้แบบไหน?');
+  const stock = await eventually(
+    () => kiosk.evaluate(() => document.body.innerText),
+    (t) => /แจกไปวันนี้ [1-9]/.test(t),
+    8000,
+  );
+  check('and its stock line for staff counts what has gone out today', /แจกไปวันนี้ [1-9]/.test(stock));
   await kiosk.close();
   await tvPage.close();
 }

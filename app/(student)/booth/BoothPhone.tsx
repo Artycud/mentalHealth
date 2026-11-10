@@ -10,8 +10,19 @@ import { SecondaryButton, TextLink } from '@/components/ui/buttons';
 import { PhoneQuiz, type QuizQuestion } from '@/components/quiz/PhoneQuiz';
 import { Screen } from '@/components/ui/Screen';
 import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
-import { flowerFromChoices, loykrathongQuiz, withDok, type Flower } from '@/content/th/booth';
-import { common } from '@/content/th/common';
+import {
+  flowerFromChoices,
+  hiddenLabel,
+  isOkayChoice,
+  loykrathongQuiz,
+  okayQuestion,
+  okayReply,
+  okayReplyLabel,
+  withDok,
+  type Flower,
+  type OkayChoiceId,
+} from '@/content/th/booth';
+import { common, cudCare } from '@/content/th/common';
 import { createTracker } from '@/lib/track';
 import type { FestivalId } from '@/lib/types';
 
@@ -39,12 +50,14 @@ interface BoothPhoneProps {
 export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: BoothPhoneProps) {
   const router = useRouter();
   const [flower, setFlower] = useState<Flower | null>(null);
+  const [okay, setOkay] = useState<OkayChoiceId | null>(null);
   // One per run. Going back from a result to play again makes a new one.
   const [tracker, setTracker] = useState(() => createTracker('booth'));
 
   const quiz = useMemo<QuizQuestion[]>(
     () =>
-      loykrathongQuiz.map((q) => ({
+      // The three flower questions, then the honest one, as on the booth's iPad.
+      [...loykrathongQuiz, okayQuestion].map((q) => ({
         id: q.id,
         note: q.note,
         headline: q.headline,
@@ -77,6 +90,8 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
           tracker.complete();
           const result = flowerFromChoices(answers);
           if (!result) return; // unreachable: the quiz only finishes complete
+          const honest = answers.find((a) => a.questionId === okayQuestion.id)?.choiceId;
+          setOkay(honest && isOkayChoice(honest) ? honest : null);
           // A history entry for the result, so back has something to pop.
           window.history.pushState({ ...(window.history.state as object), quizDone: true }, '');
           setFlower(result);
@@ -103,6 +118,19 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
         </div>
 
         <p className={styles.body}>{flower.body}</p>
+
+        {/* The other side of the flower, and the honest question answered back. */}
+        <div className={styles.hidden}>
+          <span className={styles.smallLabel}>{hiddenLabel}</span>
+          <span>{flower.hidden}</span>
+        </div>
+        {okay && (
+          <div className={styles.reply}>
+            <span className={styles.smallLabel}>{okayReplyLabel}</span>
+            <span className={styles.replyText}>{okayReply[okay]}</span>
+            <span className={styles.care}>{cudCare.result.body}</span>
+          </div>
+        )}
 
         <BoothTicket
           title={ticketTitle}

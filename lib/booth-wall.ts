@@ -1,4 +1,4 @@
-import { loykrathongFlowers } from '../content/th/booth.ts';
+import { loykrathongFlowers, okayQuestion } from '../content/th/booth.ts';
 
 import { db } from './db.ts';
 import type { Arrival } from './new-flowers.ts';
@@ -38,9 +38,33 @@ export interface WallData {
    * public), never anything about who got it.
    */
   recent: Arrival[];
+  /**
+   * How many in ten of today's players answered the honest question with "บอกว่า
+   * โอเค แต่จริง ๆ ไม่ค่อย", or null while it may not be shown. See okayShare.
+   */
+  okay: OkayShare | null;
   /** True only for the demo numbers, so the screen can say they are invented. */
   sample: boolean;
 }
+
+export interface OkayShare {
+  /** Rounded to a whole "n in 10", never a precise percentage. */
+  inTen: number;
+  /** How many answers it is drawn from (for the admin and tests, not the screen). */
+  answered: number;
+}
+
+/**
+ * The TV's privacy guard for the honest question (BRIEF §12). The TV is a screen in
+ * a room, beside the one iPad, so a number that moved the moment a student walked
+ * away from the iPad would say what that student answered. So:
+ *  - the newest OKAY_SKIP_NEWEST results of the day are always left out, so the
+ *    number can only move several students later, never right after someone;
+ *  - nothing is shown until OKAY_MIN answers remain after that;
+ *  - it is rounded to a whole "n in 10".
+ */
+export const OKAY_SKIP_NEWEST = 5;
+export const OKAY_MIN = 10;
 
 const DAY = 86_400_000;
 const BANGKOK = 7 * 3_600_000;
@@ -62,6 +86,7 @@ const empty = (): WallData => ({
   total: 0,
   flowers: loykrathongFlowers.map((f) => ({ id: f.id, name: f.name, tint: f.tint, count: 0 })),
   recent: [],
+  okay: null,
   sample: false,
 });
 
@@ -101,10 +126,31 @@ export async function getWallData(festival: FestivalId, nowMs = Date.now()): Pro
       const f = loykrathongFlowers.find((x) => x.id === r.flower);
       return f ? [{ flowerId: f.id, name: f.name, tint: f.tint }] : [];
     });
+
+    // The honest question, behind its guard (OKAY_SKIP_NEWEST, OKAY_MIN). "LIMIT -1
+    // OFFSET n" is SQLite for "all but the first n".
+    const okay = await c.execute({
+      sql: `SELECT a.choice_id AS choice, COUNT(*) AS n
+            FROM answer a
+            JOIN (SELECT id FROM session WHERE ${finished} AND completed_at >= ?
+                  ORDER BY completed_at DESC LIMIT -1 OFFSET ?) s ON s.id = a.session_id
+            WHERE a.question_id = ?
+            GROUP BY a.choice_id`,
+      args: [festival, dayStart, OKAY_SKIP_NEWEST, okayQuestion.id],
+    });
+    data.okay = okayShare(okay.rows.map((r) => ({ choice: String(r.choice), n: Number(r.n) })));
   } catch (error) {
     console.error('getWallData: showing an empty wall', error);
   }
   return data;
+}
+
+/** The guarded share from the counts per choice: null until there are OKAY_MIN. */
+export function okayShare(counts: { choice: string; n: number }[]): OkayShare | null {
+  const answered = counts.reduce((sum, r) => sum + r.n, 0);
+  if (answered < OKAY_MIN) return null;
+  const hide = counts.find((r) => r.choice === 'hide')?.n ?? 0;
+  return { inTen: Math.round((hide / answered) * 10), answered };
 }
 
 /**
@@ -121,6 +167,7 @@ export function demoWallData(): WallData {
       const f = loykrathongFlowers[i % loykrathongFlowers.length];
       return { flowerId: f.id, name: f.name, tint: f.tint };
     }),
+    okay: { inTen: 4, answered: 96 },
     sample: true,
   };
 }
