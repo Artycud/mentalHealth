@@ -30,6 +30,30 @@ export interface FestivalTheme {
     resultNote: string;
     title: string;
   };
+  /**
+   * What a student gets for playing, as the TV's headline. Optional: a booth with
+   * no reward leads with its flower instead (tv.hook.flowerOnly). An admin switches
+   * it off when it runs out (lib/settings.ts getRewardOn), so no screen promises
+   * something the booth no longer has.
+   */
+  reward?: Reward;
+}
+
+/**
+ * The booth's reward, split the way the TV sets it: a short lead, the headline,
+ * and the amount in the biggest type on the screen. Written exactly as the council
+ * announces it.
+ */
+export interface Reward {
+  lead: string;
+  headline: string;
+  amount: string;
+  /** What else comes with it, one small line under the amount. */
+  extra: string;
+  /** The kiosk's idle screen, under the start button's lead. */
+  kioskLine: string;
+  /** On the result's ticket, so the staff holding the iPad hand over both. */
+  ticketLine: string;
 }
 
 export const festivals: Record<FestivalId, FestivalTheme> = {
@@ -45,6 +69,15 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
       label: 'บูธลอยกระทง',
       resultNote: 'ดอกไม้ของคุณคือ',
       title: 'เอาหน้านี้ไปโชว์ที่บูธ',
+    },
+    // The council's wording, kept as announced: students read it as 10 baht off.
+    reward: {
+      lead: 'คุณเป็นดอกไม้แบบไหน? ตอบ 4 ข้อ รับเลย',
+      headline: 'คูปองลดไอศกรีม',
+      amount: '10 บาทฟรี',
+      extra: '+ ดอกไม้ไปแต่งกระทง',
+      kioskLine: 'ตอบครบ รับคูปองลดไอศกรีม 10 บาท + ดอกไม้',
+      ticketLine: '+ คูปองลดไอศกรีม 10 บาท',
     },
   },
   christmas: {
@@ -431,6 +464,24 @@ export const tv = {
   newLine: 'มีคนเพิ่งได้ดอกนี้ ลอยลงแม่น้ำแล้ว',
   /** A laptop driving the TV: shown only while the mouse moves, until full screen. */
   fullscreen: 'เต็มจอ',
+  /**
+   * The hook: the left of the TV, always on screen, read in a one-second glance
+   * from across the canteen. The reward leads when there is one (FestivalTheme
+   * .reward); otherwise the flower itself is the prize.
+   */
+  hook: {
+    /** Where to play. Not a button: the TV is never touched. */
+    where: 'เล่นได้ที่บูธนี้ ถามพี่ที่ถือ iPad ได้เลย',
+    flowerOnly: {
+      lead: 'ตอบ 4 ข้อ รับเลย',
+      headline: 'คุณเป็นดอกไม้แบบไหน?',
+      amount: 'รับดอกไม้ฟรี',
+      extra: 'ไปแต่งกระทง',
+    },
+    /** The count, at the top of the rotating panel. */
+    today: 'วันนี้เล่นแล้ว',
+    todayUnit: 'คน',
+  },
   /**
    * The awareness band. DRAFT copy, for council review. A line that states a fact
    * carries its source and says only what the source found (BRIEF §0); the rest is

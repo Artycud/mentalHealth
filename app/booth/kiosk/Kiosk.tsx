@@ -30,6 +30,7 @@ import {
   type BoothAnswer,
   type FestivalTheme,
   type OkayChoiceId,
+  type Reward,
 } from '@/content/th/booth';
 import { common, cudCare } from '@/content/th/common';
 import type { EventText } from '@/lib/events';
@@ -85,11 +86,14 @@ export function Kiosk({
   event,
   stock,
   qrUrl,
+  reward,
 }: {
   theme: FestivalTheme;
   event: EventText;
   stock: StockLine[];
   qrUrl: string;
+  /** The booth's reward while it lasts (the admin switches it off when it runs out). */
+  reward?: Reward;
 }) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>({ kind: 'idle' });
@@ -219,6 +223,7 @@ export function Kiosk({
             <p className={styles.note}>{theme.theme}</p>
             <h1 className={styles.question}>{boothQuizTitle}</h1>
             <p className={styles.lead}>{kiosk.idleBody}</p>
+            {reward && <p className={styles.reward}>{reward.kioskLine}</p>}
             <button
               type="button"
               className={styles.start}
@@ -364,6 +369,8 @@ export function Kiosk({
           <div className={`${styles.ticket} ${styles.rise}`}>
             <span className={styles.ticketTitle}>{kiosk.ticketTitle}</span>
             <span className={styles.ticketBody}>รับ{withDok(flower.name)}ไปแต่งกระทงได้เลย</span>
+            {/* For the staff holding the iPad: hand over both. */}
+            {reward && <span className={styles.ticketReward}>{reward.ticketLine}</span>}
           </div>
         </div>
 

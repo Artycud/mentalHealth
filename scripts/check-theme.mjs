@@ -106,7 +106,7 @@ for (const [fg, bg, min, where] of PAIRS) {
 
 // ---- 2. the festival layer ----
 
-const ALLOWED = ['--accent', '--fest-far', '--fest-near', '--fest-light', '--fest-glow', '--fest-on-water'];
+const ALLOWED = ['--accent', '--fest-far', '--fest-near', '--fest-light', '--fest-glow', '--fest-on-water', '--fest-sky'];
 const festivalFiles = files('app/festivals', ['.css']);
 check(festivalFiles.length > 0, 'there is at least one festival file');
 

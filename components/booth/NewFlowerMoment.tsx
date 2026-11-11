@@ -21,14 +21,14 @@ interface Moment extends Arrival {
 }
 
 /**
- * The quiet screen that greets a new flower on the TV.
+ * The quiet moment that greets a new flower on the TV.
  *
- * When a result comes in, the busy dashboard steps back: a clean paper screen
- * fades in with ONE flower blooming in its own colour, its name, and a single soft
- * ring, then fades away, and the flower is already on the river beneath. Nothing
- * else on the screen is coloured while it plays — no confetti, no burst — so it
- * reads as a moment of attention rather than an alarm, in a room where the screen
- * is mostly background.
+ * When a result comes in, the TV's rotating panel (its parent) steps back: it goes
+ * quiet and ONE flower blooms in its own colour, with its name and a single soft
+ * ring, then fades away, and the flower is already on the river beneath. No
+ * confetti, no burst. It never covers the hook beside it, so a glance at that
+ * moment still sees the reward; the flower appearing is the one change on screen
+ * that catches the eye.
  *
  * It is anonymous by construction (BRIEF §12): it shows a flower and nothing
  * about who got it, because the screen is in a room full of people.

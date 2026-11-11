@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import { createClient } from '@libsql/client';
 import puppeteer from 'puppeteer-core';
 
-import { flowerFromChoices, kiosk as kioskCopy, loykrathongQuiz, okayQuestion, okayReply } from '../content/th/booth.ts';
+import { festivals, flowerFromChoices, kiosk as kioskCopy, loykrathongQuiz, okayQuestion, okayReply } from '../content/th/booth.ts';
 import { questions } from '../content/th/questions.ts';
 import { buildResult } from '../content/th/results.ts';
 import { scoreCheckin } from '../lib/scoring.ts';
@@ -338,19 +338,22 @@ const letters = ['a', 'b', 'c', 'd'];
 {
   const tvPage = await newPage(tv);
   await tvPage.goto(`${BASE}/booth/display`, { waitUntil: 'networkidle0' });
-  const readCount = () => tvPage.$eval('[class*="countNum"]', (n) => Number(n.textContent.trim()));
+  const readCount = () => tvPage.$eval('[class*="todayNum"]', (n) => Number(n.textContent.trim()));
   const startCount = await readCount();
   await tvPage.evaluate(() => { window.__stillHere = 'no reload'; });
   await sleep(1500);
   check('loading the TV does not replay old results as new flowers', (await tvPage.$('[role="status"]')) === null);
   check('the TV shows a real, non-invented count', (await tvPage.evaluate(() => !document.body.innerText.includes('ตัวอย่าง'))));
   check('the TV shows a QR code to the main site', (await tvPage.$('aside svg[role="img"]')) !== null);
+  const reward = festivals.loykrathong.reward;
+  check('the TV leads with the coupon', (await heading(tvPage)) === reward.headline && (await tvPage.evaluate(() => document.body.innerText)).includes(reward.amount));
   await shot(tvPage, 'tv-live-before');
 
   const kioskFrom = created.length;
   const kiosk = await newPage(tablet);
   await kiosk.goto(`${BASE}/booth/kiosk`, { waitUntil: 'networkidle0' });
   check('the kiosk opens on its own idle screen', (await heading(kiosk)) === 'คุณเป็นดอกไม้แบบไหน?');
+  check('and tells the student about the coupon', (await kiosk.evaluate(() => document.body.innerText)).includes(reward.kioskLine));
   await kiosk.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('เริ่มเลย'))?.click());
   const flowerWanted = flowerFromChoices(loykrathongQuiz.map((q) => ({ questionId: q.id, choiceId: q.choices[0].id })));
   for (let i = 0; i < 3; i += 1) {
@@ -369,6 +372,7 @@ const letters = ['a', 'b', 'c', 'd'];
   check("the result says the flower's other side", resultText.includes(flowerWanted.hidden));
   check('and answers the honest question warmly, with CUD Care', resultText.includes(okayReply.hide) && resultText.includes('CUD Care'));
   check('and has a QR code to the main site', (await kiosk.$('svg[role="img"]')) !== null);
+  check('and its ticket tells staff to hand over the coupon too', resultText.includes(reward.ticketLine));
   await sleep(900);
   await shot(kiosk, 'kiosk-result');
 
@@ -418,6 +422,28 @@ const letters = ['a', 'b', 'c', 'd'];
     8000,
   );
   check('and its stock line for staff counts what has gone out today', /แจกไปวันนี้ [1-9]/.test(stock));
+
+  // -- the coupons run out: the admin switches the coupon off, and neither screen
+  // promises one any more. Put back exactly as it was afterwards.
+  if (CHECK_DB) {
+    const before = await rows("SELECT value, updated_at FROM setting WHERE key = 'reward_on'");
+    await db.execute({
+      sql: `INSERT INTO setting (key, value, updated_at) VALUES ('reward_on', '0', ?)
+            ON CONFLICT(key) DO UPDATE SET value = '0'`,
+      args: [new Date().toISOString()],
+    });
+    try {
+      await tvPage.reload({ waitUntil: 'networkidle0' });
+      await kiosk.reload({ waitUntil: 'networkidle0' });
+      const tvText = await tvPage.evaluate(() => document.body.innerText);
+      const kioskText = await kiosk.evaluate(() => document.body.innerText);
+      check('with the coupon switched off, the TV leads with the flower instead', !tvText.includes(reward.headline) && (await heading(tvPage)) !== '');
+      check('and the kiosk no longer mentions it', !kioskText.includes(reward.kioskLine));
+    } finally {
+      if (before.length === 0) await db.execute("DELETE FROM setting WHERE key = 'reward_on'");
+      else await db.execute({ sql: "UPDATE setting SET value = ?, updated_at = ? WHERE key = 'reward_on'", args: [before[0].value, before[0].updated_at] });
+    }
+  }
   await kiosk.close();
   await tvPage.close();
 }

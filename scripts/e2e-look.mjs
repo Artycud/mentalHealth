@@ -83,7 +83,25 @@ try {
       };
     });
     check('the TV does not scroll in either direction', shape.noScroll);
-    check('the river band fills the bottom 30%', shape.bandHeight === 30 && shape.bandAtBottom, JSON.stringify(shape));
+    check('the river band fills the bottom 24%', shape.bandHeight === 24 && shape.bandAtBottom, JSON.stringify(shape));
+
+    // The hook is for a one-second glance, so nothing may ever cover it. In demo
+    // mode a pretend new flower arrives after 4 s; while it plays, the hook must
+    // still be on screen and the moment must stay inside its own panel.
+    await page.waitForSelector('[role="status"]', { timeout: 15000 });
+    const glance = await page.evaluate(() => {
+      const hook = document.querySelector('section[data-hook]')?.getBoundingClientRect();
+      const moment = document.querySelector('[role="status"]')?.getBoundingClientRect();
+      const h1 = document.querySelector('section[data-hook] h1');
+      const atCentre = h1 && (() => {
+        const r = h1.getBoundingClientRect();
+        return h1.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+      })();
+      const overlap = hook && moment && !(moment.left >= hook.right || moment.right <= hook.left || moment.top >= hook.bottom || moment.bottom <= hook.top);
+      return { atCentre, overlap, headline: h1?.textContent ?? '' };
+    });
+    check('the TV leads with its hook headline', glance.headline.length > 0, JSON.stringify(glance));
+    check('a new flower never covers the hook', glance.atCentre === true && glance.overlap === false, JSON.stringify(glance));
     await page.close();
   }
 

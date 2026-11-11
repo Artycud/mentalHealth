@@ -1,7 +1,7 @@
 import { connection } from 'next/server';
 import { Fragment } from 'react';
 
-import { CountBlob } from '@/components/booth/art';
+import { IceCream } from '@/components/booth/art';
 import { AutoRefresh } from '@/components/booth/AutoRefresh';
 import { KeepAwake } from '@/components/booth/KeepAwake';
 import { NewFlowerMoment } from '@/components/booth/NewFlowerMoment';
@@ -11,13 +11,13 @@ import { TvRotate } from '@/components/booth/TvRotate';
 import { FestivalRiver } from '@/components/festival/registry';
 import { tintInk, WallFlower } from '@/components/booth/WallFlower';
 import { Wordmark } from '@/components/illustrations/icons';
-import { boothQuizTitle, festivals, qrInvite, tv } from '@/content/th/booth';
+import { festivals, qrInvite, tv } from '@/content/th/booth';
 import { common } from '@/content/th/common';
 import { demoWallData, getWallData } from '@/lib/booth-wall';
 import { getEventText } from '@/lib/events';
 import { requireBooth } from '@/lib/guard';
 import { riverDepth } from '@/lib/river';
-import { getActiveFestival } from '@/lib/settings';
+import { getActiveFestival, getRewardOn } from '@/lib/settings';
 import { siteUrl } from '@/lib/site-url';
 
 import styles from './display.module.css';
@@ -72,41 +72,55 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
   const { demo } = await props.searchParams;
   const showDemo = demo === '1' && process.env.NODE_ENV !== 'production';
 
-  const wall = showDemo ? demoWallData() : await getWallData(active);
-  const event = await getEventText(active);
-  const qrUrl = await siteUrl('/');
+  const [wall, event, qrUrl, rewardOn] = await Promise.all([
+    showDemo ? demoWallData() : getWallData(active),
+    getEventText(active),
+    siteUrl('/'),
+    getRewardOn(),
+  ]);
   const max = Math.max(...wall.flowers.map((f) => f.count), 1);
 
   const empty = wall.recent.length === 0;
 
-  // The flower bars: the TV's primary view, taking turns with the awareness slides.
+  // The hook: the reward when there is one and it has not run out, else the flower.
+  const reward = rewardOn ? theme.reward : undefined;
+  const hook = reward ?? tv.hook.flowerOnly;
+
+  // The rotating panel's first view: today's count over the flower bars.
   const bars = (
-    <div className={styles.bars}>
-      {wall.flowers.map((f, i) => (
-        <div key={f.id} className={styles.bar}>
-          <span className={styles.barName}>{f.name}</span>
-          <span className={styles.barFlower}>
-            <WallFlower tint={f.tint} />
-          </span>
-          <span className={styles.barTrack}>
-            {/* Each bar takes its flower's own ink, so the chart and the river
-                below speak the same colours. --r is how much of the track is
-                left empty; the fill is clipped to it, not resized, so its
-                rounded end is never squashed. */}
-            <span
-              className={styles.barFill}
-              style={
-                {
-                  '--ink-bar': tintInk(f.tint),
-                  '--r': `${100 - Math.round((f.count / max) * 100)}%`,
-                  animationDelay: `${i * 90}ms`,
-                } as React.CSSProperties
-              }
-            />
-          </span>
-          <span className={styles.barCount}>{f.count}</span>
-        </div>
-      ))}
+    <div className={styles.tally}>
+      <p className={styles.today}>
+        {tv.hook.today} <span className={styles.todayNum}>{wall.today}</span> {tv.hook.todayUnit}
+      </p>
+      <div className={styles.bars}>
+        {wall.flowers.map((f, i) => (
+          <div key={f.id} className={styles.bar}>
+            <span className={styles.barName}>{f.name}</span>
+            <span className={styles.barFlower}>
+              {/* On a plate: petals multiplied straight onto the night sky would
+                  go dark. */}
+              <WallFlower tint={f.tint} plate />
+            </span>
+            <span className={styles.barTrack}>
+              {/* Each bar takes its flower's own ink, so the chart and the river
+                  below speak the same colours. --r is how much of the track is
+                  left empty; the fill is clipped to it, not resized, so its
+                  rounded end is never squashed. */}
+              <span
+                className={styles.barFill}
+                style={
+                  {
+                    '--ink-bar': tintInk(f.tint),
+                    '--r': `${100 - Math.round((f.count / max) * 100)}%`,
+                    animationDelay: `${i * 90}ms`,
+                  } as React.CSSProperties
+                }
+              />
+            </span>
+            <span className={styles.barCount}>{f.count}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
@@ -147,9 +161,6 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
       <AutoRefresh />
       <KeepAwake />
       <TvControls label={tv.fullscreen} />
-      {/* A quiet screen for each new flower. In demo mode it pretends one arrives
-          every few seconds, so the design can be reviewed. */}
-      <NewFlowerMoment total={wall.total} recent={wall.recent} demo={showDemo} />
       <div className={styles.head}>
         <span className={styles.brand}>
           <Wordmark />
@@ -173,37 +184,47 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
       </div>
 
       <div className={styles.top}>
-        <div className={styles.intro}>
-          <p className={styles.note}>{theme.theme}</p>
-          <h1 className={styles.title}>{boothQuizTitle}</h1>
-        </div>
-
-        {/* The bridge to the main site. Top right, so it stays clear of the moon that
-            rises over the water at the bottom right. */}
-        <aside className={styles.qrCard}>
-          <span className={styles.qrTitle}>
-            <Phrases text={qrInvite.title} />
-          </span>
-          <div className={styles.qrBox}>
-            <QrCode value={qrUrl} label={qrInvite.title} />
-          </div>
-          <span className={styles.qrBody}>
-            <Phrases text={qrInvite.body} />
-          </span>
-        </aside>
-
-        <div className={styles.middle}>
-          <div className={styles.count}>
-            <div className={styles.countArt}>
-              <div className={styles.layer}>
-                <CountBlob />
-              </div>
-              <div className={styles.countNum}>{wall.today}</div>
+        {/* The hook, for the one-second glance from across the canteen. Always on
+            screen: nothing on the TV ever covers it, not even a new flower. */}
+        <section className={styles.hook} data-hook={reward ? 'reward' : 'flower'}>
+          <p className={styles.lead}>{hook.lead}</p>
+          <h1 className={styles.headline}>{hook.headline}</h1>
+          <div className={styles.amountRow}>
+            <p className={styles.amount}>{hook.amount}</p>
+            <div className={styles.hookArt}>
+              {reward ? <IceCream /> : <WallFlower tint={wall.flowers[0]?.tint ?? 0} plate size={240} />}
             </div>
-            <div className={styles.countLabel}>คนเล่นแล้ววันนี้</div>
+          </div>
+          <p className={styles.where}>{tv.hook.where}</p>
+          <p className={styles.extra}>{hook.extra}</p>
+        </section>
+
+        <div className={styles.side}>
+          {/* For the queue, who have time to read: the count and bars, taking turns
+              with the awareness slides. A new flower plays here, over this panel
+              only. */}
+          <div className={styles.panel}>
+            <TvRotate primary={bars} items={awareness} />
+            {/* In demo mode it pretends one arrives every few seconds, so the
+                design can be reviewed. */}
+            <NewFlowerMoment total={wall.total} recent={wall.recent} demo={showDemo} />
           </div>
 
-          <TvRotate primary={bars} items={awareness} />
+          {/* The bridge to the main site, for later. Dark around it so it does not
+              outshine the hook; white behind the code for the camera. */}
+          <aside className={styles.qrCard}>
+            <div className={styles.qrBox}>
+              <QrCode value={qrUrl} label={qrInvite.title} />
+            </div>
+            <div className={styles.qrText}>
+              <span className={styles.qrTitle}>
+                <Phrases text={qrInvite.title} />
+              </span>
+              <span className={styles.qrBody}>
+                <Phrases text={qrInvite.body} />
+              </span>
+            </div>
+          </aside>
         </div>
       </div>
 
@@ -237,7 +258,7 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
         </div>
         <div className={styles.foot}>
           <span>
-            {event.place} · รวมทั้งหมด {wall.total} คน
+            {event.place} · {theme.theme} · รวมทั้งหมด {wall.total} คน
           </span>
           {wall.sample && <span className={styles.sample}>ตัวอย่าง — ยังไม่ใช่ข้อมูลจริง</span>}
         </div>

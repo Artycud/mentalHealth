@@ -5,7 +5,7 @@ import { errors } from '@/content/th/common';
 import { getWallData } from '@/lib/booth-wall';
 import { getEventText } from '@/lib/events';
 import { requireBooth } from '@/lib/guard';
-import { getActiveFestival } from '@/lib/settings';
+import { getActiveFestival, getRewardOn } from '@/lib/settings';
 import { siteUrl } from '@/lib/site-url';
 
 import { Kiosk } from './Kiosk';
@@ -40,6 +40,19 @@ export default async function BoothKioskPage() {
 
   // Today's flowers so far, for the staff's stock line (the same anonymous counts
   // the TV shows), and the main site's address for the result's QR code.
-  const [event, wall, qrUrl] = await Promise.all([getEventText(active), getWallData(active), siteUrl('/')]);
-  return <Kiosk theme={theme} event={event} stock={wall.flowers} qrUrl={qrUrl} />;
+  const [event, wall, qrUrl, rewardOn] = await Promise.all([
+    getEventText(active),
+    getWallData(active),
+    siteUrl('/'),
+    getRewardOn(),
+  ]);
+  return (
+    <Kiosk
+      theme={theme}
+      event={event}
+      stock={wall.flowers}
+      qrUrl={qrUrl}
+      reward={rewardOn ? theme.reward : undefined}
+    />
+  );
 }

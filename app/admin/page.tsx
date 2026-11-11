@@ -8,7 +8,7 @@ import { filtersToQuery, getAdminData, parseFilters, thaiDay } from '@/lib/admin
 import { getBoothAccount } from '@/lib/auth';
 import { getEvent } from '@/lib/events';
 import { adminConfig, requireAdminPage } from '@/lib/guard';
-import { getActiveFestival } from '@/lib/settings';
+import { getActiveFestival, getRewardOn } from '@/lib/settings';
 
 import { AccountCard } from './AccountCard';
 import styles from './admin.module.css';
@@ -19,6 +19,7 @@ import { EventForms } from './EventForms';
 import { Filters } from './Filters';
 import { formatDuration, fullDay, thaiStamp } from './format';
 import { LogoutButton } from './LogoutButton';
+import { RewardControl } from './RewardControl';
 import { SessionList } from './SessionList';
 import { ThemeControl } from './ThemeControl';
 
@@ -32,7 +33,7 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
   await requireAdminPage();
 
   const filters = parseFilters(await props.searchParams);
-  const [data, live, booth, account, events] = await Promise.all([
+  const [data, live, booth, account, events, rewardOn] = await Promise.all([
     getAdminData(filters),
     getActiveFestival(),
     getBoothAccount(),
@@ -43,7 +44,10 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
         return { festival: id, name: festivals[id].name, start: e.start, end: e.end, time: e.time, place: e.place };
       }),
     ),
+    getRewardOn(),
   ]);
+  // The coupon switch shows only while the live booth has a reward to switch.
+  const liveReward = live === 'none' ? undefined : festivals[live].reward;
 
   const query = filtersToQuery(filters);
   const exportHref = (kind: 'sessions' | 'answers') => `/api/admin/export${query ? `${query}&` : '?'}kind=${kind}`;
@@ -82,6 +86,12 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
           ]}
         />
       </div>
+
+      {liveReward && (
+        <div className={styles.section}>
+          <RewardControl on={rewardOn} reward={`${liveReward.headline} ${liveReward.amount}`} />
+        </div>
+      )}
 
       <section className={`${styles.card} ${styles.section}`} aria-labelledby="filters-h">
         <h2 id="filters-h">{admin.filters.heading}</h2>

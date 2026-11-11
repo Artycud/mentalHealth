@@ -16,4 +16,8 @@
   --fest-light: var(--sunflower);      /* the moon, and its reflection */
   --fest-glow: rgba(255, 181, 17, 0.6); /* the pool of light under a floating flower */
   --fest-on-water: var(--paper);       /* text that sits on the near layer */
+  /* The TV's sky: night above, dusk warming only just above the water. The TV is
+     the one screen read in a glance from across a room, so it is a night scene
+     with paper-coloured text (BRIEF, decisions: "Booth TV at a glance"). */
+  --fest-sky: linear-gradient(180deg, #0b1536 0%, #1c2668 46%, #33307f 64%, #8a3290 72%, #e0457f 77%, #ff8a4d 81%, #ffc36b 84%);
 }

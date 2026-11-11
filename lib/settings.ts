@@ -44,3 +44,33 @@ export async function setActiveFestival(festival: ActiveFestival): Promise<void>
     args: [festival, new Date().toISOString()],
   });
 }
+
+/**
+ * Whether the booth's reward (the Loy Krathong ice-cream coupon) is still being
+ * given out. The TV leads with it and the kiosk mentions it, so when the coupons run
+ * out an admin switches this off and neither screen promises one any more.
+ *
+ * On by default: a fresh database, or one nobody has touched, shows the reward. It
+ * never throws; if the database is unreachable the screens carry on as if it were on.
+ */
+export async function getRewardOn(): Promise<boolean> {
+  try {
+    const c = await db();
+    const r = await c.execute("SELECT value FROM setting WHERE key = 'reward_on'");
+    const value = r.rows[0]?.value;
+    return value !== '0';
+  } catch (error) {
+    console.error('getRewardOn: falling back to on', error);
+    return true;
+  }
+}
+
+/** For the admin panel's coupon switch. */
+export async function setRewardOn(on: boolean): Promise<void> {
+  const c = await db();
+  await c.execute({
+    sql: `INSERT INTO setting (key, value, updated_at) VALUES ('reward_on', ?, ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    args: [on ? '1' : '0', new Date().toISOString()],
+  });
+}

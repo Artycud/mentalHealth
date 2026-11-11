@@ -1,23 +1,26 @@
-/* The quiet screen for a new flower on the TV. Sizes are in vh, like the TV.
+/* The quiet moment for a new flower on the TV. Sizes are in vh, like the TV.
 
-   Restraint is the design. The page behind stays exactly as it is; this covers it
-   with plain paper and shows one flower in its own colour. The only saturated
-   colour on screen is that flower, lit by a soft pool of the festival's light.
-   Everything else is ink on paper, and the one ring is a thin line that swells
-   once and is gone. */
+   Restraint is the design. It covers only the TV's rotating panel (its parent),
+   never the hook beside it: someone glancing at the screen at that moment still
+   sees what the booth gives. The panel goes quiet — the night sky, seen through
+   the same fixed gradient as the page so there is no edge — and one flower blooms
+   in its own colour, lit by a soft pool of the festival's light. The one ring is
+   a thin line that swells once and is gone. */
 
 .veil {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2.4vh;
-  padding: 4vh 4vw;
-  background: var(--paper-surface);
-  color: var(--ink);
+  gap: 1.2vh;
+  padding: 1vh 1vw;
+  /* The page's own sky, pinned to the viewport, so the panel turns quiet without
+     a box appearing. Plain navy where the festival has no sky. */
+  background: var(--fest-sky, var(--ink)) fixed;
+  color: var(--tv-text, var(--paper));
   text-align: center;
   /* In, hold, out — as one animation on the clock the timer also uses, so the
      screen is never still showing when the component has already left. */
@@ -27,9 +30,9 @@
 /* The one Itim note on this screen (BRIEF §5). */
 .note {
   font-family: var(--font-note);
-  font-size: 3.6vh;
+  font-size: 2.8vh;
   line-height: 1.4;
-  color: var(--note-pink);
+  color: var(--tv-note, var(--paper));
   animation: rise 500ms var(--ease) 250ms backwards;
 }
 
@@ -37,8 +40,8 @@
    bloom (petals opening one after another) and, later, its slow breath. */
 .art {
   position: relative;
-  width: 44vh;
-  height: 44vh;
+  width: 22vh;
+  height: 22vh;
   animation: fade 400ms var(--ease) 200ms backwards;
 }
 
@@ -58,23 +61,23 @@
 .ring {
   position: absolute;
   inset: 4%;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--tv-text, var(--paper));
   border-radius: 50%;
   pointer-events: none;
   animation: ring 1800ms ease-out 700ms both;
 }
 
 .name {
-  font-size: 12vh;
+  font-size: 6vh;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.2;
   animation: rise 500ms var(--ease) 500ms backwards;
 }
 
 .line {
-  font-size: 3vh;
+  font-size: 2.4vh;
   line-height: 1.5;
-  color: var(--ink-soft);
+  color: var(--tv-soft, var(--paper));
   animation: rise 500ms var(--ease) 650ms backwards;
 }
 

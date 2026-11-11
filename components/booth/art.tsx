@@ -139,20 +139,46 @@ export function backdropToneFor(tint: Tint): 'pink' | 'sun' {
   return tint === 1 || tint === 3 ? 'sun' : 'pink';
 }
 
+/** The cone's waffle: diagonal lines both ways, clipped to the cone. */
+const WAFFLE = [-40, 0, 40, 80, 120, 160].flatMap((o) => [
+  `M${o} 150 L${o + 160} 310`,
+  `M${o + 120} 150 L${o - 40} 310`,
+]);
+
 /**
- * The count's badge on the TV: a pink blob and a blue circle for the big number
- * to sit on. The number itself is HTML, laid over this.
+ * The TV's reward, as a picture: an ice-cream cone in cut paper. A shape the room
+ * knows before it reads a word, beside the coupon's amount. A vanilla scoop on a
+ * pink one, a marigold cone, a cherry. Still: the amount beside it is what pops.
  */
-export function CountBlob() {
+export function IceCream() {
   return (
-    <svg viewBox="0 0 300 250" aria-hidden="true" className={s.fill}>
-      <SpeckleDefs id="sp-count" size={110} />
-      <g className={s.floatA}>
-        <Cut d={BLOB} fill="var(--riso-pink)" speckle="sp-count" transform="translate(10 8) scale(1.05 1.05)" />
+    <svg viewBox="0 0 220 320" aria-hidden="true" className={s.fill}>
+      <SpeckleDefs id="sp-ice" size={110} />
+      <defs>
+        <clipPath id="ice-cone">
+          <path d="M50 150 L170 150 L112 314 Z" />
+        </clipPath>
+      </defs>
+      <Cut d="M50 150 L170 150 L112 314 Z" fill="var(--sunflower)" speckle="sp-ice" />
+      <g clipPath="url(#ice-cone)" stroke="var(--ink)" strokeWidth="4" opacity="0.32">
+        {WAFFLE.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </g>
-      <g className={s.floatB}>
-        <Cut d={circlePath(258, 204, 40)} fill="var(--riso-blue)" speckle="sp-count" mul />
+      <Cut
+        d="M38 156 C28 116 62 90 110 90 C158 90 192 116 182 156 C176 172 162 160 152 174 C142 188 130 166 119 178 C108 190 96 166 85 178 C74 190 62 162 52 172 C44 178 38 168 38 156 Z"
+        fill="var(--riso-pink)"
+        speckle="sp-ice"
+      />
+      <Cut d={circlePath(110, 78, 46)} fill="var(--paper)" speckle="sp-ice" />
+      <g strokeLinecap="round" strokeWidth="5">
+        <path d="M86 64 l8 -5" stroke="var(--riso-blue)" />
+        <path d="M118 96 l9 3" stroke="var(--riso-pink)" />
+        <path d="M134 62 l4 8" stroke="var(--riso-blue)" />
+        <path d="M96 92 l-6 6" stroke="var(--sunflower)" />
       </g>
+      <path d="M124 26 C126 14 134 8 144 6" fill="none" stroke="var(--ink)" strokeWidth="4" strokeLinecap="round" />
+      <Cut d={circlePath(122, 34, 12)} fill="var(--riso-pink)" />
     </svg>
   );
 }

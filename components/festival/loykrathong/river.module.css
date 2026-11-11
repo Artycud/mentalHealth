@@ -1,9 +1,9 @@
 /* The night river. Everything is sized in vh (and vw for the sideways position), like
    the TV it fills, and everything that moves is a transform.
 
-   The band it fills is 30vh tall; the far layer's edge is about 17% down it and the
-   near layer's about 38%, so the moon (centred on the horizon) sits half above the
-   far water. */
+   On the TV the band it fills is 24vh tall; the far layer's edge is about 17% down
+   it and the near layer's about 38%, so the moon (centred on the horizon) sits on
+   the far water, rising just above it. */
 
 .scene {
   position: absolute;

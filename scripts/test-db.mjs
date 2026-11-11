@@ -13,7 +13,7 @@ for (const suffix of ['', '-journal', '-wal', '-shm']) fs.rmSync(FILE + suffix, 
 
 const { db, closeDb } = await import('../lib/db.ts');
 const { ApiError, CREATE_CAP_PER_MINUTE, completeSession, createSession, saveAnswer } = await import('../lib/session.ts');
-const { getActiveFestival, setActiveFestival } = await import('../lib/settings.ts');
+const { getActiveFestival, getRewardOn, setActiveFestival, setRewardOn } = await import('../lib/settings.ts');
 const { DEFAULT_EVENTS, getEvent, getEventText, setEvent } = await import('../lib/events.ts');
 const { OKAY_MIN, OKAY_SKIP_NEWEST, bangkokDayStartUtc, demoWallData, getWallData, okayShare } = await import('../lib/booth-wall.ts');
 const { questions } = await import('../content/th/questions.ts');
@@ -208,6 +208,18 @@ const checkinAnswers = ['d', 'b', 'c', 'b', 'b', 'b', 'd', 'c']; // the brief's 
   eq('a corrupt setting falls back to the default, not an error', await getActiveFestival(), 'loykrathong');
   await setActiveFestival('loykrathong');
   await c.execute("DELETE FROM session");
+}
+
+// ---- 7b. The coupon switch: the TV never promises a coupon the booth has run out of ----
+{
+  eq('the coupon is on by default, before anyone has touched it', await getRewardOn(), true);
+  await setRewardOn(false);
+  eq('the admin can switch it off when the coupons run out', await getRewardOn(), false);
+  await setRewardOn(true);
+  eq('and back on', await getRewardOn(), true);
+  await c.execute("UPDATE setting SET value = 'garbage' WHERE key = 'reward_on'");
+  eq('a corrupt value counts as on (only an explicit off hides it)', await getRewardOn(), true);
+  await c.execute("DELETE FROM setting WHERE key = 'reward_on'");
 }
 
 // ---- 8. Events: defaults, overrides, and bad edits ----

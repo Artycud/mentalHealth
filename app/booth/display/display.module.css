@@ -2,23 +2,56 @@
    Sizes are in vh so the whole screen scales with whatever it is cast to,
    from a 1280×720 projector to a 4K panel.
 
-   It runs for two hours in a canteen, so it has to look alive by itself: the
-   water moves, the flowers drift, the bars grow in. BRIEF §9 keeps the phone
-   screens still because there motion must mean "you touched something"; this is
-   a wall display, where a frozen frame reads as broken. All of it is transform,
-   opacity or clip-path, and all of it stops under prefers-reduced-motion. */
+   It is read two ways. Most of the canteen gives it a one-second glance while
+   walking past, so the left half is a hook that never changes and never gets
+   covered: the reward, in the biggest type on the screen, beside a picture of it.
+   The queue at the booth has time to read, so the right half takes turns: the
+   count and bars, the awareness slides, a new flower when one arrives.
+
+   It is a night scene (the festival's --fest-sky). A dark, saturated screen stands
+   out from a light canteen wall where a cream one blends in. Text on the sky is
+   paper or marigold, never pink on navy for anything you must read. The base's
+   ink and text tokens are untouched: this screen reads its own --tv-* colours.
+
+   It runs for two hours, so it has to look alive by itself: the water moves and
+   the flowers drift, and once every ten seconds the amount gives one small pop —
+   a periodic change is noticed from the corner of the eye where constant motion
+   is not. All of it is transform, opacity or clip-path, and all of it stops under
+   prefers-reduced-motion. */
 
 .stage {
+  /* Text on the night sky. */
+  --tv-text: var(--paper);
+  --tv-soft: rgba(252, 241, 230, 0.8);
+  --tv-note: #ffb8de;
+  --tv-line: rgba(252, 241, 230, 0.2);
+  /* The hook's unit: 1vh on 16:9, smaller on 4:3, where the hook gets a smaller
+     share of a narrower screen. */
+  --u: min(1vh, 0.56vw);
+
   position: relative;
   display: flex;
   flex-direction: column;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  /* The bottom 31vh belongs to the river band, which is laid over it. */
-  padding: 3.2vh 3.5vw 31vh;
-  background: var(--paper-surface);
-  color: var(--ink);
+  /* The bottom 24vh belongs to the river band, which is laid over it; 3vh more
+     keeps the QR card clear of the moon rising over the water. */
+  padding: 3.2vh 3.5vw 27vh;
+  /* A few still stars, then the sky. A festival with no sky gets plain navy. */
+  background:
+    radial-gradient(circle at 58% 4%, rgba(255, 255, 255, 0.8) 0 0.16vh, transparent 0.26vh),
+    radial-gradient(circle at 71% 11%, rgba(255, 255, 255, 0.6) 0 0.12vh, transparent 0.22vh),
+    radial-gradient(circle at 83% 3%, rgba(255, 255, 255, 0.9) 0 0.18vh, transparent 0.28vh),
+    radial-gradient(circle at 93% 15%, rgba(255, 255, 255, 0.55) 0 0.12vh, transparent 0.22vh),
+    radial-gradient(circle at 44% 9%, rgba(255, 255, 255, 0.5) 0 0.12vh, transparent 0.22vh),
+    radial-gradient(circle at 30% 3%, rgba(255, 255, 255, 0.7) 0 0.14vh, transparent 0.24vh),
+    radial-gradient(circle at 12% 6%, rgba(255, 255, 255, 0.55) 0 0.12vh, transparent 0.22vh),
+    radial-gradient(circle at 64% 30%, rgba(255, 255, 255, 0.5) 0 0.12vh, transparent 0.22vh),
+    radial-gradient(circle at 97% 40%, rgba(255, 255, 255, 0.6) 0 0.14vh, transparent 0.24vh),
+    radial-gradient(circle at 52% 52%, rgba(255, 255, 255, 0.4) 0 0.12vh, transparent 0.22vh),
+    var(--fest-sky, var(--ink));
+  color: var(--tv-text);
   overflow: hidden;
   overflow: clip;
 }
@@ -45,14 +78,21 @@
   height: auto;
 }
 
+/* The wordmark's inks multiply on paper; multiplied onto the night they would
+   vanish, so here they add light instead, and the overlap still makes a third
+   colour. */
+.brand :global(.mul) {
+  mix-blend-mode: screen;
+}
+
 .when {
   font-family: var(--font-heading);
   font-size: 2.4vh;
   font-weight: 500;
+  color: var(--tv-soft);
 }
 
 .dot {
-  color: var(--ink-soft);
   padding: 0 0.6vw;
 }
 
@@ -63,7 +103,7 @@
   gap: 0.7vh;
   margin-left: 1.2vw;
   padding: 0.3vh 1vw;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--tv-text);
   border-radius: 999px;
   font-size: 2vh;
   font-weight: 600;
@@ -81,157 +121,152 @@
    while: the "สด" badge greys and stops pulsing, so nobody reads stale numbers as
    live. It comes back by itself when the server does. */
 :global(html[data-stale]) .live {
-  border-color: var(--ink-muted);
-  color: var(--ink-muted);
+  border-color: var(--tv-line);
+  color: var(--tv-soft);
 }
 
 :global(html[data-stale]) .liveDot {
-  background: var(--ink-muted);
+  background: var(--tv-soft);
   animation: none;
 }
 
-/* Everything above the river: the headline and the counts on the left, the QR
-   card on the right. The card spans both rows and is aligned to the top, so it
-   ends well above the moon that rises over the water at the bottom right. */
+/* Everything above the river: the hook on the left, the panel and QR on the right. */
 .top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr) min(64vh, 40vw);
   column-gap: 3vw;
+  flex-grow: 1;
+  min-height: 0;
+  margin-top: 2vh;
+}
+
+/* ---- The hook ---- */
+
+.hook {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.lead {
+  font-family: var(--font-heading);
+  font-size: calc(3.6 * var(--u));
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--tv-note);
+}
+
+.headline {
+  margin-top: 0.4vh;
+  font-size: calc(10 * var(--u));
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-shadow: 0 0.6vh 3vh rgba(0, 0, 0, 0.35);
+}
+
+.amountRow {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+
+/* The one thing a passer-by must read: marigold, the biggest type on screen. */
+.amount {
+  font-family: var(--font-heading);
+  font-size: calc(15 * var(--u));
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--sunflower);
+  white-space: nowrap;
+  text-shadow: 0 0.6vh 3vh rgba(0, 0, 0, 0.35);
+  transform-origin: left center;
+  animation: pop 10s ease-in-out infinite;
+}
+
+.hookArt {
+  flex-shrink: 0;
+  width: calc(22 * var(--u) * 0.6875);
+  height: calc(22 * var(--u));
+}
+
+/* The flower when there is no reward: square, so it gets a square box. */
+.hook[data-hook='flower'] .hookArt {
+  width: calc(20 * var(--u));
+  height: calc(20 * var(--u));
+}
+
+.hookArt > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.where {
+  margin-top: 2.4vh;
+  font-family: var(--font-heading);
+  font-size: calc(3.2 * var(--u));
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.extra {
+  margin-top: 0.4vh;
+  font-size: calc(2.8 * var(--u));
+  line-height: 1.45;
+  color: var(--tv-soft);
+}
+
+/* ---- The right side: rotating panel over a QR card ---- */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6vh;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The new-flower moment plays over this panel and nothing else. */
+.panel {
+  position: relative;
+  display: flex;
   flex-grow: 1;
   min-height: 0;
 }
 
-/* Headline block */
-.intro {
-  flex-shrink: 0;
-  margin-top: 2.4vh;
-}
-
-/* The bridge to the main site. White behind the code for the camera's sake; a
-   raised slab of paper around it, so it reads as part of the booth. 24vh is
-   about 15 cm on a 50–55" TV: a phone reads it from a couple of metres. */
-.qrCard {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: start;
+.tally {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.2vh;
-  width: 32vh;
-  margin-top: 2.4vh;
-  padding: 1.8vh 1.8vh 2vh;
-  border-radius: 3vh;
-  background: var(--paper-raised);
-  box-shadow:
-    0 0.5vh 0 var(--line),
-    0 2.4vh 3.6vh -2.4vh rgba(27, 43, 94, 0.3);
-  text-align: center;
+  gap: 1.4vh;
 }
 
-.qrTitle {
+.today {
   font-family: var(--font-heading);
-  font-size: 2.7vh;
-  font-weight: 500;
-  line-height: 1.35;
-  text-wrap: balance;
-}
-
-.qrBox {
-  width: 24vh;
-}
-
-/* A phrase of the QR card's copy: lines break between phrases, never inside one. */
-.phrase {
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.qrBody {
-  font-size: 2.2vh;
-  line-height: 1.4;
-  color: var(--ink-soft);
-  text-wrap: balance;
-}
-
-.note {
-  font-family: var(--font-note);
-  font-size: 3vh;
-  line-height: 1.4;
-  color: var(--note-pink);
-}
-
-.title {
-  margin-top: 0.4vh;
-  font-size: 8.4vh;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-/* A layer fills its parent, so illustrations stack without absolute maths. */
-.layer {
-  position: absolute;
-  inset: 0;
-}
-
-/* Counts + distribution. Grows to absorb the leftover height and centres itself
-   in it, so the screen never reads as a top-heavy block above empty paper. */
-.middle {
-  grid-column: 1;
-  display: flex;
-  align-items: center;
-  gap: 3vw;
-  margin-top: 2.6vh;
-  min-width: 0;
-}
-
-.count {
-  flex-shrink: 0;
-}
-
-/* The number sits on a pink blob and a blue circle, like a riso poster numeral. */
-.countArt {
-  position: relative;
-  /* min() so a 4:3 screen, where the QR card takes a bigger share of the width,
-     still leaves the bars room. */
-  height: min(28vh, 17vw);
-  aspect-ratio: 300 / 250;
-}
-
-.countNum {
-  position: absolute;
-  inset: 0 6% 4% 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-heading);
-  font-size: 14vh;
-  font-weight: 600;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.countLabel {
-  margin-top: 0.4vh;
-  text-align: center;
   font-size: 2.8vh;
-  line-height: 1.5;
-  color: var(--ink-soft);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--tv-soft);
+}
+
+.todayNum {
+  font-size: 6vh;
+  font-weight: 600;
+  color: var(--tv-text);
+  font-variant-numeric: tabular-nums;
 }
 
 .bars {
   display: flex;
   flex-direction: column;
-  gap: 1.3vh;
-  flex-grow: 1;
+  gap: 0.8vh;
   min-width: 0;
 }
 
 .bar {
   display: flex;
   align-items: center;
-  gap: 1.2vw;
+  gap: 1vw;
 }
 
 .barFlower {
@@ -240,18 +275,15 @@
 }
 
 .barFlower svg {
-  width: 5.6vh;
-  height: 5.6vh;
+  width: 4.2vh;
+  height: 4.2vh;
 }
 
-/* Wide enough for the longest name, ดอกบานไม่รู้โรย, on ONE line. The text is
-   sized in vh but a width in vw does not track it, so on a 4:3 screen the name
-   outgrew its column and touched the bar. max() takes whichever is larger; 22vh
-   is the measured width of that name at this font size. */
+/* Wide enough for the longest name, ดอกบานไม่รู้โรย, on ONE line at this size. */
 .barName {
-  width: max(13vw, 24vh);
+  width: 20vh;
   flex-shrink: 0;
-  font-size: 3vh;
+  font-size: 2.6vh;
   font-weight: 600;
   line-height: 1.4;
   text-align: right;
@@ -265,9 +297,9 @@
   display: block;
   position: relative;
   flex-grow: 1;
-  height: 3.6vh;
+  height: 2.8vh;
   border-radius: 999px;
-  background: var(--track);
+  background: rgba(252, 241, 230, 0.14);
   overflow: hidden;
 }
 
@@ -281,7 +313,7 @@
   border-radius: 999px;
   /* Solid ink with the print's flecks in it. Never behind text: the count and
      the name sit outside the bar. */
-  background-color: var(--ink-bar, var(--ink));
+  background-color: var(--ink-bar, var(--tv-text));
   background-image: var(--ink-speckle);
   background-size: 192px 192px;
   clip-path: inset(0 var(--r, 0%) 0 0 round 999px);
@@ -290,10 +322,10 @@
 }
 
 .barCount {
-  width: 4vw;
+  width: 4.4vh;
   flex-shrink: 0;
   font-family: var(--font-heading);
-  font-size: 3.4vh;
+  font-size: 2.8vh;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -304,67 +336,128 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1vh;
-  /* In vh, like the type, so a line is the same length of words on any screen. */
-  max-width: min(100%, 92vh);
+  gap: 0.9vh;
 }
 
 .awareNote {
   font-family: var(--font-note);
-  font-size: 3vh;
+  font-size: 2.6vh;
   line-height: 1.4;
-  color: var(--note-pink);
+  color: var(--tv-note);
 }
 
 .awareText {
   font-family: var(--font-heading);
-  font-size: 4.4vh;
+  font-size: 3.6vh;
   font-weight: 500;
   line-height: 1.45;
   text-wrap: balance;
 }
 
 .awareSource {
-  margin-top: 0.6vh;
-  font-size: 2vh;
+  margin-top: 0.4vh;
+  font-size: 1.8vh;
   line-height: 1.5;
-  color: var(--ink-soft);
+  color: var(--tv-soft);
 }
 
 .awareStat {
   font-family: var(--font-heading);
-  font-size: 5.6vh;
+  font-size: 4.6vh;
   font-weight: 600;
   line-height: 1.25;
+  color: var(--sunflower);
 }
 
 .awareTail {
   font-family: var(--font-note);
-  font-size: 3.2vh;
+  font-size: 2.8vh;
   line-height: 1.4;
-  color: var(--note-pink);
+  color: var(--tv-note);
 }
 
 /* Ten people as ten dots: the ones who say "okay" while not okay are filled. A
    picture the room gets before it reads the words. */
 .people {
   display: flex;
-  gap: 1.4vh;
-  margin: 0.6vh 0 0.8vh;
+  gap: 1.2vh;
+  margin: 0.4vh 0 0.6vh;
 }
 
 .person {
-  width: 4.4vh;
-  height: 4.4vh;
+  width: 4vh;
+  height: 4vh;
   border-radius: 50%;
-  border: 0.5vh solid var(--ink);
-  background: var(--paper-raised);
+  border: 0.45vh solid var(--tv-text);
 }
 
 .personOn {
   border-color: var(--riso-pink);
   background: var(--riso-pink);
 }
+
+/* ---- QR card ---- */
+
+/* The bridge to the main site. Dark glass around the code, so the brightest thing
+   on screen stays the hook; white only behind the code itself, for the camera.
+   21vh is about 13 cm on a 50–55" TV: a phone reads it from a couple of metres. */
+.qrCard {
+  display: flex;
+  align-items: center;
+  gap: 1.6vw;
+  flex-shrink: 0;
+  padding: 1.4vh;
+  border: 2px solid var(--tv-line);
+  border-radius: 2.4vh;
+  background: rgba(252, 241, 230, 0.07);
+}
+
+.qrBox {
+  flex-shrink: 0;
+  width: 21vh;
+}
+
+.qrText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+  min-width: 0;
+}
+
+.qrTitle {
+  font-family: var(--font-heading);
+  font-size: 2.7vh;
+  font-weight: 500;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+/* A phrase of the QR card's copy: lines break between phrases, never inside one. */
+.phrase {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.qrBody {
+  font-size: 2.2vh;
+  line-height: 1.4;
+  color: var(--tv-soft);
+  text-wrap: balance;
+}
+
+/* ---- No booth live ---- */
+
+.intro {
+  margin-top: 2.4vh;
+}
+
+.title {
+  font-size: 8.4vh;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* ---- The river ---- */
 
 /* The river band, full width along the bottom. The festival draws the water into
    it (components/festival/); the flowers float on top. Absolute, so the moon can
@@ -374,20 +467,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 30vh;
+  height: 24vh;
 }
 
 /* Before the first result of the day the river is just water; this says why, and
    invites the first player. Paper coloured, because it sits on the water. */
 .emptyRiver {
   position: absolute;
-  inset: 8vh 0 6vh;
+  inset: 6vh 0 5vh;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-note);
-  font-size: 3.4vh;
-  color: var(--fest-on-water, var(--note-pink));
+  font-size: 3.2vh;
+  color: var(--fest-on-water, var(--tv-text));
 }
 
 /* Two copies of the same row, end to end. Sliding by exactly one copy (half of
@@ -413,7 +506,7 @@
   align-items: flex-end;
   justify-content: space-around;
   min-width: 100vw;
-  padding-bottom: 7.6vh;
+  padding-bottom: 6vh;
 }
 
 /* --depth runs from 1 (the newest flower) down to about 0.4 (the oldest shown).
@@ -422,7 +515,7 @@
    distant ones instead of a row of identical marks. */
 .float {
   position: relative;
-  margin-bottom: calc((1 - var(--depth, 1)) * 22vh);
+  margin-bottom: calc((1 - var(--depth, 1)) * 16vh);
   animation: bob 5s ease-in-out infinite;
 }
 
@@ -447,7 +540,7 @@
    term wins and nothing changes; on 4:3 the vw term keeps them from crowding. */
 .float svg {
   position: relative;
-  width: calc(min(13vh, 8.6vw) * var(--depth, 1));
+  width: calc(min(11vh, 7.4vw) * var(--depth, 1));
   height: auto;
 }
 
@@ -455,15 +548,15 @@
   position: absolute;
   left: 3.5vw;
   right: 3.5vw;
-  bottom: 2.4vh;
+  bottom: 2vh;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 2vw;
   font-size: 2vh;
   line-height: 1.5;
-  /* On the water, so paper coloured; on a festival with no water, plain muted ink. */
-  color: var(--fest-on-water, var(--ink-muted));
+  /* On the water, so paper coloured. */
+  color: var(--fest-on-water, var(--tv-soft));
 }
 
 /* Shown only while the numbers are invented. */
@@ -472,6 +565,7 @@
   border: 2px dashed currentColor;
   border-radius: 999px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 @keyframes drift {
@@ -512,11 +606,24 @@
   }
 }
 
+/* Still for nine seconds, one small pop, still again. */
+@keyframes pop {
+  0%,
+  91%,
+  100% {
+    transform: scale(1);
+  }
+  95% {
+    transform: scale(1.07);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .track,
   .float,
   .liveDot,
-  .barFill {
+  .barFill,
+  .amount {
     animation: none;
   }
 }
