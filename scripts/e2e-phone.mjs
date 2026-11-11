@@ -338,7 +338,7 @@ const letters = ['a', 'b', 'c', 'd'];
 {
   const tvPage = await newPage(tv);
   await tvPage.goto(`${BASE}/booth/display`, { waitUntil: 'networkidle0' });
-  const readCount = () => tvPage.$eval('[class*="todayNum"]', (n) => Number(n.textContent.trim()));
+  const readCount = () => tvPage.$eval('[class*="countNum"]', (n) => Number(n.textContent.trim()));
   const startCount = await readCount();
   await tvPage.evaluate(() => { window.__stillHere = 'no reload'; });
   await sleep(1500);
@@ -346,7 +346,7 @@ const letters = ['a', 'b', 'c', 'd'];
   check('the TV shows a real, non-invented count', (await tvPage.evaluate(() => !document.body.innerText.includes('ตัวอย่าง'))));
   check('the TV shows a QR code to the main site', (await tvPage.$('aside svg[role="img"]')) !== null);
   const reward = festivals.loykrathong.reward;
-  check('the TV leads with the coupon', (await heading(tvPage)) === reward.headline && (await tvPage.evaluate(() => document.body.innerText)).includes(reward.amount));
+  check('the TV leads with the coupon', (await heading(tvPage)).replace(/\s+/g, ' ') === `${reward.headline} ${reward.amount}`);
   await shot(tvPage, 'tv-live-before');
 
   const kioskFrom = created.length;

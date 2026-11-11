@@ -86,41 +86,35 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
   const reward = rewardOn ? theme.reward : undefined;
   const hook = reward ?? tv.hook.flowerOnly;
 
-  // The rotating panel's first view: today's count over the flower bars.
+  // The flower bars: the stats panel's main view, taking turns with the awareness slides.
   const bars = (
-    <div className={styles.tally}>
-      <p className={styles.today}>
-        {tv.hook.today} <span className={styles.todayNum}>{wall.today}</span> {tv.hook.todayUnit}
-      </p>
-      <div className={styles.bars}>
-        {wall.flowers.map((f, i) => (
-          <div key={f.id} className={styles.bar}>
-            <span className={styles.barName}>{f.name}</span>
-            <span className={styles.barFlower}>
-              {/* On a plate: petals multiplied straight onto the night sky would
-                  go dark. */}
-              <WallFlower tint={f.tint} plate />
-            </span>
-            <span className={styles.barTrack}>
-              {/* Each bar takes its flower's own ink, so the chart and the river
-                  below speak the same colours. --r is how much of the track is
-                  left empty; the fill is clipped to it, not resized, so its
-                  rounded end is never squashed. */}
-              <span
-                className={styles.barFill}
-                style={
-                  {
-                    '--ink-bar': tintInk(f.tint),
-                    '--r': `${100 - Math.round((f.count / max) * 100)}%`,
-                    animationDelay: `${i * 90}ms`,
-                  } as React.CSSProperties
-                }
-              />
-            </span>
-            <span className={styles.barCount}>{f.count}</span>
-          </div>
-        ))}
-      </div>
+    <div className={styles.bars}>
+      {wall.flowers.map((f, i) => (
+        <div key={f.id} className={styles.bar}>
+          <span className={styles.barName}>{f.name}</span>
+          <span className={styles.barFlower}>
+            {/* On a plate: petals multiplied straight onto the night sky would go dark. */}
+            <WallFlower tint={f.tint} plate />
+          </span>
+          <span className={styles.barTrack}>
+            {/* Each bar takes its flower's own ink, so the chart and the river
+                below speak the same colours. --r is how much of the track is
+                left empty; the fill is clipped to it, not resized, so its
+                rounded end is never squashed. */}
+            <span
+              className={styles.barFill}
+              style={
+                {
+                  '--ink-bar': tintInk(f.tint),
+                  '--r': `${100 - Math.round((f.count / max) * 100)}%`,
+                  animationDelay: `${i * 90}ms`,
+                } as React.CSSProperties
+              }
+            />
+          </span>
+          <span className={styles.barCount}>{f.count}</span>
+        </div>
+      ))}
     </div>
   );
 
@@ -161,6 +155,13 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
       <AutoRefresh />
       <KeepAwake />
       <TvControls label={tv.fullscreen} />
+      {/* Lanterns rising off the water, behind everything: the night is alive. */}
+      <div className={styles.lanterns} aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
       <div className={styles.head}>
         <span className={styles.brand}>
           <Wordmark />
@@ -184,56 +185,60 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
       </div>
 
       <div className={styles.top}>
-        {/* The hook, for the one-second glance from across the canteen. Always on
-            screen: nothing on the TV ever covers it, not even a new flower. */}
+        {/* The hook: one line, read in a glance. Never covered, not even by a new
+            flower. */}
         <section className={styles.hook} data-hook={reward ? 'reward' : 'flower'}>
-          <p className={styles.lead}>{hook.lead}</p>
-          <h1 className={styles.headline}>{hook.headline}</h1>
-          <div className={styles.amountRow}>
-            <p className={styles.amount}>{hook.amount}</p>
-            <div className={styles.hookArt}>
-              {reward ? <IceCream /> : <WallFlower tint={wall.flowers[0]?.tint ?? 0} plate size={240} />}
-            </div>
+          <div className={styles.hookText}>
+            <p className={styles.lead}>{hook.lead}</p>
+            <h1 className={styles.headline}>
+              {hook.headline} <span className={styles.amount}>{hook.amount}</span>
+            </h1>
+            <p className={styles.extra}>{hook.extra}</p>
           </div>
-          <p className={styles.where}>{tv.hook.where}</p>
-          <p className={styles.extra}>{hook.extra}</p>
+          <div className={styles.hookArt}>
+            {reward ? <IceCream /> : <WallFlower tint={wall.flowers[0]?.tint ?? 0} plate size={240} />}
+          </div>
         </section>
 
-        <div className={styles.side}>
-          {/* For the queue, who have time to read: the count and bars, taking turns
-              with the awareness slides. A new flower plays here, over this panel
-              only. */}
+        {/* The bridge to the main site, for later. Dark glass around it so it does
+            not outshine the stats; white only behind the code, for the camera. */}
+        <aside className={styles.qrCard}>
+          <span className={styles.qrTitle}>
+            <Phrases text={qrInvite.title} />
+          </span>
+          <div className={styles.qrBox}>
+            <QrCode value={qrUrl} label={qrInvite.title} />
+          </div>
+          <span className={styles.qrBody}>
+            <Phrases text={qrInvite.body} />
+          </span>
+        </aside>
+
+        {/* The stats, big: how many have played today, on the moon, and which
+            flowers. The bars take turns with the awareness slides, and a new
+            flower plays over that panel only. */}
+        <div className={styles.stats}>
+          <div className={styles.count}>
+            <div className={styles.moon}>
+              <span className={styles.countNum}>{wall.today}</span>
+            </div>
+            <p className={styles.countLabel}>{tv.hook.countLabel}</p>
+          </div>
           <div className={styles.panel}>
             <TvRotate primary={bars} items={awareness} />
             {/* In demo mode it pretends one arrives every few seconds, so the
                 design can be reviewed. */}
             <NewFlowerMoment total={wall.total} recent={wall.recent} demo={showDemo} />
           </div>
-
-          {/* The bridge to the main site, for later. Dark around it so it does not
-              outshine the hook; white behind the code for the camera. */}
-          <aside className={styles.qrCard}>
-            <div className={styles.qrBox}>
-              <QrCode value={qrUrl} label={qrInvite.title} />
-            </div>
-            <div className={styles.qrText}>
-              <span className={styles.qrTitle}>
-                <Phrases text={qrInvite.title} />
-              </span>
-              <span className={styles.qrBody}>
-                <Phrases text={qrInvite.body} />
-              </span>
-            </div>
-          </aside>
         </div>
       </div>
 
       {/* The river band. The water is the festival's (an empty slot if it has none);
           the flowers on it are the base's: each one is a student's result, floating
-          away. ปล่อยวางความทุกข์, the booth's own theme. Text on the water is paper
-          coloured, so the footer lives inside the band. */}
+          away. ปล่อยวางความทุกข์, the booth's own theme. The moon is up in the sky
+          holding the count, so the river draws none of its own. */}
       <div className={styles.river}>
-        <FestivalRiver id={active} />
+        <FestivalRiver id={active} moon={false} />
         {empty && <p className={styles.emptyRiver}>{tv.empty}</p>}
         <div className={styles.track}>
           {river.map((copy) => (

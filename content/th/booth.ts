@@ -465,22 +465,19 @@ export const tv = {
   /** A laptop driving the TV: shown only while the mouse moves, until full screen. */
   fullscreen: 'เต็มจอ',
   /**
-   * The hook: the left of the TV, always on screen, read in a one-second glance
-   * from across the canteen. The reward leads when there is one (FestivalTheme
-   * .reward); otherwise the flower itself is the prize.
+   * The hook: a strip across the top of the TV, always on screen, read in a
+   * one-second glance. The reward leads when there is one (FestivalTheme.reward);
+   * otherwise the flower itself is the prize.
    */
   hook: {
-    /** Where to play. Not a button: the TV is never touched. */
-    where: 'เล่นได้ที่บูธนี้ ถามพี่ที่ถือ iPad ได้เลย',
     flowerOnly: {
       lead: 'ตอบ 4 ข้อ รับเลย',
       headline: 'คุณเป็นดอกไม้แบบไหน?',
       amount: 'รับดอกไม้ฟรี',
       extra: 'ไปแต่งกระทง',
     },
-    /** The count, at the top of the rotating panel. */
-    today: 'วันนี้เล่นแล้ว',
-    todayUnit: 'คน',
+    /** Under the big count on the moon. */
+    countLabel: 'คนเล่นแล้ววันนี้',
   },
   /**
    * The awareness band. DRAFT copy, for council review. A line that states a fact
