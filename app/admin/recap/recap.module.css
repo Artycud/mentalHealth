@@ -1,0 +1,122 @@
+/* The recap page: the cards in a grid, each with its share and save buttons. */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.label {
+  margin-right: 4px;
+  font-family: var(--font-heading);
+  font-weight: 500;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.toggleOn {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.toggleOn:hover {
+  color: var(--white);
+}
+
+.sample {
+  margin: 8px 0 16px;
+  padding: 8px 14px;
+  border: 2px dashed var(--ink);
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  background: #0b1536;
+  box-shadow: 0 10px 24px -14px rgba(27, 43, 94, 0.5);
+}
+
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardName {
+  font-family: var(--font-heading);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.share,
+.save {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.share {
+  border: 0;
+  background: var(--ink);
+  color: var(--white);
+}
+
+.save {
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.share:disabled,
+.save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.loading {
+  margin-top: 12px;
+  color: var(--ink-soft);
+}

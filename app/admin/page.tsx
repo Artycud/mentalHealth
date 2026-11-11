@@ -3,6 +3,7 @@ import { connection } from 'next/server';
 
 import { Wordmark } from '@/components/illustrations/icons';
 import { admin } from '@/content/th/admin';
+import { recap } from '@/content/th/recap';
 import { festivalOrder, festivals } from '@/content/th/booth';
 import { filtersToQuery, getAdminData, parseFilters, thaiDay } from '@/lib/admin-data';
 import { getBoothAccount } from '@/lib/auth';
@@ -148,6 +149,10 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
           <a className={styles.download} href={exportHref('answers')}>
             {admin.export.answers}
           </a>
+          {/* The day as Instagram cards, from the same anonymous totals. */}
+          <Link className={styles.download} href="/admin/recap">
+            {recap.title}
+          </Link>
         </div>
       </section>
 
