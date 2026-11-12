@@ -815,42 +815,51 @@
   color: var(--sunflower);
 }
 
-/* From the heart to its flower: a dotted path that flows, and two sparkles. */
+/* From the heart to its flower: an arc across the gap, at the height of the two
+   pictures, with dots flowing toward the flower and a head that follows the
+   curve. It reaches into both columns' empty margins, so it spans the gap. */
 .bridge {
-  align-self: center;
-  margin-top: -6vh;
+  align-self: start;
+  margin: 15vh -5vw 0;
 }
 
 .bridge svg {
+  display: block;
   width: 100%;
   height: auto;
   overflow: visible;
 }
 
-.bridgePath,
+.bridgeTrail {
+  fill: none;
+  stroke: rgba(255, 181, 17, 0.25);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.bridgePath {
+  fill: none;
+  stroke: var(--sunflower);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.1 12;
+  animation: flow 1.2s linear infinite;
+}
+
 .bridgeHead {
   fill: none;
   stroke: var(--sunflower);
-  stroke-width: 3.5;
+  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.bridgePath {
-  stroke-dasharray: 2 9;
-  animation: flow 1.4s linear infinite;
-}
-
 .spark {
   fill: var(--paper);
-  opacity: 0.85;
+  opacity: 0.9;
   transform-box: fill-box;
   transform-origin: center;
   animation: twinkle 2.4s ease-in-out infinite;
-}
-
-.spark + .spark {
-  animation-delay: -1.2s;
 }
 
 /* Under the scene: the reply and the QR, side by side, on the sky. */
@@ -935,7 +944,7 @@
 
 @keyframes flow {
   to {
-    stroke-dashoffset: -22;
+    stroke-dashoffset: -12.1;
   }
 }
 

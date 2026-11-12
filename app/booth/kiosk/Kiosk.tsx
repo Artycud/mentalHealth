@@ -488,11 +488,26 @@ export function Kiosk({
         </section>
 
         <div className={`${styles.bridge} ${styles.rise}`} aria-hidden="true">
-          <svg viewBox="0 0 120 90">
-            <path d="M8 62 C34 8 86 8 110 54" className={styles.bridgePath} />
-            <path d="M97 46 L111 56 L96 63" className={styles.bridgeHead} />
-            <path d="M42 22 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 Z" className={styles.spark} />
-            <path d="M74 16 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5 Z" className={styles.spark} />
+          <svg viewBox="0 0 240 90">
+            <defs>
+              {/* The head follows the curve's own direction at its end. */}
+              <marker
+                id="kiosk-bridge-head"
+                viewBox="0 0 12 12"
+                refX="7"
+                refY="6"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <path d="M2 2 L9 6 L2 10" className={styles.bridgeHead} />
+              </marker>
+            </defs>
+            {/* A faint solid trail under a flow of dots, so the curve reads at once. */}
+            <path d="M14 70 Q120 -14 222 64" className={styles.bridgeTrail} />
+            <path d="M14 70 Q120 -14 222 64" className={styles.bridgePath} markerEnd="url(#kiosk-bridge-head)" />
+            <path d="M120 2 l2.4 6 6 2.4 -6 2.4 -2.4 6 -2.4 -6 -6 -2.4 6 -2.4 Z" className={styles.spark} />
           </svg>
         </div>
 
