@@ -520,6 +520,136 @@
   animation: pop var(--d-badge) var(--ease-overshoot);
 }
 
+/* ---- Feeling questions: a drag, then a tap ---- */
+
+/* What to do, in one line, under the question. */
+.hint {
+  margin-top: 2vh;
+  font-family: var(--font-heading);
+  font-size: 2.8vh;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--sunflower);
+}
+
+/* The heart so far, in the home's own mood colour: a round badge with its word.
+   It changes as the bag is dragged, so the two questions read as one heart. */
+.mood {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4vh;
+  width: 24vh;
+  height: 24vh;
+  margin-top: 3.4vh;
+  border-radius: 50%;
+  background: var(--mood);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1.2vh color-mix(in srgb, var(--mood) 30%, transparent),
+    0 2vh 4vh -2vh rgba(0, 0, 0, 0.5);
+  text-align: center;
+  transition: background-color 200ms var(--ease);
+}
+
+.moodLabel {
+  font-size: 2vh;
+  font-weight: 500;
+}
+
+.moodWord {
+  font-family: var(--font-heading);
+  font-size: 4.6vh;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+/* The drag and its "next" button. */
+.meterSide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2.4vh;
+  min-width: 0;
+}
+
+.next {
+  align-self: center;
+  min-width: 60%;
+  min-height: 8.4vh;
+  padding: 0 3vw;
+  border-radius: 3vh 3vh 3vh 1vh;
+  background: var(--sunflower);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 3.2vh;
+  font-weight: 600;
+  transition:
+    transform var(--d-tap) var(--ease),
+    opacity var(--d-color) var(--ease);
+}
+
+.next:active {
+  transform: scale(0.98);
+}
+
+/* Before the meter is touched it says what to do instead, and does nothing. */
+.next:disabled {
+  background: rgba(252, 241, 230, 0.14);
+  color: var(--paper);
+  font-size: 2.6vh;
+  font-weight: 500;
+}
+
+/* What fills the head: a 3 × 3 grid of picture tiles, each easy to hit. */
+.topics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 1.6vh;
+  align-content: center;
+  min-width: 0;
+}
+
+.topic {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1vh;
+  min-height: 19vh;
+  padding: 1.6vh 0.8vw;
+  border-radius: 3vh;
+  background: var(--paper-raised);
+  box-shadow:
+    0 0.5vh 0 var(--line),
+    0 2vh 4vh -2vh rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  transition:
+    background-color var(--d-color) var(--ease),
+    transform var(--d-tap) var(--ease);
+}
+
+.topic:active {
+  transform: scale(0.97);
+}
+
+.topic svg {
+  width: 7.5vh;
+  height: 7.5vh;
+}
+
+.topicLabel {
+  font-family: var(--font-heading);
+  font-size: 2.6vh;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  text-wrap: balance;
+}
+
 /* ---- Result: the payoff, so it carries more than a name ---- */
 
 .result {
@@ -560,21 +690,31 @@
   color: var(--ink-soft);
 }
 
-/* The other side of the flower: an open note with a pink rule, not a card, so it
-   reads as part of the flower's description rather than a warning. */
-.hidden {
+/* The feeling, first on the result: its label and the home's word for it, on a
+   chip of its mood colour. */
+.feelingLine {
   display: flex;
-  flex-direction: column;
-  gap: 0.2vh;
-  margin-top: 1.6vh;
-  padding-left: 1.4vw;
-  border-left: 0.6vh solid var(--riso-pink);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.2vw;
+  margin-bottom: 1.4vh;
 }
 
-.hiddenText {
+.feelingLabel {
+  font-family: var(--font-heading);
   font-size: 2.6vh;
-  line-height: 1.55;
-  text-wrap: balance;
+  font-weight: 500;
+}
+
+.feelingChip {
+  padding: 0.6vh 2vw;
+  border-radius: 999px;
+  background: var(--mood);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 3.4vh;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 /* The answer to the honest question. Tinted block with one sharp corner, the same
@@ -744,6 +884,7 @@
 .resultText > :nth-child(4) { animation-delay: 240ms; }
 .resultText > :nth-child(5) { animation-delay: 300ms; }
 .resultText > :nth-child(6) { animation-delay: 360ms; }
+.resultText > :nth-child(7) { animation-delay: 420ms; }
 .wishLine { animation-delay: 340ms; }
 .qrCard { animation-delay: 420ms; }
 

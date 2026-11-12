@@ -135,11 +135,11 @@ await seed(ci({ at: todayStart + 1 * H, seconds: 90, state: 'ok', primary: 'stud
 await seed(ci({ at: todayStart + 2 * H, seconds: 120, state: 'drained', primary: 'study', secondary: 'friends', answers: [['q1-study', 'c'], ['q2-pressure', 'b']] }));
 await seed(ci({ at: todayStart + 3 * H, seconds: 60, state: 'heavy', primary: 'family', secondary: 'rest', answers: [['q1-study', 'd']] }));
 const unfinishedId = await seed(ci({ at: todayStart + 4 * H, seconds: null, answers: [['q1-study', 'b']] }));
-await seed({ mode: 'booth', at: todayStart + 5 * H, seconds: 40, flower: 'lotus', answers: [['b1', 'a'], ['b2', 'a'], ['b3', 'a']] });
-await seed({ mode: 'booth', at: todayStart + 6 * H, seconds: 30, flower: 'marigold', answers: [['b1', 'b']] });
+await seed({ mode: 'booth', at: todayStart + 5 * H, seconds: 40, flower: 'lotus', answers: [['energy', 'low'], ['weight', 'light'], ['topic', 'study']] });
+await seed({ mode: 'booth', at: todayStart + 6 * H, seconds: 30, flower: 'marigold', answers: [['energy', 'mid']] });
 await seed(ci({ at: todayStart - 20 * H, seconds: 100, state: 'thinking', primary: 'friends', secondary: 'freetime', answers: [['q1-study', 'a']] }));
 await seed(ci({ at: todayStart - 19 * H, seconds: 80, state: 'ok', primary: 'rest', secondary: 'study', answers: [['q1-study', 'b']] }));
-await seed({ mode: 'booth', at: todayStart - 18 * H, seconds: 50, flower: 'champak', answers: [['b1', 'c']] });
+await seed({ mode: 'booth', at: todayStart - 18 * H, seconds: 50, flower: 'champak', answers: [['energy', 'high']] });
 const SEEDED = { total: 9, completed: 8, booth: 3, checkin: 6, today: 6, answers: 2 + 2 + 1 + 1 + 3 + 1 + 1 + 1 + 1 };
 
 // ---- helpers ----
@@ -425,7 +425,7 @@ try {
   await booth.$eval('input[name=password]', (e) => (e.value = ''));
   await booth.type('input[name=password]', boothPassword);
   await Promise.all([booth.waitForFunction(() => location.pathname === '/booth/kiosk', { timeout: 15000 }), booth.click('button[type=submit]')]);
-  check('the right booth password opens the kiosk', (await eventually(() => textOf(booth), (t) => t.includes('คุณเป็นดอกไม้แบบไหน?'))).includes('คุณเป็นดอกไม้แบบไหน?'));
+  check('the right booth password opens the kiosk', (await eventually(() => textOf(booth), (t) => t.includes('ใจวันนี้ ได้ดอกไม้อะไร?'))).includes('ใจวันนี้ ได้ดอกไม้อะไร?'));
   const bc = (await booth.cookies()).find((x) => x.name === 'cud_booth');
   check('the booth cookie is HttpOnly, sent only under /booth, and lasts 12 hours', !!bc && bc.httpOnly && bc.path === '/booth' && Math.abs(bc.expires - Date.now() / 1000 - 12 * 3600) < 600, JSON.stringify(bc));
   const boothCookie = `cud_booth=${bc.value}`;

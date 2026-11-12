@@ -1,25 +1,23 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { IdleBackdrop, QuizArt } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
+import { FeelingMeter, third } from '@/components/booth/FeelingMeter';
 import { FlowerArt } from '@/components/booth/FlowerArt';
 import { KeepAwake } from '@/components/booth/KeepAwake';
 import { QrCode } from '@/components/booth/QrCode';
+import { TopicIcon } from '@/components/booth/TopicIcon';
 import { WallFlower } from '@/components/booth/WallFlower';
 import { FestivalRiver } from '@/components/festival/registry';
-import {
-  BackChevron,
-  CheckBadge,
-  Wordmark,
-} from '@/components/illustrations/icons';
+import { BackChevron, CheckBadge, Wordmark } from '@/components/illustrations/icons';
 import { BoothMarigold } from '@/components/illustrations/scenes';
 import {
-  boothQuizTitle,
+  feelingCell,
+  feelingFromAnswers,
   flowerFromAnswers,
-  hiddenLabel,
   kiosk,
   loykrathongQuiz,
   okayQuestion,
@@ -33,7 +31,9 @@ import {
   type Reward,
 } from '@/content/th/booth';
 import { common, cudCare } from '@/content/th/common';
+import { feelings } from '@/content/th/heart';
 import type { EventText } from '@/lib/events';
+import { moodColour, rgb } from '@/lib/heart';
 import { createTracker, type Tracker } from '@/lib/track';
 import type { Tint } from '@/lib/types';
 
@@ -56,30 +56,36 @@ export interface StockLine {
 /** How long a tapped answer stays visibly selected before the next question. */
 const SELECT_MS = 260;
 
-/** The three flower questions, then the honest one (never scored). */
+/** The feeling questions, then the honest one (never scored). */
 const STEPS = loykrathongQuiz.length + 1;
 const OKAY_STEP = loykrathongQuiz.length;
 
+/** A meter starts in the middle, untouched. */
+const FRESH = { v: 0.5, touched: false };
+
+/** The mood colour (the home's own) for a feeling cell's centre. */
+const moodFor = (energy: number, weight: number) => rgb(moodColour(energy, weight));
+
 /**
  * The booth kiosk: the one iPad at the booth. Staff hold it, hand it to each
- * student for four taps, and take it back to give out the flower.
+ * student, and take it back to give out the flower.
  *
- * What follows from that:
+ * It asks how the student's heart is right now, the way the home's "ใจวันนี้"
+ * does, through two things everyone knows: drag a phone battery to how much
+ * charge is left, drag a school bag to how heavy today is. The picture follows the
+ * finger and says what that much feels like, so there is nothing to explain. Then
+ * one tap for what fills their head, and the honest "โอเคไหม". The result names
+ * the feeling (one of the home's nine) and gives the flower for that heart.
+ *
+ * What follows from being a shared device:
  *  - It must always return to a clean start. Staff tap "คนต่อไป"; if nobody does,
  *    the result resets itself after kiosk.resetSeconds of no touching, so a
- *    student's answer is never left up for the next person — which is also a
- *    privacy point (§12). Any touch restarts the count.
+ *    student's answer is never left up for the next person (§12). Any touch
+ *    restarts the count.
  *  - Nothing persists in the browser between students. State lives in memory
  *    only, and the session it writes is anonymous like every other.
  *  - It never reloads blind. The stock line refreshes only after the server has
- *    answered a ping, so a dropped Wi-Fi can never turn the iPad into a browser
- *    error page in the middle of the booth (see components/booth/AutoRefresh).
- *
- * The booth's one idea is that looking okay and being okay are not the same thing,
- * and that both are normal. So after the three flower questions it asks one honest,
- * unscored question, and every result says the other side of its flower and
- * answers that question warmly, with a route to CUD Care (§12) and a QR code to the
- * main site for the deeper questions later.
+ *    answered a ping (see components/booth/AutoRefresh).
  */
 export function Kiosk({
   theme,
@@ -100,6 +106,8 @@ export function Kiosk({
   const [remaining, setRemaining] = useState<number>(kiosk.resetSeconds);
   /** The answer just tapped, held on screen for SELECT_MS before moving on. */
   const [picked, setPicked] = useState<string | null>(null);
+  /** The current drag question's position (0 → 1) and whether it has been touched. */
+  const [meter, setMeter] = useState(FRESH);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // One per student. It starts when they press start and is dropped on reset, so
@@ -123,14 +131,14 @@ export function Kiosk({
     clearTimeout(advance.current);
     tracker.current = null;
     setPicked(null);
+    setMeter(FRESH);
     setStage({ kind: 'idle' });
     // A moment later, so the result just sent has reached the server first.
     setTimeout(() => void refreshStock(), 1200);
   }, [refreshStock]);
 
   /** Entering the result also arms the countdown, so the effect below only ever
-   *  runs the timer. Resetting `remaining` inside the effect instead would set
-   *  state during render and cascade an extra render every time. */
+   *  runs the timer. */
   const finish = useCallback((answers: BoothAnswer[], okay: OkayChoiceId) => {
     tracker.current?.complete();
     setRemaining(kiosk.resetSeconds);
@@ -174,6 +182,7 @@ export function Kiosk({
             onClick={() => {
               clearTimeout(advance.current);
               setPicked(null);
+              setMeter(FRESH);
               if (stage.step === 0) {
                 reset();
               } else {
@@ -221,7 +230,7 @@ export function Kiosk({
         <div className={styles.idle}>
           <div className={styles.idleText}>
             <p className={styles.note}>{theme.theme}</p>
-            <h1 className={styles.question}>{boothQuizTitle}</h1>
+            <h1 className={styles.question}>{kiosk.idleTitle}</h1>
             <p className={styles.lead}>{kiosk.idleBody}</p>
             {reward && <p className={styles.reward}>{reward.kioskLine}</p>}
             <button
@@ -230,6 +239,7 @@ export function Kiosk({
               onClick={() => {
                 tracker.current = createTracker('booth');
                 tracker.current.start();
+                setMeter(FRESH);
                 setStage({ kind: 'quiz', step: 0, answers: [], dir: 1 });
               }}
             >
@@ -275,6 +285,36 @@ export function Kiosk({
   if (stage.kind === 'quiz') {
     const isOkay = stage.step === OKAY_STEP;
     const question = isOkay ? okayQuestion : loykrathongQuiz[stage.step];
+    const quizQ = isOkay ? null : loykrathongQuiz[stage.step];
+    const energyAnswer = stage.answers.find((a) => a.axis === 'energy');
+    const weightAnswer = stage.answers.find((a) => a.axis === 'weight');
+
+    /** Record an answer and move on (or finish, after the honest question). */
+    const answer = (choiceId: string, value: number) => {
+      tracker.current?.answer(question.id, choiceId);
+      if (isOkay) {
+        finish(stage.answers, choiceId as OkayChoiceId);
+        return;
+      }
+      const answers = [...stage.answers, { axis: quizQ!.axis, value }];
+      setMeter(FRESH);
+      setStage({ kind: 'quiz', step: stage.step + 1, answers, dir: 1 });
+    };
+
+    // The heart so far: shown live while the bag is dragged, and on the topic step.
+    let mood: { colour: string; word: string; label: string } | null = null;
+    if (quizQ?.axis === 'weight' && energyAnswer) {
+      const e = energyAnswer.value / 2;
+      mood = {
+        colour: moodFor(e, meter.v),
+        word: feelings[third(meter.v)][energyAnswer.value].word,
+        label: kiosk.liveHeart,
+      };
+    } else if (quizQ?.axis === 'topic' && energyAnswer && weightAnswer) {
+      const { row, col } = feelingCell(stage.answers);
+      mood = { colour: moodFor(col / 2, row / 2), word: feelings[row][col].word, label: kiosk.resultNote };
+    }
+
     return (
       <main className={styles.stage} data-festival={theme.id}>
         <KeepAwake />
@@ -286,49 +326,103 @@ export function Kiosk({
             <h1 className={styles.headline} tabIndex={-1} ref={headingRef}>
               {question.headline}
             </h1>
-            <div className={styles.quizArt}>
-              <QuizArt step={stage.step} />
-            </div>
+            {quizQ?.meter && <p className={styles.hint}>{quizQ.meter.hint}</p>}
+            {mood && (
+              <div className={styles.mood} style={{ '--mood': mood.colour } as CSSProperties}>
+                <span className={styles.moodLabel}>{mood.label}</span>
+                <span className={styles.moodWord}>{mood.word}</span>
+              </div>
+            )}
+            {isOkay && (
+              <div className={styles.quizArt}>
+                <QuizArt step={3} />
+              </div>
+            )}
           </div>
 
-          <div className={styles.answers}>
-            {question.choices.map((choice) => {
-              const isPicked = picked === choice.id;
-              return (
-                <button
-                  key={choice.id}
-                  type="button"
-                  aria-pressed={isPicked}
-                  className={`${styles.answer} ${isPicked ? styles.picked : ''}`}
-                  onClick={() => {
-                    if (picked) return; // one tap per question
-                    setPicked(choice.id);
-                    tracker.current?.answer(question.id, choice.id);
-                    advance.current = setTimeout(() => {
-                      setPicked(null);
-                      if (isOkay) {
-                        finish(stage.answers, choice.id as OkayChoiceId);
-                        return;
-                      }
-                      const q = loykrathongQuiz[stage.step];
-                      const value = q.choices.find((c) => c.id === choice.id)?.value ?? 0;
-                      const answers = [...stage.answers, { axis: q.axis, value }];
-                      setStage({ kind: 'quiz', step: stage.step + 1, answers, dir: 1 });
-                    }, SELECT_MS);
-                  }}
-                >
-                  <ChoiceMark mark={choice.mark} />
-                  <span className={styles.answerLabel}>{choice.label}</span>
-                  {/* The badge's space is always reserved, so nothing reflows. */}
-                  <span className={styles.tick} aria-hidden="true">
-                    <span className={styles.tickBadge}>
-                      <CheckBadge />
+          {quizQ?.meter ? (
+            // A drag: the picture follows the finger; "next" once it has been touched.
+            <div className={styles.meterSide}>
+              <FeelingMeter
+                kind={quizQ.meter.kind}
+                value={meter.v}
+                touched={meter.touched}
+                onChange={(v) => setMeter({ v, touched: true })}
+                ends={quizQ.meter.ends}
+                anchors={quizQ.meter.anchors}
+                label={quizQ.headline}
+                dragMe={kiosk.dragMe}
+              />
+              <button
+                type="button"
+                className={styles.next}
+                disabled={!meter.touched}
+                onClick={() => {
+                  const choice = quizQ.choices[third(meter.v)];
+                  answer(choice.id, choice.value);
+                }}
+              >
+                {meter.touched ? quizQ.meter.go : kiosk.touchFirst}
+              </button>
+            </div>
+          ) : quizQ?.axis === 'topic' ? (
+            // One tap on a picture.
+            <div className={styles.topics}>
+              {quizQ.choices.map((choice) => {
+                const isPicked = picked === choice.id;
+                return (
+                  <button
+                    key={choice.id}
+                    type="button"
+                    aria-pressed={isPicked}
+                    className={`${styles.topic} ${isPicked ? styles.picked : ''}`}
+                    onClick={() => {
+                      if (picked) return; // one tap per question
+                      setPicked(choice.id);
+                      advance.current = setTimeout(() => {
+                        setPicked(null);
+                        answer(choice.id, choice.value);
+                      }, SELECT_MS);
+                    }}
+                  >
+                    {choice.icon && <TopicIcon icon={choice.icon} />}
+                    <span className={styles.topicLabel}>{choice.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={styles.answers}>
+              {question.choices.map((choice) => {
+                const isPicked = picked === choice.id;
+                return (
+                  <button
+                    key={choice.id}
+                    type="button"
+                    aria-pressed={isPicked}
+                    className={`${styles.answer} ${isPicked ? styles.picked : ''}`}
+                    onClick={() => {
+                      if (picked) return; // one tap per question
+                      setPicked(choice.id);
+                      advance.current = setTimeout(() => {
+                        setPicked(null);
+                        answer(choice.id, 0);
+                      }, SELECT_MS);
+                    }}
+                  >
+                    <ChoiceMark mark={choice.mark} />
+                    <span className={styles.answerLabel}>{choice.label}</span>
+                    {/* The badge's space is always reserved, so nothing reflows. */}
+                    <span className={styles.tick} aria-hidden="true">
+                      <span className={styles.tickBadge}>
+                        <CheckBadge />
+                      </span>
                     </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         {foot(<span>{event.date}</span>)}
       </main>
@@ -336,6 +430,8 @@ export function Kiosk({
   }
 
   const flower = flowerFromAnswers(stage.answers);
+  const feeling = feelingFromAnswers(stage.answers);
+  const { row, col } = feelingCell(stage.answers);
 
   return (
     // Any touch on the result restarts the countdown: a student still reading
@@ -349,15 +445,16 @@ export function Kiosk({
       {head}
       <div className={styles.result}>
         <div className={styles.resultText}>
-          <p className={`${styles.note} ${styles.rise}`}>{kiosk.resultNote}</p>
+          {/* The feeling first: the home's word for it, in the home's colour. */}
+          <p className={`${styles.feelingLine} ${styles.rise}`}>
+            <span className={styles.feelingLabel}>{kiosk.resultNote}</span>
+            <span className={styles.feelingChip} style={{ '--mood': moodFor(col / 2, row / 2) } as CSSProperties}>
+              {feeling.word}
+            </span>
+          </p>
+          <p className={`${styles.note} ${styles.rise}`}>{kiosk.flowerFor}</p>
           <h1 className={`${styles.flowerName} ${styles.rise}`}>{flower.name}</h1>
-          <p className={`${styles.resultBody} ${styles.rise}`}>{flower.body}</p>
-
-          {/* The other side of the flower: even this one has tired days. */}
-          <div className={`${styles.hidden} ${styles.rise}`}>
-            <span className={styles.smallLabel}>{hiddenLabel}</span>
-            <span className={styles.hiddenText}>{flower.hidden}</span>
-          </div>
+          <p className={`${styles.resultBody} ${styles.rise}`}>{feeling.message}</p>
 
           {/* The honest question, answered back warmly, with a route to CUD Care. */}
           <div className={`${styles.reply} ${styles.rise}`}>
@@ -375,12 +472,12 @@ export function Kiosk({
         </div>
 
         <div className={styles.resultSide}>
-          {/* Disc, flower and bloom are the shared FlowerArt (see it for the
-              interim-art note). This box only sizes it. */}
+          {/* Disc, flower and bloom are the shared FlowerArt. This box only sizes it. */}
           <div className={styles.artStack}>
             <FlowerArt flower={flower} />
           </div>
-          <p className={`${styles.wishLine} ${styles.rise}`}>“{flower.wish}”</p>
+          {/* Why this flower: which heart it is for. */}
+          <p className={`${styles.wishLine} ${styles.rise}`}>{flower.body}</p>
 
           {/* The bridge to the main site: the booth is the quick part; the deeper
               questions are for later, in the student's own time. */}
@@ -396,11 +493,7 @@ export function Kiosk({
         </div>
       </div>
 
-      <button
-        type="button"
-        className={styles.again}
-        onClick={reset}
-      >
+      <button type="button" className={styles.again} onClick={reset}>
         {kiosk.again}
       </button>
       {foot(

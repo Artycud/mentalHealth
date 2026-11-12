@@ -63,18 +63,6 @@
   padding-top: 28px;
 }
 
-/* The other side of the flower: an open note with a pink rule, not a card. */
-.hidden {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 14px;
-  padding-left: 12px;
-  border-left: 4px solid var(--riso-pink);
-  font-size: 16px;
-  line-height: 1.55;
-}
-
 .smallLabel {
   font-size: 14px;
   line-height: 1.5;

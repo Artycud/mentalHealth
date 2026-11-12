@@ -52,8 +52,8 @@ await add(1, { mode: 'checkin', start: '2026-11-19T04:00:00Z', end: '2026-11-19T
   answers: [['q1-study', 'c'], ['q2-pressure', 'b'], ['q3-sleep', 'd']] });
 await add(2, { mode: 'checkin', start: '2026-11-19T17:30:00Z', answers: [['q1-study', 'a'], ['q2-pressure', 'a']] }); // unfinished
 await add(3, { mode: 'booth', start: '2026-11-20T04:10:00Z', end: '2026-11-20T04:10:40Z', flower: 'lotus', device: 'tablet',
-  answers: [['b1', 'a'], ['b2', 'a'], ['b3', 'a']] });
-await add(4, { mode: 'booth', start: '2026-11-20T04:20:00Z', end: '2026-11-20T04:20:20Z', flower: 'marigold', device: 'tablet', answers: [['b1', 'b']] });
+  answers: [['energy', 'low'], ['weight', 'light'], ['topic', 'study']] });
+await add(4, { mode: 'booth', start: '2026-11-20T04:20:00Z', end: '2026-11-20T04:20:20Z', flower: 'marigold', device: 'tablet', answers: [['energy', 'mid']] });
 await add(5, { mode: 'checkin', start: '2026-11-21T04:00:00Z', end: '2026-11-21T04:01:00Z', state: 'heavy', primary: 'family', secondary: 'friends', answers: [['q1-study', 'c']] });
 
 const NOW = Date.parse('2026-11-20T10:00:00Z'); // 17:00 on the 20th in Thailand
@@ -86,7 +86,7 @@ const all = await A.getAdminData({}, NOW);
   const q1 = all.checkinQuestions.find((q) => q.id === 'q1-study');
   eq('q1: three answered; two chose c and one chose a, as percentages of those who answered', [q1.answered, q1.choices.find((x) => x.id === 'c').pct, q1.choices.find((x) => x.id === 'a').pct], [3, 67, 33]);
   eq('every choice of a question is listed, even at zero', q1.choices.length, 4);
-  const b1 = all.boothQuestions.find((q) => q.id === 'b1');
+  const b1 = all.boothQuestions.find((q) => q.id === 'energy');
   eq('the booth questions are counted separately', [b1.answered, b1.choices.filter((x) => x.count).length], [2, 2]);
   eq('percentages of a question add to about 100', q1.choices.reduce((s, x) => s + x.pct, 0), 100);
 }

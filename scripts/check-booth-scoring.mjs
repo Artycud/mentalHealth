@@ -1,104 +1,96 @@
-// Enumerates every possible set of booth answers and reports how often each
-// flower comes up. Reads the REAL quiz and the REAL scoring function from
+// Checks the booth's feeling → flower rules against the REAL quiz and scoring in
 // content/th/booth.ts, so it cannot drift from what the kiosk does.
 //
-// Run it after editing any booth question or answer:  npm run check:booth
+// Run it after editing any booth question, answer or flower:  npm run check:booth
 //
-// It exists because the booth hands out PHYSICAL flowers. A lopsided quiz means
-// the booth runs out of some and is left holding a pile of others. Rewording an
-// answer is safe; changing which value it carries, or how many answers a
-// question has, is what can unbalance this.
+// The booth hands out PHYSICAL flowers. Since 2026-11-12 the flower is the one
+// "for" the student's feeling (energy × weight, the home's nine), so how many of
+// each go out depends on how the room feels and cannot be balanced in advance.
+// What CAN be checked, and is:
+//   1. every flower is reachable, and every one of the nine feelings has a flower;
+//   2. energy and weight both decide the flower, and the topic never does;
+//   3. every answer to energy and weight counts differently.
+// It also prints the map, so the council can see which heart gets which flower.
 
-import { flowerFromAnswers, loykrathongFlowers, loykrathongQuiz } from '../content/th/booth.ts';
-
-// Ideal is 1/6 = 16.7%, and the current design hits it exactly. The band is
-// deliberately tight: an earlier version of this check used 10-25% and passed a
-// quiz whose third question did nothing at all.
-const MIN = 0.12;
-const MAX = 0.22;
-
-const counts = new Map(loykrathongFlowers.map((f) => [f.id, 0]));
-let total = 0;
-const outcomes = []; // outcomes[i] = flower id for the i-th answer set, in walk order
-
-function walk(q, answers) {
-  if (q === loykrathongQuiz.length) {
-    const id = flowerFromAnswers(answers).id;
-    counts.set(id, counts.get(id) + 1);
-    outcomes.push(id);
-    total += 1;
-    return;
-  }
-  const question = loykrathongQuiz[q];
-  for (const choice of question.choices) {
-    walk(q + 1, [...answers, { axis: question.axis, value: choice.value }]);
-  }
-}
-walk(0, []);
-
-console.log(
-  `${total} possible answer sets, ${loykrathongFlowers.length} flowers (ideal ${(100 / loykrathongFlowers.length).toFixed(1)}% each)\n`,
-);
+import { feelingFromAnswers, flowerFromAnswers, loykrathongFlowers, loykrathongQuiz } from '../content/th/booth.ts';
 
 let bad = 0;
+const fail = (msg) => {
+  bad += 1;
+  console.log(`FAIL ${msg}`);
+};
+const ok = (msg) => console.log(`ok   ${msg}`);
+
+const byAxis = (axis) => loykrathongQuiz.find((q) => q.axis === axis);
+const energy = byAxis('energy');
+const weight = byAxis('weight');
+const topic = byAxis('topic');
+if (!energy || !weight || !topic) {
+  console.log('FAIL the quiz must have an energy, a weight and a topic question');
+  process.exit(1);
+}
+
+// ---- the map ----
+console.log('weight \\ energy'.padEnd(18) + energy.choices.map((c) => c.label.padEnd(22)).join(''));
+const counts = new Map(loykrathongFlowers.map((f) => [f.id, 0]));
+for (const w of weight.choices) {
+  let line = w.label.padEnd(18);
+  for (const e of energy.choices) {
+    const answers = [
+      { axis: 'energy', value: e.value },
+      { axis: 'weight', value: w.value },
+      { axis: 'topic', value: 0 },
+    ];
+    const flower = flowerFromAnswers(answers);
+    const feeling = feelingFromAnswers(answers);
+    counts.set(flower.id, counts.get(flower.id) + 1);
+    line += `${feeling.word} → ${flower.name}`.padEnd(22);
+  }
+  console.log(line);
+}
+console.log('');
+
+// ---- 1. every flower reachable ----
 for (const f of loykrathongFlowers) {
   const n = counts.get(f.id);
-  const share = n / total;
-  const reachable = n > 0;
-  const ok = reachable && share >= MIN && share <= MAX;
-  if (!ok) bad += 1;
-  console.log(
-    `${ok ? 'ok  ' : 'FAIL'} ${f.name.padEnd(16)} ${String(n).padStart(3)}/${total}  ${(share * 100).toFixed(1).padStart(5)}%  ${'#'.repeat(n)}${reachable ? '' : '  (UNREACHABLE)'}`,
-  );
+  if (n > 0) ok(`${f.name} is given for ${n} of the 9 feelings`);
+  else fail(`${f.name} can never be given (no feeling maps to it)`);
 }
 
-// 1. Every answer to a question must count differently. If two match, picking
-//    either gives the same flower, so that choice is decoration.
-console.log('');
-let dup = 0;
-for (const q of loykrathongQuiz) {
+// ---- 2. energy and weight decide it; topic never does ----
+const flowerAt = (e, w, t = 0) =>
+  flowerFromAnswers([
+    { axis: 'energy', value: e },
+    { axis: 'weight', value: w },
+    { axis: 'topic', value: t },
+  ]).id;
+const matters = (axis) => {
+  for (let a = 0; a < 3; a += 1) {
+    const set = new Set([0, 1, 2].map((b) => (axis === 'energy' ? flowerAt(b, a) : flowerAt(a, b))));
+    if (set.size > 1) return true;
+  }
+  return false;
+};
+for (const axis of ['energy', 'weight']) {
+  if (matters(axis)) ok(`${axis} changes the flower`);
+  else fail(`${axis} never changes the flower: it is decoration`);
+}
+let topicMatters = false;
+for (let e = 0; e < 3; e += 1) {
+  for (let w = 0; w < 3; w += 1) {
+    const set = new Set(topic.choices.map((c) => flowerAt(e, w, c.value)));
+    if (set.size > 1) topicMatters = true;
+  }
+}
+if (topicMatters) fail('the topic changes the flower; it must not');
+else ok('the topic never changes the flower');
+
+// ---- 3. distinct answers ----
+for (const q of [energy, weight]) {
   const values = new Set(q.choices.map((c) => c.value));
-  const ok = values.size === q.choices.length;
-  if (!ok) dup += 1;
-  console.log(`${ok ? 'ok  ' : 'FAIL'} ${q.id} (${q.axis}): ${q.choices.length} answers, ${values.size} distinct values`);
+  if (values.size === q.choices.length && q.choices.length === 3) ok(`${q.id}: 3 answers, 3 distinct values`);
+  else fail(`${q.id}: needs exactly 3 answers with distinct values (0, 1, 2)`);
 }
 
-// 2. Every question must be able to change the outcome. Flip one question's
-//    answer while holding the others fixed; if the flower never changes for any
-//    setting of the others, that question is decoration.
-console.log('');
-let inert = 0;
-for (let qi = 0; qi < loykrathongQuiz.length; qi += 1) {
-  let changes = 0;
-  const others = loykrathongQuiz.map((q) => q.choices);
-  // Walk every combination of the OTHER questions' answers.
-  const rest = loykrathongQuiz.map((_, i) => i).filter((i) => i !== qi);
-  const recurse = (k, picked) => {
-    if (k === rest.length) {
-      const flowers = new Set();
-      for (const choice of loykrathongQuiz[qi].choices) {
-        const answers = loykrathongQuiz.map((q, i) => {
-          const c = i === qi ? choice : picked.get(i);
-          return { axis: q.axis, value: c.value };
-        });
-        flowers.add(flowerFromAnswers(answers).id);
-      }
-      if (flowers.size > 1) changes += 1;
-      return;
-    }
-    for (const c of others[rest[k]]) recurse(k + 1, new Map(picked).set(rest[k], c));
-  };
-  recurse(0, new Map());
-  const ok = changes > 0;
-  if (!ok) inert += 1;
-  console.log(`${ok ? 'ok  ' : 'FAIL'} ${loykrathongQuiz[qi].id} changes the flower in ${changes} of the other answer combinations`);
-}
-
-console.log('');
-if (bad) console.log(`${bad} flower(s) unreachable or outside ${MIN * 100}-${MAX * 100}%. Rebalance before the booth.`);
-if (dup) console.log(`${dup} question(s) have answers that count the same. Give each answer its own value.`);
-if (inert) console.log(`${inert} question(s) never change the result, so they are decoration.`);
-if (!bad && !dup && !inert) {
-  console.log(`Balanced: every flower reachable and between ${MIN * 100}% and ${MAX * 100}%, and every question matters.`);
-}
-process.exit(bad || dup || inert ? 1 : 0);
+console.log(bad ? `\n${bad} problem(s)` : '\nEvery flower reachable, and only energy and weight decide it.');
+process.exit(bad ? 1 : 0);

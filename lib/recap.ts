@@ -194,7 +194,8 @@ export async function demoRecap(festival: FestivalId): Promise<Recap> {
     });
     return { id: q.id, headline: q.headline, answered: players, choices };
   };
-  const shares = [[48, 37, 15], [22, 61, 17], [19, 34, 47]];
+  // Energy, weight, then the nine topics.
+  const shares = [[38, 45, 17], [24, 49, 27], [34, 14, 12, 8, 10, 9, 6, 4, 3]];
   const event = await getEvent(festival);
   const shaped = shape(
     {

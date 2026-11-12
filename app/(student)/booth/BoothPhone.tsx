@@ -11,9 +11,11 @@ import { PhoneQuiz, type QuizQuestion } from '@/components/quiz/PhoneQuiz';
 import { Screen } from '@/components/ui/Screen';
 import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
 import {
+  answersFromChoices,
+  feelingFromAnswers,
   flowerFromChoices,
-  hiddenLabel,
   isOkayChoice,
+  kiosk,
   loykrathongQuiz,
   okayQuestion,
   okayReply,
@@ -39,10 +41,11 @@ interface BoothPhoneProps {
 }
 
 /**
- * The booth quiz on a student's own phone: three questions, then a result to show
- * at the booth to collect a real flower (BRIEF §1, §8). The kiosk at the booth
- * runs the same quiz on a shared device; both give the same flower for the same
- * answers.
+ * The booth quiz on a student's own phone: how the heart is right now (battery,
+ * bag, what fills the head) and the honest question, then a result to show at the
+ * booth to collect a real flower (BRIEF §1, §8). The kiosk at the booth asks the
+ * same questions as drags on a shared device; both give the same flower for the
+ * same answers. Here they are taps, which suit a phone in one hand.
  *
  * Booth mode runs on trust — staff just look at the screen — so there is no code
  * or token here, and nothing to check (§12).
@@ -50,13 +53,14 @@ interface BoothPhoneProps {
 export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: BoothPhoneProps) {
   const router = useRouter();
   const [flower, setFlower] = useState<Flower | null>(null);
+  const [feeling, setFeeling] = useState<ReturnType<typeof feelingFromAnswers> | null>(null);
   const [okay, setOkay] = useState<OkayChoiceId | null>(null);
   // One per run. Going back from a result to play again makes a new one.
   const [tracker, setTracker] = useState(() => createTracker('booth'));
 
   const quiz = useMemo<QuizQuestion[]>(
     () =>
-      // The three flower questions, then the honest one, as on the booth's iPad.
+      // The feeling questions, then the honest one, as on the booth's iPad.
       [...loykrathongQuiz, okayQuestion].map((q) => ({
         id: q.id,
         note: q.note,
@@ -92,6 +96,8 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
           if (!result) return; // unreachable: the quiz only finishes complete
           const honest = answers.find((a) => a.questionId === okayQuestion.id)?.choiceId;
           setOkay(honest && isOkayChoice(honest) ? honest : null);
+          const scored = answersFromChoices(answers);
+          setFeeling(scored ? feelingFromAnswers(scored) : null);
           // A history entry for the result, so back has something to pop.
           window.history.pushState({ ...(window.history.state as object), quizDone: true }, '');
           setFlower(result);
@@ -108,6 +114,11 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
         <WordmarkHeader />
         <BoothLabelPill>{label}</BoothLabelPill>
 
+        {feeling && (
+          <p className={styles.note}>
+            {kiosk.resultNote}: {feeling.word}
+          </p>
+        )}
         <p className={styles.note}>{resultNote}</p>
         <h1 className={`${styles.flower} ${flower.name.length > 8 ? styles.flowerLong : ''}`}>
           {flower.name}
@@ -119,11 +130,8 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
 
         <p className={styles.body}>{flower.body}</p>
 
-        {/* The other side of the flower, and the honest question answered back. */}
-        <div className={styles.hidden}>
-          <span className={styles.smallLabel}>{hiddenLabel}</span>
-          <span>{flower.hidden}</span>
-        </div>
+        {/* What the feeling's own message says, and the honest question answered back. */}
+        {feeling && <p className={styles.body}>{feeling.message}</p>}
         {okay && (
           <div className={styles.reply}>
             <span className={styles.smallLabel}>{okayReplyLabel}</span>
