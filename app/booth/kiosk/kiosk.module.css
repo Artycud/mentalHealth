@@ -711,106 +711,6 @@
   color: var(--ink-soft);
 }
 
-.resultGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2vw;
-  flex-grow: 1;
-  min-height: 0;
-  margin-top: 0.6vh;
-}
-
-.panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5vh;
-  min-height: 0;
-  padding: 1.8vh 2vw 2vh;
-  border: 2px solid rgba(252, 241, 230, 0.16);
-  border-radius: 3vh;
-  background: rgba(252, 241, 230, 0.07);
-  text-align: center;
-}
-
-.panelLabel {
-  font-family: var(--font-note);
-  font-size: 2.8vh;
-  line-height: 1.3;
-  color: var(--tv-note);
-}
-
-/* Taller than the flower's box: the heart's drawing keeps room for its glow and
-   shadow, so this makes the two look the same size. */
-.resultHeart {
-  height: 27vh;
-  margin-block: -2vh -1vh;
-}
-
-.resultFlower {
-  height: 22vh;
-  aspect-ratio: 1;
-}
-
-.feelingWord {
-  margin-top: 0.4vh;
-}
-
-.feelingMessage {
-  max-width: 40ch;
-  margin-top: 0.6vh;
-  font-size: 2.6vh;
-  line-height: 1.5;
-  text-wrap: balance;
-}
-
-.panel .flowerName {
-  margin-top: 0.2vh;
-  font-size: 6.4vh;
-}
-
-.flowerBody {
-  font-family: var(--font-heading);
-  font-size: 2.6vh;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--tv-soft);
-  text-wrap: balance;
-}
-
-/* For the staff: what to hand over. */
-.take {
-  margin-top: auto;
-  padding: 0.8vh 1.6vw;
-  border: 2px dashed var(--sunflower);
-  border-radius: 999px;
-  font-family: var(--font-heading);
-  font-size: 2.2vh;
-  font-weight: 500;
-  color: var(--sunflower);
-}
-
-.resultBottom {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: stretch;
-  gap: 2vw;
-  margin-top: 1.4vh;
-}
-
-.resultBottom .reply,
-.resultBottom .qrCard {
-  margin-top: 0;
-}
-
-.resultBottom .qrBox {
-  width: 12vh;
-}
-
-.resultGrid > :nth-child(1) { animation-delay: 60ms; }
-.resultGrid > :nth-child(2) { animation-delay: 180ms; }
-.resultBottom { animation-delay: 300ms; }
-
 @keyframes toast-in {
   from {
     transform: translateY(-160%);
@@ -827,88 +727,223 @@
   line-height: 1.15;
 }
 
-.resultBody {
-  margin-top: 1vh;
+/* One scene on the night sky: heart, path, flower. No panels; a soft light
+   behind it holds it together. */
+.scene {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 12vw 1fr;
+  align-items: start;
+  flex-grow: 1;
+  min-height: 0;
+  /* Clear of the coupon notification at the top right. */
+  margin-top: 4.4vh;
 }
 
-.smallLabel {
+.scene::before {
+  content: '';
+  position: absolute;
+  inset: 4% 8% 10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(252, 241, 230, 0.09), transparent);
+  pointer-events: none;
+}
+
+.sceneSide {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4vh;
+  min-width: 0;
+  text-align: center;
+}
+
+.sceneLabel {
+  font-family: var(--font-note);
+  font-size: 2.8vh;
+  line-height: 1.3;
+  color: var(--tv-note);
+}
+
+.resultHeart {
+  height: 30vh;
+  margin-block: -1.6vh -1.2vh;
+}
+
+.resultFlower {
+  height: 25vh;
+  aspect-ratio: 1;
+  margin-block: 0.6vh 0.4vh;
+}
+
+.feelingWord {
+  margin-top: 0.2vh;
+}
+
+.feelingMessage {
+  max-width: 34ch;
+  margin-top: 0.8vh;
+  font-size: 2.6vh;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.sceneSide .flowerName {
+  margin-top: 0;
+  font-size: 6.4vh;
+}
+
+.flowerBody {
+  font-family: var(--font-heading);
+  font-size: 2.6vh;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--tv-soft);
+  text-wrap: balance;
+}
+
+/* For the staff: what to hand over. */
+.take {
+  margin-top: 1.2vh;
+  padding: 0.6vh 1.6vw;
+  border: 2px dashed var(--sunflower);
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 2.1vh;
+  font-weight: 500;
+  color: var(--sunflower);
+}
+
+/* From the heart to its flower: a dotted path that flows, and two sparkles. */
+.bridge {
+  align-self: center;
+  margin-top: -6vh;
+}
+
+.bridge svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.bridgePath,
+.bridgeHead {
+  fill: none;
+  stroke: var(--sunflower);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bridgePath {
+  stroke-dasharray: 2 9;
+  animation: flow 1.4s linear infinite;
+}
+
+.spark {
+  fill: var(--paper);
+  opacity: 0.85;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
+.spark + .spark {
+  animation-delay: -1.2s;
+}
+
+/* Under the scene: the reply and the QR, side by side, on the sky. */
+.resultFoot {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 3vw;
+  margin-top: 1.4vh;
+}
+
+/* The answer to the honest question: a warm note with a pink rule, not a card. */
+.reply {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vh;
+  padding-left: 1.6vw;
+  border-left: 0.6vh solid var(--riso-pink);
+}
+
+.replyLabel {
   font-size: 2vh;
   line-height: 1.5;
   color: var(--tv-soft);
 }
 
-/* Inside the paper blocks the small label goes back to ink. */
-.reply .smallLabel {
-  color: var(--ink-soft);
-}
-
-/* The answer to the honest question. Tinted block with one sharp corner, the same
-   treatment as the CUD Care block — a warm note, not a card (§7). */
-.reply {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3vh;
-  margin-top: 1.8vh;
-  padding: 1.5vh 1.8vw;
-  border-radius: 3vh 3vh 1vh 3vh;
-  background: var(--pink-tint);
-  color: var(--ink);
-}
-
 .replyText {
   font-family: var(--font-heading);
-  font-size: 2.9vh;
-  font-weight: 500;
-  line-height: 1.45;
-  text-wrap: balance;
-}
-
-/* The route to CUD Care that every result keeps (§12). */
-.care {
-  margin-top: 0.4vh;
-  font-size: 2.1vh;
-  line-height: 1.5;
-  color: var(--ink-soft);
-}
-
-/* The bridge to the main site: a QR code to keep for later. A raised slab, so it
-   reads as something to pick up, beside a short reason to. */
-.qrCard {
-  display: flex;
-  align-items: center;
-  gap: 1.6vw;
-  margin-top: 1.2vh;
-  padding: 1.4vh 1.4vw;
-  border-radius: 3vh;
-  background: var(--paper-raised);
-  color: var(--ink);
-  box-shadow: 0 2vh 4vh -2vh rgba(0, 0, 0, 0.5);
-}
-
-.qrBox {
-  flex-shrink: 0;
-  width: 17vh;
-}
-
-.qrText {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6vh;
-  min-width: 0;
-}
-
-.qrTitle {
-  font-family: var(--font-heading);
-  font-size: 2.7vh;
+  font-size: 2.8vh;
   font-weight: 500;
   line-height: 1.4;
   text-wrap: balance;
 }
 
-.qrBody {
-  font-size: 2.2vh;
+/* The route to CUD Care that every result keeps (§12). */
+.care {
+  font-size: 2.1vh;
   line-height: 1.5;
-  color: var(--ink-soft);
+  color: var(--tv-soft);
+}
+
+/* The QR, for later: white only behind the code, for the camera. */
+.qrMini {
+  display: flex;
+  align-items: center;
+  gap: 1.4vw;
+}
+
+.qrBox {
+  flex-shrink: 0;
+  width: 12.5vh;
+  padding: 0.6vh;
+  border-radius: 1.6vh;
+  background: #ffffff;
+}
+
+.qrText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+  max-width: 22vw;
+}
+
+.qrTitle {
+  font-family: var(--font-heading);
+  font-size: 2.4vh;
+  font-weight: 500;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.qrBody {
+  font-size: 2vh;
+  line-height: 1.45;
+  color: var(--tv-soft);
+}
+
+.scene > :nth-child(1) { animation-delay: 60ms; }
+.scene > :nth-child(2) { animation-delay: 220ms; }
+.scene > :nth-child(3) { animation-delay: 380ms; }
+.resultFoot { animation-delay: 520ms; }
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+@keyframes twinkle {
+  50% {
+    transform: scale(0.55);
+    opacity: 0.4;
+  }
 }
 
 /* "คนต่อไป": full-width, so staff can reach it without looking. */
@@ -1031,7 +1066,9 @@
   .idleFlower svg circle:nth-of-type(even),
   .idleFlower svg circle:last-of-type,
   .picked .tickBadge,
-  .start::after {
+  .start::after,
+  .bridgePath,
+  .spark {
     animation: none;
   }
 }

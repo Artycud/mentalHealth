@@ -471,10 +471,11 @@ export function Kiosk({
         </div>
       )}
 
-      <div className={styles.resultGrid}>
-        {/* The heart the student just made, exactly as they made it. */}
-        <section className={`${styles.panel} ${styles.rise}`}>
-          <p className={styles.panelLabel}>{kiosk.resultNote}</p>
+      {/* One scene, no boxes: the heart the student made, a glowing path, and the
+          flower for that heart. Each one's words sit under it. */}
+      <div className={styles.scene}>
+        <section className={`${styles.sceneSide} ${styles.rise}`}>
+          <p className={styles.sceneLabel}>{kiosk.resultNote}</p>
           <div className={styles.resultHeart}>
             <JellyHeart energy={energyLevel} weight={weightLevel} label={feeling.word} />
           </div>
@@ -486,29 +487,38 @@ export function Kiosk({
           <p className={styles.feelingMessage}>{feeling.message}</p>
         </section>
 
-        {/* The flower for that heart, and what the staff should hand over. */}
-        <section className={`${styles.panel} ${styles.rise}`}>
-          <p className={styles.panelLabel}>{kiosk.flowerFor}</p>
+        <div className={`${styles.bridge} ${styles.rise}`} aria-hidden="true">
+          <svg viewBox="0 0 120 90">
+            <path d="M8 62 C34 8 86 8 110 54" className={styles.bridgePath} />
+            <path d="M97 46 L111 56 L96 63" className={styles.bridgeHead} />
+            <path d="M42 22 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 Z" className={styles.spark} />
+            <path d="M74 16 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5 Z" className={styles.spark} />
+          </svg>
+        </div>
+
+        <section className={`${styles.sceneSide} ${styles.rise}`}>
+          <p className={styles.sceneLabel}>{kiosk.flowerFor}</p>
           <div className={styles.resultFlower}>
             <FlowerArt flower={flower} />
           </div>
           <h1 className={styles.flowerName}>{flower.name}</h1>
           <p className={styles.flowerBody}>{flower.body}</p>
+          {/* For the staff: what to hand over. */}
           <p className={styles.take}>
             {kiosk.ticketTitle} · รับ{withDok(flower.name)}ไปแต่งกระทงได้เลย
           </p>
         </section>
       </div>
 
-      <div className={`${styles.resultBottom} ${styles.rise}`}>
+      <div className={`${styles.resultFoot} ${styles.rise}`}>
         {/* The honest question, answered back warmly, with a route to CUD Care. */}
         <div className={styles.reply}>
-          <span className={styles.smallLabel}>{okayReplyLabel}</span>
+          <span className={styles.replyLabel}>{okayReplyLabel}</span>
           <span className={styles.replyText}>{okayReply[stage.okay]}</span>
           <span className={styles.care}>{cudCare.result.body}</span>
         </div>
-        {/* The bridge to the main site, for later. */}
-        <div className={styles.qrCard}>
+        {/* The bridge to the main site, for later: white only behind the code. */}
+        <div className={styles.qrMini}>
           <div className={styles.qrBox}>
             <QrCode value={qrUrl} label={qrInvite.title} />
           </div>
