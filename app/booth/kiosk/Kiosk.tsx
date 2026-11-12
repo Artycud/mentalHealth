@@ -227,7 +227,6 @@ export function Kiosk({
             <button
               type="button"
               className={styles.start}
-              style={{ color: 'var(--white)' }}
               onClick={() => {
                 tracker.current = createTracker('booth');
                 tracker.current.start();
@@ -245,7 +244,8 @@ export function Kiosk({
               {stock.map((f) => (
                 <span key={f.id} className={styles.stockItem}>
                   <span className={styles.stockMark} aria-hidden="true">
-                    <WallFlower tint={f.tint} />
+                    {/* On a plate: multiplied straight onto the night it would go dark. */}
+                    <WallFlower tint={f.tint} plate />
                   </span>
                   {f.name.replace(/^ดอก/, '')} {f.count}
                 </span>
@@ -399,7 +399,6 @@ export function Kiosk({
       <button
         type="button"
         className={styles.again}
-        style={{ color: 'var(--white)' }}
         onClick={reset}
       >
         {kiosk.again}

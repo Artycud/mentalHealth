@@ -1,8 +1,17 @@
 /* Booth kiosk — the one iPad at the booth. Staff hold it and hand it to each
    student, landscape, standing up, often with someone watching over a shoulder.
-   Sized in vh like the TV so it fills whatever it runs on. */
+   Sized in vh like the TV so it fills whatever it runs on.
+
+   It shares the TV's night: the festival's sky behind, paper and marigold text on
+   it. What is pressed stays bright: the answers are big slabs of paper with navy
+   text, the brightest things on the screen, so answering is the obvious thing to
+   do; the start and next buttons are marigold. Anything that needs paper behind
+   it to read (the question's picture, the ticket, the QR card) sits on its own
+   slab of paper. */
 
 .stage {
+  --tv-soft: rgba(252, 241, 230, 0.8);
+  --tv-note: #ffb8de;
   display: flex;
   flex-direction: column;
   width: 100vw;
@@ -10,8 +19,15 @@
   height: 100dvh;
   padding: 3.5vh max(4vw, env(safe-area-inset-left)) max(3.5vh, env(safe-area-inset-bottom))
     max(4vw, env(safe-area-inset-right));
-  background: var(--paper-surface);
-  color: var(--ink);
+  /* A few still stars over the festival's sky; plain night where there is none. */
+  background:
+    radial-gradient(circle at 58% 5%, rgba(255, 255, 255, 0.8) 0 0.16vh, transparent 0.26vh),
+    radial-gradient(circle at 76% 12%, rgba(255, 255, 255, 0.6) 0 0.12vh, transparent 0.22vh),
+    radial-gradient(circle at 91% 4%, rgba(255, 255, 255, 0.85) 0 0.16vh, transparent 0.26vh),
+    radial-gradient(circle at 38% 9%, rgba(255, 255, 255, 0.5) 0 0.12vh, transparent 0.22vh),
+    radial-gradient(circle at 18% 4%, rgba(255, 255, 255, 0.6) 0 0.14vh, transparent 0.24vh),
+    var(--fest-sky, linear-gradient(180deg, #0b1536, #26307f));
+  color: var(--paper);
   overflow: hidden;
   overflow: clip;
   /* It is passed from hand to hand all day, so the iPad's own gestures must not
@@ -46,7 +62,7 @@
   right: max(4vw, env(safe-area-inset-right));
   bottom: 2.2vh;
   padding-top: 0;
-  color: var(--fest-on-water, var(--ink-muted));
+  color: var(--fest-on-water, var(--tv-soft));
 }
 
 .head {
@@ -74,6 +90,27 @@
   height: auto;
 }
 
+/* Inks that multiply on paper would vanish on the night; here they add light. */
+.brand :global(.mul),
+.idleArt :global(.mul) {
+  mix-blend-mode: screen;
+}
+
+/* Drawn lines in paper colour, on the sky (the idle picture, the back arrow). */
+.idleArt :global(.ln),
+.back :global(.ln) {
+  stroke: var(--paper);
+}
+
+/* Without the river at the bottom (the quiz and the result), the sky is
+   stretched so the screen ends in its dusk pink, not the bright glow just above
+   the water: the footer's paper-coloured text stays readable on it. */
+.stage:not(.withShore) {
+  background-size: 100% 135%;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+
 /* Progress: 4 steps (3 questions and the honest one), same ink/pink/track language as the phone (§7). */
 .progress {
   display: flex;
@@ -90,7 +127,7 @@
   width: 7vh;
   height: 7vh;
   border-radius: 2vh;
-  color: var(--ink);
+  color: var(--paper);
   transition: transform var(--d-tap) var(--ease);
 }
 
@@ -113,12 +150,12 @@
   flex-grow: 1;
   height: 1.2vh;
   border-radius: 999px;
-  background: var(--track);
+  background: rgba(252, 241, 230, 0.2);
   transition: background-color var(--d-color) var(--ease);
 }
 
 .done {
-  background: var(--ink);
+  background: var(--sunflower);
 }
 
 .current {
@@ -138,7 +175,7 @@
   font-family: var(--font-note);
   font-size: 2.8vh;
   line-height: 1.4;
-  color: var(--note-pink);
+  color: var(--tv-note);
 }
 
 .question {
@@ -170,7 +207,7 @@
   gap: 2vw;
   padding-top: 2.5vh;
   font-size: 2vh;
-  color: var(--ink-muted);
+  color: var(--tv-soft);
 }
 
 /* A layer fills its parent, so illustrations stack without absolute maths in
@@ -253,10 +290,11 @@
   margin-top: 4vh;
   padding: 0 4vw;
   border-radius: 3vh 3vh 3vh 1vh;
-  background: var(--ink);
+  background: var(--sunflower);
+  color: var(--ink);
   font-family: var(--font-heading);
-  font-size: 3.6vh;
-  font-weight: 500;
+  font-size: 3.8vh;
+  font-weight: 600;
   transition: transform var(--d-tap) var(--ease);
 }
 
@@ -270,7 +308,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--sunflower);
   border-radius: inherit;
   pointer-events: none;
   animation: ripple 2.8s ease-out infinite;
@@ -284,6 +322,7 @@
   border: 3px dashed var(--ink);
   border-radius: 2vh;
   background: var(--sun-tint);
+  color: var(--ink);
   font-family: var(--font-heading);
   font-size: 2.6vh;
   font-weight: 500;
@@ -299,13 +338,13 @@
   margin-top: 3.2vh;
   font-size: 1.9vh;
   line-height: 1.4;
-  color: var(--ink-soft);
+  color: var(--tv-soft);
   font-variant-numeric: tabular-nums;
 }
 
 .stockTitle {
   font-weight: 500;
-  color: var(--ink);
+  color: var(--paper);
 }
 
 .stockItem {
@@ -368,9 +407,15 @@
   outline: none;
 }
 
+/* The question's picture, on its own slab of paper: drawn for paper, it keeps
+   its colours, and it reads as a card held up beside the question. */
 .quizArt {
   height: 30vh;
   margin-top: 3vh;
+  padding: 1.6vh;
+  border-radius: 3vh;
+  background: var(--paper-raised);
+  box-shadow: 0 2vh 4vh -2vh rgba(0, 0, 0, 0.5);
 }
 
 /* One column of big cards. Two answers make two very tall cards and three make
@@ -398,11 +443,11 @@
      picked ring is drawn on ::after and faded by opacity. */
   position: relative;
   box-shadow:
-    0 0.4vh 0 var(--line),
-    0 2vh 3vh -2vh rgba(27, 43, 94, 0.32);
+    0 0.5vh 0 var(--line),
+    0 2vh 4vh -2vh rgba(0, 0, 0, 0.55);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 3.6vh;
+  font-size: 3.8vh;
   font-weight: 500;
   line-height: 1.4;
   text-align: left;
@@ -427,9 +472,10 @@
 }
 
 /* The tapped answer holds on screen for a beat before the question moves on, so
-   a tap always visibly lands. Border and fill fade together (§9). */
+   a tap always visibly lands: it turns marigold, which nothing else on the quiz
+   is. Border and fill fade together (§9). */
 .picked {
-  background: var(--pink-tint);
+  background: var(--sunflower);
 }
 
 .picked::after {
@@ -506,6 +552,11 @@
 .smallLabel {
   font-size: 2vh;
   line-height: 1.5;
+  color: var(--tv-soft);
+}
+
+/* Inside the paper blocks the small label goes back to ink. */
+.reply .smallLabel {
   color: var(--ink-soft);
 }
 
@@ -564,6 +615,7 @@
   border: 3px dashed var(--ink);
   border-radius: 3vh;
   background: var(--sun-tint);
+  color: var(--ink);
 }
 
 .ticketTitle {
@@ -609,7 +661,7 @@
   font-family: var(--font-note);
   font-size: 2.6vh;
   line-height: 1.45;
-  color: var(--note-pink);
+  color: var(--tv-note);
   text-wrap: balance;
 }
 
@@ -623,9 +675,8 @@
   padding: 1.4vh 1.4vw;
   border-radius: 3vh;
   background: var(--paper-raised);
-  box-shadow:
-    0 0.4vh 0 var(--line),
-    0 2vh 3vh -2vh rgba(27, 43, 94, 0.28);
+  color: var(--ink);
+  box-shadow: 0 2vh 4vh -2vh rgba(0, 0, 0, 0.5);
 }
 
 .qrBox {
@@ -664,10 +715,11 @@
   min-height: 9vh;
   margin-top: 2vh;
   border-radius: 3vh 3vh 3vh 1vh;
-  background: var(--ink);
+  background: var(--sunflower);
+  color: var(--ink);
   font-family: var(--font-heading);
   font-size: 3.4vh;
-  font-weight: 500;
+  font-weight: 600;
   transition: transform var(--d-tap) var(--ease);
 }
 
