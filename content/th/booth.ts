@@ -223,7 +223,7 @@ export const loykrathongFlowers: Flower[] = [
  *
  * On the kiosk both are asked on a jelly heart, dragged directly and sideways
  * for both (components/booth/HeartMeter): the first fills it with charge, the
- * second drops stones into it.
+ * second makes it heavy, drooping like a water balloon.
  *   TOPIC   what fills your head most, one of nine (tapped; never scored)
  *
  * Energy × weight is one of the home's nine feelings (สบาย ๆ … เครียด), and each
@@ -307,7 +307,7 @@ export const loykrathongQuiz: BoothQuestion[] = [
     note: 'ข้อ 2 · ไม่มีถูกผิด',
     headline: 'เรื่องที่แบกอยู่ในหัววันนี้ หนักแค่ไหน?',
     meter: {
-      hint: 'ลากหัวใจไปทางขวา ยิ่งหนัก ยิ่งมีก้อนหินในใจ',
+      hint: 'ลากหัวใจไปทางขวา ยิ่งหนัก หัวใจยิ่งถ่วงลง',
       drag: 'ลากหัวใจ ← →',
       ends: { low: 'โล่ง', high: 'หนักอึ้ง' },
       anchors: ['เหมือนกระเป๋าวันไม่มีเรียน', 'เหมือนกระเป๋าวันธรรมดา', 'เหมือนกระเป๋าวันสอบ ครบทุกวิชา'],

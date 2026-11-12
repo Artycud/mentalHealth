@@ -34,18 +34,6 @@ function charge(e: number, w: number): RGB {
 
 const POINTS = 44;
 
-/** Where the stones of a heavy heart settle, from its bottom tip up: a little pile. */
-const STONES: [number, number, number][] = [
-  [0, -34, 17],
-  [-32, -58, 15],
-  [30, -60, 16],
-  [0, -76, 14],
-  [-62, -88, 13],
-  [60, -90, 14],
-  [-28, -104, 13],
-  [30, -108, 12],
-];
-
 /**
  * A jelly ♥ around 0,0: the classic heart curve, wobbling (livelier with more
  * energy), squashed wide and low by weight, and stretched toward a finger. Returns
@@ -57,7 +45,7 @@ function heartPath(o: { energy: number; weight: number; t: number; scale: number
   // Heavy jelly moves slower, spreads wider and sits lower.
   const speed = (1.2 + o.energy * 2.6) * (1 - o.weight * 0.55);
   const sx = 1 + o.weight * 0.18;
-  const sy = 1 - o.weight * 0.15;
+  const sy = 1 - o.weight * 0.2;
   const sink = o.weight * 44 - (1 - o.weight) * 10;
   const pts: [number, number][] = [];
   let top = Infinity;
@@ -71,8 +59,13 @@ function heartPath(o: { energy: number; weight: number; t: number; scale: number
     const wobble = Math.sin(2 * a + o.t * speed) * amp + Math.sin(3 * a - o.t * speed * 0.7) * amp * 0.6;
     const toward = Math.max(0, Math.cos(angle - o.pullAngle)) ** 3 * o.pull * 0.1;
     const f = 1 + wobble + toward;
-    const x = hx * k * f * sx;
-    const y = hy * k * f * sy + sink;
+    // Weight pulls the lower half down like a water balloon: nothing at the top,
+    // most at the tip.
+    // Clamped: the top of the lobes sits a touch above -12.5, and a negative number
+    // to a fractional power is NaN, which would blank the whole heart.
+    const droop = o.weight * 66 * Math.max(0, (hy + 12.5) / 29) ** 2.2;
+    const x = hx * k * f * sx * (1 - o.weight * 0.1 * Math.max(0, hy / 17));
+    const y = hy * k * f * sy + sink + droop;
     top = Math.min(top, y);
     bottom = Math.max(bottom, y);
     pts.push([x, y]);
@@ -95,8 +88,9 @@ function heartPath(o: { energy: number; weight: number; t: number; scale: number
  *  - energy: drag sideways. The heart fills with glowing charge, like a battery,
  *    the liquid sloshes as it moves, and a fuller heart wobbles livelier.
  *  - weight: drag sideways too (one gesture to learn for both). The heart gets
- *    heavy: stones drop into it, it sinks, spreads wide, dims and slows. The
- *    charge from the first question stays inside it.
+ *    heavy like a water balloon: its lower half droops, it sinks and spreads,
+ *    dims, slows, and presses a darker shadow into the ground. The charge from
+ *    the first question stays inside it, deepening in colour.
  *
  * It is alive the whole time (the same shared frame loop as the home's heart):
  * it breathes, it leans toward the finger, its size and level spring to the
@@ -137,8 +131,8 @@ export function HeartMeter({
   const stopTop = useRef<SVGStopElement>(null);
   const stopBottom = useRef<SVGStopElement>(null);
   const pctRef = useRef<SVGTextElement>(null);
-  const stonesRef = useRef<SVGGElement>(null);
   const shadeRef = useRef<SVGRectElement>(null);
+  const shadowRef = useRef<SVGEllipseElement>(null);
   const glowRef = useRef<SVGStopElement>(null);
 
   // What the loop reads: the latest answer, mirrored from props.
@@ -189,9 +183,10 @@ export function HeartMeter({
       });
       bodyRef.current?.setAttribute('d', d);
       clipRef.current?.setAttribute('d', d);
-      // A heavy heart dims, and its stones ride on its bottom tip.
-      shadeRef.current?.setAttribute('opacity', (w * 0.4).toFixed(3));
-      stonesRef.current?.setAttribute('transform', `translate(0 ${bottom.toFixed(1)})`);
+      // A heavy heart dims, and presses a wider, darker shadow into the ground.
+      shadeRef.current?.setAttribute('opacity', (w * 0.46).toFixed(3));
+      shadowRef.current?.setAttribute('rx', (110 + w * 60).toFixed(1));
+      shadowRef.current?.setAttribute('opacity', (0.55 + w * 0.45).toFixed(3));
 
       // The charge: a liquid surface whose height is energy, sloshing as it moves.
       const level = bottom - (0.06 + e * 0.9) * (bottom - top);
@@ -327,7 +322,7 @@ export function HeartMeter({
           </defs>
           {/* The charge's own light, spilling round the heart, and its shadow below. */}
           <ellipse cx="0" cy="10" rx="215" ry="195" fill={`url(#${id}-glow)`} />
-          <ellipse cx="0" cy="186" rx="130" ry="20" fill={`url(#${id}-shadow)`} />
+          <ellipse ref={shadowRef} cx="0" cy="200" rx="120" ry="20" fill={`url(#${id}-shadow)`} />
           {/* The glass of the heart, then the charge inside it, then its shine. */}
           <path ref={bodyRef} fill={`url(#${id}-glass)`} className={styles.rim} />
           <g clipPath={`url(#${id}-clip)`}>
@@ -338,19 +333,6 @@ export function HeartMeter({
               ))}
             </g>
             <rect ref={shadeRef} x="-230" y="-200" width="460" height="420" fill="#0b1536" opacity="0" />
-            {/* What it is carrying: a stone drops in for each step heavier. */}
-            <g ref={stonesRef}>
-              {axis === 'weight' &&
-                STONES.slice(0, Math.round(value * STONES.length)).map(([x, y, r], i) => (
-                  <g key={i} transform={`translate(${x} ${y})`}>
-                    <g className={styles.stone}>
-                      <ellipse rx={r * 1.25} ry={r} fill="#4a4f86" />
-                      <ellipse rx={r * 1.25} ry={r} fill="none" stroke="#2c2f5c" strokeWidth="3" />
-                      <ellipse cx={-r * 0.4} cy={-r * 0.38} rx={r * 0.42} ry={r * 0.24} fill="#ffffff" opacity="0.35" />
-                    </g>
-                  </g>
-                ))}
-            </g>
           </g>
           <g clipPath={`url(#${id}-clip)`}>
             <rect x="-230" y="-200" width="460" height="420" fill={`url(#${id}-shine)`} />
