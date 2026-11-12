@@ -362,20 +362,16 @@ const letters = ['a', 'b', 'c', 'd'];
   // Battery nearly empty, bag light, "เรื่องเรียน": the first answer of each, which is สบาย ๆ.
   const flowerWanted = flowerFromChoices(loykrathongQuiz.map((q) => ({ questionId: q.id, choiceId: q.choices[0].id })));
   const feelingWanted = feelings[0][0];
-  /** Drag the meter's handle to a share of its track, as a finger would. */
+  /** Drag the heart sideways, as a finger would. The answer uses the middle 80% of
+   *  the stage, so a share maps to 10% + share × 80%. */
   const dragTo = async (share) => {
-    const thumb = await kiosk.$('[role="slider"]');
-    const box = await thumb.boundingBox();
-    const track = await thumb.evaluate((el) => {
-      const r = el.parentElement.getBoundingClientRect();
-      return { x: r.x, w: r.width };
-    });
-    await kiosk.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    const box = await (await kiosk.$('[role="slider"]')).boundingBox();
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    const to = { x: box.x + box.width * (0.1 + 0.8 * share), y: cy };
+    await kiosk.mouse.move(cx, cy);
     await kiosk.mouse.down();
-    for (let k = 1; k <= 8; k += 1) {
-      const x = box.x + box.width / 2 + ((track.x + track.w * share) - (box.x + box.width / 2)) * (k / 8);
-      await kiosk.mouse.move(x, box.y + box.height / 2);
-    }
+    for (let k = 1; k <= 8; k += 1) await kiosk.mouse.move(cx + (to.x - cx) * (k / 8), cy + (to.y - cy) * (k / 8));
     await kiosk.mouse.up();
   };
   const nextButton = () => kiosk.$('button[class*="next"]');
@@ -384,10 +380,10 @@ const letters = ['a', 'b', 'c', 'd'];
     await kiosk.waitForFunction((h) => document.querySelector('h1')?.textContent.trim() === h, { timeout: 4000 }, q.headline);
     await sleep(400); // the slide-in
     if (i === 0) {
-      check('the kiosk asks the battery question as a drag', (await kiosk.$('[role="slider"]')) !== null);
+      check('the kiosk asks the battery question as a drag on the heart', (await kiosk.$('[role="slider"] svg')) !== null);
       check('and "next" waits until the meter is touched', await (await nextButton()).evaluate((b) => b.disabled));
     }
-    await dragTo(0.08);
+    await dragTo(0.05);
     const live = await kiosk.evaluate(() => document.body.innerText);
     check(`dragging ${q.id} says what it feels like ("${q.meter.anchors[0]}")`, live.includes(q.meter.anchors[0]));
     if (i === 1) check(`and shows the heart so far ("${feelingWanted.word}")`, live.includes(feelingWanted.word));

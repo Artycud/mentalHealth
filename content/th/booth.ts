@@ -218,8 +218,12 @@ export const loykrathongFlowers: Flower[] = [
  * student who plays at the booth has already met the idea the main site is
  * built on. It is asked through things everyone knows:
  *
- *   ENERGY  a phone battery   ใกล้หมด · พอไหว · เต็มหลอด   (dragged, on the kiosk)
- *   WEIGHT  a school bag      โล่ง · ปานกลาง · หนักอึ้ง     (dragged, on the kiosk)
+ *   ENERGY  a phone battery   ใกล้หมด · พอไหว · เต็มหลอด
+ *   WEIGHT  a school bag      โล่ง · ปานกลาง · หนักอึ้ง
+ *
+ * On the kiosk both are asked on a jelly heart, dragged directly and sideways
+ * for both (components/booth/HeartMeter): the first fills it with charge, the
+ * second drops stones into it.
  *   TOPIC   what fills your head most, one of nine (tapped; never scored)
  *
  * Energy × weight is one of the home's nine feelings (สบาย ๆ … เครียด), and each
@@ -234,9 +238,6 @@ export const loykrathongFlowers: Flower[] = [
  * every flower can be reached and that only energy and weight decide it.
  */
 export type Axis = 'energy' | 'weight' | 'topic';
-
-/** The picture a dragged question shows on the kiosk. */
-export type MeterKind = 'battery' | 'bag';
 
 export type TopicIcon =
   | 'study'
@@ -272,8 +273,9 @@ export interface BoothQuestion {
    * as the finger moves through each third; the answer is the third it ends in.
    */
   meter?: {
-    kind: MeterKind;
     hint: string;
+    /** On the heart until it is touched: which way to drag. */
+    drag: string;
     ends: { low: string; high: string };
     anchors: [string, string, string];
     go: string;
@@ -287,8 +289,8 @@ export const loykrathongQuiz: BoothQuestion[] = [
     note: 'ข้อ 1 · ไม่มีถูกผิด',
     headline: 'ถ้าใจเป็นแบตมือถือ ตอนนี้เหลือเท่าไหร่?',
     meter: {
-      kind: 'battery',
-      hint: 'ลากแบตไปซ้าย–ขวา ให้ตรงกับใจตอนนี้',
+      hint: 'ลากหัวใจไปซ้าย–ขวา เติมแบตให้ตรงกับใจตอนนี้',
+      drag: 'ลากหัวใจ ← →',
       ends: { low: 'ใกล้หมด', high: 'เต็มหลอด' },
       anchors: ['เปิดโหมดประหยัดพลังงานอยู่', 'ใช้ได้ แต่อย่าเพิ่งเปิดอะไรหนัก ๆ', 'ชาร์จเต็ม พร้อมลุย'],
       go: 'ประมาณนี้แหละ',
@@ -305,8 +307,8 @@ export const loykrathongQuiz: BoothQuestion[] = [
     note: 'ข้อ 2 · ไม่มีถูกผิด',
     headline: 'เรื่องที่แบกอยู่ในหัววันนี้ หนักแค่ไหน?',
     meter: {
-      kind: 'bag',
-      hint: 'ลากไปทางขวา ยิ่งหนักยิ่งใส่หนังสือเยอะ',
+      hint: 'ลากหัวใจไปทางขวา ยิ่งหนัก ยิ่งมีก้อนหินในใจ',
+      drag: 'ลากหัวใจ ← →',
       ends: { low: 'โล่ง', high: 'หนักอึ้ง' },
       anchors: ['เหมือนกระเป๋าวันไม่มีเรียน', 'เหมือนกระเป๋าวันธรรมดา', 'เหมือนกระเป๋าวันสอบ ครบทุกวิชา'],
       go: 'ประมาณนี้แหละ',
@@ -547,17 +549,15 @@ export const tv = {
 /** Copy for the kiosk, which is read standing up by a queue. */
 export const kiosk = {
   idleTitle: 'ใจวันนี้ ได้ดอกไม้อะไร?',
-  idleBody: 'ลากแบต ลากกระเป๋า แล้วดูว่าใจวันนี้ได้ดอกไม้อะไร เอาไปแต่งกระทงได้เลย',
+  idleBody: 'ลากหัวใจ เติมแบต ใส่ความหนัก แล้วดูว่าใจวันนี้ได้ดอกไม้อะไร เอาไปแต่งกระทงได้เลย',
   idleAction: 'เริ่มเลย',
   resultNote: 'ใจวันนี้ของคุณ',
   /** Above the flower's name on the result. */
   flowerFor: 'ดอกไม้สำหรับใจนี้',
   /** While dragging the bag: the heart so far. */
   liveHeart: 'ใจตอนนี้',
-  /** On the meter before the first touch. */
-  dragMe: 'ลากเลย',
   /** Under a disabled "next" until the meter has been touched. */
-  touchFirst: 'ลากหรือแตะที่รูปก่อนนะ',
+  touchFirst: 'ลากหรือแตะที่หัวใจก่อนนะ',
   wishLabel: 'คำอวยพรจากดอกไม้',
   ticketTitle: 'โชว์หน้านี้ที่บูธ',
   /** Staff hold the iPad: after a result, they tap this for the next student. */

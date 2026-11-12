@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 
 import { IdleBackdrop, QuizArt } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
-import { FeelingMeter, third } from '@/components/booth/FeelingMeter';
 import { FlowerArt } from '@/components/booth/FlowerArt';
+import { HeartMeter, third } from '@/components/booth/HeartMeter';
 import { KeepAwake } from '@/components/booth/KeepAwake';
 import { QrCode } from '@/components/booth/QrCode';
 import { TopicIcon } from '@/components/booth/TopicIcon';
@@ -71,9 +71,10 @@ const moodFor = (energy: number, weight: number) => rgb(moodColour(energy, weigh
  * student, and take it back to give out the flower.
  *
  * It asks how the student's heart is right now, the way the home's "ใจวันนี้"
- * does, through two things everyone knows: drag a phone battery to how much
- * charge is left, drag a school bag to how heavy today is. The picture follows the
- * finger and says what that much feels like, so there is nothing to explain. Then
+ * does, on the home's own jelly heart, dragged directly: sideways fills it with
+ * charge like a phone battery, down makes it heavy like a school bag on exam day.
+ * It is alive the whole time and says what that much feels like, so there is
+ * nothing to explain (components/booth/HeartMeter). Then
  * one tap for what fills their head, and the honest "โอเคไหม". The result names
  * the feeling (one of the home's nine) and gives the flower for that heart.
  *
@@ -108,6 +109,8 @@ export function Kiosk({
   const [picked, setPicked] = useState<string | null>(null);
   /** The current drag question's position (0 → 1) and whether it has been touched. */
   const [meter, setMeter] = useState(FRESH);
+  /** Where the energy drag ended, so the heart keeps exactly that charge for the weight question. */
+  const [energyLevel, setEnergyLevel] = useState(0.5);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // One per student. It starts when they press start and is dropped on reset, so
@@ -304,9 +307,8 @@ export function Kiosk({
     // The heart so far: shown live while the bag is dragged, and on the topic step.
     let mood: { colour: string; word: string; label: string } | null = null;
     if (quizQ?.axis === 'weight' && energyAnswer) {
-      const e = energyAnswer.value / 2;
       mood = {
-        colour: moodFor(e, meter.v),
+        colour: moodFor(energyLevel, meter.v),
         word: feelings[third(meter.v)][energyAnswer.value].word,
         label: kiosk.liveHeart,
       };
@@ -341,17 +343,18 @@ export function Kiosk({
           </div>
 
           {quizQ?.meter ? (
-            // A drag: the picture follows the finger; "next" once it has been touched.
+            // A drag on the heart itself; "next" once it has been touched.
             <div className={styles.meterSide}>
-              <FeelingMeter
-                kind={quizQ.meter.kind}
+              <HeartMeter
+                axis={quizQ.axis === 'weight' ? 'weight' : 'energy'}
                 value={meter.v}
+                energy={energyLevel}
                 touched={meter.touched}
                 onChange={(v) => setMeter({ v, touched: true })}
                 ends={quizQ.meter.ends}
                 anchors={quizQ.meter.anchors}
                 label={quizQ.headline}
-                dragMe={kiosk.dragMe}
+                dragMe={quizQ.meter.drag}
               />
               <button
                 type="button"
@@ -359,6 +362,7 @@ export function Kiosk({
                 disabled={!meter.touched}
                 onClick={() => {
                   const choice = quizQ.choices[third(meter.v)];
+                  if (quizQ.axis === 'energy') setEnergyLevel(meter.v);
                   answer(choice.id, choice.value);
                 }}
               >
