@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { IdleBackdrop } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
@@ -233,7 +233,9 @@ export function Kiosk({
         <div className={styles.idle}>
           <div className={styles.idleText}>
             <p className={styles.note}>{theme.theme}</p>
-            <h1 className={styles.question}>{kiosk.idleTitle}</h1>
+            <h1 className={styles.question}>
+              <Phrases text={kiosk.idleTitle} />
+            </h1>
             <p className={styles.lead}>{kiosk.idleBody}</p>
             {reward && <p className={styles.reward}>{reward.kioskLine}</p>}
             <button
@@ -322,9 +324,13 @@ export function Kiosk({
           <div className={styles.quizLeft}>
             <p className={styles.note}>{question.note}</p>
             <h1 className={styles.headline} tabIndex={-1} ref={headingRef}>
-              {question.headline}
+              <Phrases text={question.headline} />
             </h1>
-            {quizQ?.meter && <p className={styles.hint}>{quizQ.meter.hint}</p>}
+            {quizQ?.meter && (
+              <p className={styles.hint}>
+                <Phrases text={quizQ.meter.hint} />
+              </p>
+            )}
             {live && (
               <p className={styles.liveWord}>
                 {kiosk.liveHeart}
@@ -554,4 +560,22 @@ export function Kiosk({
       )}
     </main>
   );
+}
+
+/**
+ * Thai has no spaces between words, so a browser breaks a line wherever its
+ * dictionary finds a word boundary, and it does not know every word: big
+ * headlines came out as "แบ|ตมือถือ" and "ตอน|นี้". The copy already puts a
+ * space between its phrases, so lines break only there. A space before ๆ is part
+ * of the word, never a place to break. (The TV does the same for its QR card.)
+ */
+function Phrases({ text }: { text: string }) {
+  // The space sits outside the phrases: a space at the end of a no-wrap box is
+  // dropped, and the words would run together.
+  return text.split(/ (?!ๆ)/).map((part, i) => (
+    <Fragment key={i}>
+      {i > 0 && ' '}
+      <span className={styles.phrase}>{part}</span>
+    </Fragment>
+  ));
 }

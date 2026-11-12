@@ -289,9 +289,11 @@ export const loykrathongQuiz: BoothQuestion[] = [
     id: 'energy',
     axis: 'energy',
     note: 'ข้อ 1 · ไม่มีถูกผิด',
-    headline: 'ถ้าใจเป็นแบตมือถือ ตอนนี้เหลือเท่าไหร่?',
+    // Word joiners (U+2060) hold "แบตมือถือ" together: the browser's Thai
+    // dictionary splits it ("แบ|ต", "มือ|ถือ").
+    headline: 'ถ้าใจเป็นแบ\u2060ต\u2060มือ\u2060ถือ ตอนนี้เหลือเท่าไหร่?',
     meter: {
-      hint: 'ลากหัวใจไปซ้าย–ขวา เติมแบตให้ตรงกับใจตอนนี้',
+      hint: 'ลากหัวใจไปซ้าย–ขวา เติมแบ\u2060ตให้ตรงกับใจตอนนี้',
       drag: 'ลากหัวใจ ← →',
       ends: { low: 'ใกล้หมด', high: 'เต็มหลอด' },
       anchors: ['เปิดโหมดประหยัดพลังงานอยู่', 'ใช้ได้ แต่อย่าเพิ่งเปิดอะไรหนัก ๆ', 'ชาร์จเต็ม พร้อมลุย'],
@@ -325,7 +327,7 @@ export const loykrathongQuiz: BoothQuestion[] = [
     id: 'topic',
     axis: 'topic',
     note: 'ข้อ 3 · เลือกอันที่ใช่ที่สุดอันเดียว',
-    headline: 'ตอนนี้อะไรอยู่ในหัวเยอะที่สุด?',
+    headline: 'ตอนนี้อะไรอยู่ในหัว เยอะที่สุด?',
     choices: [
       { id: 'study', label: 'เรื่องเรียน', value: 0, mark: 'square', icon: 'study' },
       { id: 'friends', label: 'เพื่อน', value: 1, mark: 'circle', icon: 'friends' },

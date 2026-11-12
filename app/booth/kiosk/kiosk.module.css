@@ -7,7 +7,11 @@
    text, the brightest things on the screen, so answering is the obvious thing to
    do; the start and next buttons are marigold. Anything that needs paper behind
    it to read (the question's picture, the ticket, the QR card) sits on its own
-   slab of paper. */
+   slab of paper.
+
+   Sizes follow the screen's height (vh), held between a floor and a ceiling with
+   clamp(): an iPad of any size gets the full design, a phone held sideways
+   shrinks it but keeps it readable, and a very large screen does not balloon. */
 
 .stage {
   --tv-soft: rgba(252, 241, 230, 0.8);
@@ -173,14 +177,22 @@
 
 .note {
   font-family: var(--font-note);
-  font-size: 2.8vh;
+  font-size: clamp(13px, 3vh, 30px);
   line-height: 1.4;
   color: var(--tv-note);
 }
 
+/* A phrase of a headline: lines break between phrases, never inside one. */
+.phrase {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Headlines follow the height, and the width too, so a phrase always fits its
+   column on a narrower iPad. */
 .question {
   margin-top: 0.8vh;
-  font-size: 7vh;
+  font-size: clamp(24px, min(7.2vh, 5.2vw), 80px);
   font-weight: 600;
   line-height: 1.25;
   text-wrap: balance;
@@ -370,8 +382,9 @@
 
 .quiz {
   display: grid;
-  grid-template-columns: 1fr 1.05fr;
-  gap: 4vw;
+  /* The answer side a little wider: it holds the heart. */
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.12fr);
+  gap: 3vw;
   flex-grow: 1;
   min-height: 0;
   margin-top: 1vh;
@@ -395,7 +408,7 @@
 
 .headline {
   margin-top: 0.8vh;
-  font-size: 6.2vh;
+  font-size: clamp(22px, min(7.4vh, 5vw), 80px);
   font-weight: 600;
   line-height: 1.25;
   text-wrap: balance;
@@ -436,7 +449,7 @@
     0 2vh 4vh -2vh rgba(0, 0, 0, 0.55);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 3.8vh;
+  font-size: clamp(15px, 4vh, 42px);
   font-weight: 500;
   line-height: 1.4;
   text-align: left;
@@ -515,7 +528,8 @@
 .hint {
   margin-top: 2vh;
   font-family: var(--font-heading);
-  font-size: 2.8vh;
+  font-size: clamp(14px, min(3.1vh, 2.2vw), 32px);
+  text-wrap: balance;
   font-weight: 500;
   line-height: 1.4;
   color: var(--sunflower);
@@ -533,13 +547,13 @@
 .next {
   align-self: center;
   min-width: 60%;
-  min-height: 8.4vh;
+  min-height: clamp(42px, 8.6vh, 84px);
   padding: 0 3vw;
   border-radius: 3vh 3vh 3vh 1vh;
   background: var(--sunflower);
   color: var(--ink);
   font-family: var(--font-heading);
-  font-size: 3.2vh;
+  font-size: clamp(15px, 3.4vh, 34px);
   font-weight: 600;
   transition:
     transform var(--d-tap) var(--ease),
@@ -593,13 +607,13 @@
 }
 
 .topic svg {
-  width: 7.5vh;
-  height: 7.5vh;
+  width: clamp(28px, 8vh, 80px);
+  height: clamp(28px, 8vh, 80px);
 }
 
 .topicLabel {
   font-family: var(--font-heading);
-  font-size: 2.6vh;
+  font-size: clamp(13px, 2.9vh, 30px);
   font-weight: 500;
   line-height: 1.25;
   text-align: center;
@@ -616,7 +630,7 @@
   gap: 1vw;
   margin-top: 3vh;
   font-family: var(--font-heading);
-  font-size: 2.6vh;
+  font-size: clamp(13px, 2.8vh, 28px);
   font-weight: 500;
 }
 
@@ -627,7 +641,7 @@
   background: var(--mood);
   color: var(--ink);
   font-family: var(--font-heading);
-  font-size: 3.2vh;
+  font-size: clamp(14px, 3.4vh, 36px);
   font-weight: 600;
   line-height: 1.3;
   transition: background-color 200ms var(--ease);
@@ -643,7 +657,7 @@
 }
 
 .sideHeartArt {
-  height: 26vh;
+  height: clamp(110px, 31vh, 320px);
 }
 
 /* ---- Result: the heart they made, and the flower for it ---- */
