@@ -3,10 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 
-import { IdleBackdrop, QuizArt } from '@/components/booth/art';
+import { IdleBackdrop } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
 import { FlowerArt } from '@/components/booth/FlowerArt';
 import { HeartMeter, third } from '@/components/booth/HeartMeter';
+import { chargeCss, JellyHeart, type HeartPoke } from '@/components/booth/JellyHeart';
 import { KeepAwake } from '@/components/booth/KeepAwake';
 import { QrCode } from '@/components/booth/QrCode';
 import { TopicIcon } from '@/components/booth/TopicIcon';
@@ -33,7 +34,6 @@ import {
 import { common, cudCare } from '@/content/th/common';
 import { feelings } from '@/content/th/heart';
 import type { EventText } from '@/lib/events';
-import { moodColour, rgb } from '@/lib/heart';
 import { createTracker, type Tracker } from '@/lib/track';
 import type { Tint } from '@/lib/types';
 
@@ -62,9 +62,6 @@ const OKAY_STEP = loykrathongQuiz.length;
 
 /** A meter starts in the middle, untouched. */
 const FRESH = { v: 0.5, touched: false };
-
-/** The mood colour (the home's own) for a feeling cell's centre. */
-const moodFor = (energy: number, weight: number) => rgb(moodColour(energy, weight));
 
 /**
  * The booth kiosk: the one iPad at the booth. Staff hold it, hand it to each
@@ -109,8 +106,11 @@ export function Kiosk({
   const [picked, setPicked] = useState<string | null>(null);
   /** The current drag question's position (0 → 1) and whether it has been touched. */
   const [meter, setMeter] = useState(FRESH);
-  /** Where the energy drag ended, so the heart keeps exactly that charge for the weight question. */
+  /** Where each drag ended, so the heart the student made stays exactly as they made it. */
   const [energyLevel, setEnergyLevel] = useState(0.5);
+  const [weightLevel, setWeightLevel] = useState(0.5);
+  /** A hand on the small heart beside the later questions: it gives a pop on each tap. */
+  const sidePoke = useRef<HeartPoke>({ dragging: false, angle: 0, pops: 0 });
   const headingRef = useRef<HTMLHeadingElement>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // One per student. It starts when they press start and is dropped on reset, so
@@ -304,18 +304,14 @@ export function Kiosk({
       setStage({ kind: 'quiz', step: stage.step + 1, answers, dir: 1 });
     };
 
-    // The heart so far: shown live while the bag is dragged, and on the topic step.
-    let mood: { colour: string; word: string; label: string } | null = null;
-    if (quizQ?.axis === 'weight' && energyAnswer) {
-      mood = {
-        colour: moodFor(energyLevel, meter.v),
-        word: feelings[third(meter.v)][energyAnswer.value].word,
-        label: kiosk.liveHeart,
-      };
-    } else if (quizQ?.axis === 'topic' && energyAnswer && weightAnswer) {
-      const { row, col } = feelingCell(stage.answers);
-      mood = { colour: moodFor(col / 2, row / 2), word: feelings[row][col].word, label: kiosk.resultNote };
-    }
+    // The feeling so far, in words: live while the weight is dragged.
+    const live =
+      quizQ?.axis === 'weight' && energyAnswer
+        ? { colour: chargeCss(energyLevel, meter.v), word: feelings[third(meter.v)][energyAnswer.value].word }
+        : null;
+    // Once both are answered: the feeling the student made.
+    const cellMade = energyAnswer && weightAnswer ? feelingCell(stage.answers) : null;
+    const made = cellMade ? feelings[cellMade.row][cellMade.col] : null;
 
     return (
       <main className={styles.stage} data-festival={theme.id}>
@@ -329,15 +325,24 @@ export function Kiosk({
               {question.headline}
             </h1>
             {quizQ?.meter && <p className={styles.hint}>{quizQ.meter.hint}</p>}
-            {mood && (
-              <div className={styles.mood} style={{ '--mood': mood.colour } as CSSProperties}>
-                <span className={styles.moodLabel}>{mood.label}</span>
-                <span className={styles.moodWord}>{mood.word}</span>
-              </div>
+            {live && (
+              <p className={styles.liveWord}>
+                {kiosk.liveHeart}
+                <span className={styles.chip} style={{ '--mood': live.colour } as CSSProperties}>
+                  {live.word}
+                </span>
+              </p>
             )}
-            {isOkay && (
-              <div className={styles.quizArt}>
-                <QuizArt step={3} />
+            {/* Once both are answered, the heart the student made stays with them,
+                face and all, for the rest of the questions. */}
+            {made && (
+              <div className={styles.sideHeart}>
+                <div className={styles.sideHeartArt}>
+                  <JellyHeart energy={energyLevel} weight={weightLevel} poke={sidePoke} />
+                </div>
+                <span className={styles.chip} style={{ '--mood': chargeCss(energyLevel, weightLevel) } as CSSProperties}>
+                  {made.word}
+                </span>
               </div>
             )}
           </div>
@@ -363,6 +368,7 @@ export function Kiosk({
                 onClick={() => {
                   const choice = quizQ.choices[third(meter.v)];
                   if (quizQ.axis === 'energy') setEnergyLevel(meter.v);
+                  if (quizQ.axis === 'weight') setWeightLevel(meter.v);
                   answer(choice.id, choice.value);
                 }}
               >
@@ -383,6 +389,7 @@ export function Kiosk({
                     onClick={() => {
                       if (picked) return; // one tap per question
                       setPicked(choice.id);
+                      sidePoke.current.pops += 1; // the heart takes it in
                       advance.current = setTimeout(() => {
                         setPicked(null);
                         answer(choice.id, choice.value);
@@ -408,6 +415,7 @@ export function Kiosk({
                     onClick={() => {
                       if (picked) return; // one tap per question
                       setPicked(choice.id);
+                      sidePoke.current.pops += 1;
                       advance.current = setTimeout(() => {
                         setPicked(null);
                         answer(choice.id, 0);
@@ -435,7 +443,6 @@ export function Kiosk({
 
   const flower = flowerFromAnswers(stage.answers);
   const feeling = feelingFromAnswers(stage.answers);
-  const { row, col } = feelingCell(stage.answers);
 
   return (
     // Any touch on the result restarts the countdown: a student still reading
@@ -447,52 +454,67 @@ export function Kiosk({
     >
       <KeepAwake />
       {head}
-      <div className={styles.result}>
-        <div className={styles.resultText}>
-          {/* The feeling first: the home's word for it, in the home's colour. */}
-          <p className={`${styles.feelingLine} ${styles.rise}`}>
-            <span className={styles.feelingLabel}>{kiosk.resultNote}</span>
-            <span className={styles.feelingChip} style={{ '--mood': moodFor(col / 2, row / 2) } as CSSProperties}>
+      {/* The coupon arrives as a notification, the way a phone tells you something
+          good just came in. For the staff too: hand over both. */}
+      {reward && (
+        <div className={styles.toast} role="status">
+          <span className={styles.toastIcon} aria-hidden="true">
+            <svg viewBox="0 0 40 28">
+              <path d="M4 4 H36 V10 A4 4 0 0 0 36 18 V24 H4 V18 A4 4 0 0 0 4 10 Z" />
+              <path d="M15 4 V24" className={styles.toastPerf} />
+            </svg>
+          </span>
+          <span className={styles.toastText}>
+            <span className={styles.toastTitle}>{reward.toastTitle}</span>
+            <span className={styles.toastBody}>{reward.received}</span>
+          </span>
+        </div>
+      )}
+
+      <div className={styles.resultGrid}>
+        {/* The heart the student just made, exactly as they made it. */}
+        <section className={`${styles.panel} ${styles.rise}`}>
+          <p className={styles.panelLabel}>{kiosk.resultNote}</p>
+          <div className={styles.resultHeart}>
+            <JellyHeart energy={energyLevel} weight={weightLevel} label={feeling.word} />
+          </div>
+          <p className={styles.feelingWord}>
+            <span className={styles.chip} style={{ '--mood': chargeCss(energyLevel, weightLevel) } as CSSProperties}>
               {feeling.word}
             </span>
           </p>
-          <p className={`${styles.note} ${styles.rise}`}>{kiosk.flowerFor}</p>
-          <h1 className={`${styles.flowerName} ${styles.rise}`}>{flower.name}</h1>
-          <p className={`${styles.resultBody} ${styles.rise}`}>{feeling.message}</p>
+          <p className={styles.feelingMessage}>{feeling.message}</p>
+        </section>
 
-          {/* The honest question, answered back warmly, with a route to CUD Care. */}
-          <div className={`${styles.reply} ${styles.rise}`}>
-            <span className={styles.smallLabel}>{okayReplyLabel}</span>
-            <span className={styles.replyText}>{okayReply[stage.okay]}</span>
-            <span className={styles.care}>{cudCare.result.body}</span>
-          </div>
-
-          <div className={`${styles.ticket} ${styles.rise}`}>
-            <span className={styles.ticketTitle}>{kiosk.ticketTitle}</span>
-            <span className={styles.ticketBody}>รับ{withDok(flower.name)}ไปแต่งกระทงได้เลย</span>
-            {/* For the staff holding the iPad: hand over both. */}
-            {reward && <span className={styles.ticketReward}>{reward.ticketLine}</span>}
-          </div>
-        </div>
-
-        <div className={styles.resultSide}>
-          {/* Disc, flower and bloom are the shared FlowerArt. This box only sizes it. */}
-          <div className={styles.artStack}>
+        {/* The flower for that heart, and what the staff should hand over. */}
+        <section className={`${styles.panel} ${styles.rise}`}>
+          <p className={styles.panelLabel}>{kiosk.flowerFor}</p>
+          <div className={styles.resultFlower}>
             <FlowerArt flower={flower} />
           </div>
-          {/* Why this flower: which heart it is for. */}
-          <p className={`${styles.wishLine} ${styles.rise}`}>{flower.body}</p>
+          <h1 className={styles.flowerName}>{flower.name}</h1>
+          <p className={styles.flowerBody}>{flower.body}</p>
+          <p className={styles.take}>
+            {kiosk.ticketTitle} · รับ{withDok(flower.name)}ไปแต่งกระทงได้เลย
+          </p>
+        </section>
+      </div>
 
-          {/* The bridge to the main site: the booth is the quick part; the deeper
-              questions are for later, in the student's own time. */}
-          <div className={`${styles.qrCard} ${styles.rise}`}>
-            <div className={styles.qrBox}>
-              <QrCode value={qrUrl} label={qrInvite.title} />
-            </div>
-            <div className={styles.qrText}>
-              <span className={styles.qrTitle}>{qrInvite.title}</span>
-              <span className={styles.qrBody}>{qrInvite.body}</span>
-            </div>
+      <div className={`${styles.resultBottom} ${styles.rise}`}>
+        {/* The honest question, answered back warmly, with a route to CUD Care. */}
+        <div className={styles.reply}>
+          <span className={styles.smallLabel}>{okayReplyLabel}</span>
+          <span className={styles.replyText}>{okayReply[stage.okay]}</span>
+          <span className={styles.care}>{cudCare.result.body}</span>
+        </div>
+        {/* The bridge to the main site, for later. */}
+        <div className={styles.qrCard}>
+          <div className={styles.qrBox}>
+            <QrCode value={qrUrl} label={qrInvite.title} />
+          </div>
+          <div className={styles.qrText}>
+            <span className={styles.qrTitle}>{qrInvite.title}</span>
+            <span className={styles.qrBody}>{qrInvite.body}</span>
           </div>
         </div>
       </div>

@@ -1,21 +1,12 @@
-/* The kiosk's jelly heart. The heart is the control: a big stage to drag on,
-   with a quiet axis under it saying which way is which. Sized in vh like the rest
-   of the kiosk. */
+/* The kiosk's feeling question. The whole block takes the drag — the heart, the
+   rail and its handle — so a finger anywhere on it works. Sized in vh like the
+   rest of the kiosk. */
 
 .meter {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 1.2vh;
-}
-
-/* The whole stage takes the drag, so a finger anywhere near the heart works. The
-   other direction (and a pinch) still reaches the browser. */
-.stage {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  height: 44vh;
+  gap: 1.6vh;
   border-radius: 4vh;
   cursor: grab;
   /* Sideways drags are ours; a vertical pan or a pinch still reaches the browser. */
@@ -23,41 +14,23 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.stage:active {
+.meter:active {
   cursor: grabbing;
 }
 
-.stage:focus-visible {
+.meter:focus-visible {
   outline: 4px solid var(--paper);
-  outline-offset: 4px;
+  outline-offset: 6px;
 }
 
-.svg {
-  height: 100%;
-  width: auto;
-  max-width: 100%;
-  overflow: visible;
+.stage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 40vh;
 }
 
-/* The heart's glass edge. */
-.rim {
-  stroke: rgba(252, 241, 230, 0.75);
-  stroke-width: 5;
-}
-
-/* Paper with a navy edge, so it reads on the empty glass and on the charge alike. */
-.pct {
-  font-family: var(--font-heading);
-  font-size: 56px;
-  font-weight: 700;
-  fill: var(--paper);
-  stroke: rgba(11, 21, 54, 0.75);
-  stroke-width: 9px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-}
-
-/* ---- the ghost finger: which way to drag, until it is touched ---- */
+/* ---- the ghost finger: the gesture, until it is touched ---- */
 
 .ghost {
   position: absolute;
@@ -67,7 +40,7 @@
 
 .finger {
   position: absolute;
-  top: 50%;
+  top: 55%;
   left: 50%;
   width: 7vh;
   height: 7vh;
@@ -77,15 +50,12 @@
     0 0 0 1.2vh rgba(252, 241, 230, 0.18),
     0 0 4vh rgba(255, 255, 255, 0.4);
   transform: translate(-50%, -50%);
-}
-
-.finger {
   animation: swipe-x 2.2s ease-in-out infinite;
 }
 
 .bubble {
   position: absolute;
-  top: 6%;
+  top: 2%;
   left: 50%;
   padding: 0.7vh 1.6vw;
   border-radius: 999px;
@@ -99,7 +69,7 @@
   box-shadow: 0 1vh 2vh -1vh rgba(0, 0, 0, 0.5);
 }
 
-/* ---- the axis ---- */
+/* ---- the rail and its handle ---- */
 
 .axis {
   display: flex;
@@ -124,25 +94,54 @@
   color: var(--paper);
 }
 
+/* A wide, easy-to-hit rail; what is filled takes the heart's own colour. */
 .rail {
   position: relative;
   flex: 1;
-  height: 0.8vh;
+  height: 1.6vh;
+  margin: 2.4vh 2vh;
   border-radius: 999px;
   background: rgba(252, 241, 230, 0.2);
 }
 
-.dot {
+.railFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--v) * 100%);
+  border-radius: inherit;
+  background: var(--fill);
+}
+
+.handle {
   position: absolute;
   top: 50%;
   left: calc(var(--v) * 100%);
-  width: 2.4vh;
-  height: 2.4vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6.4vh;
+  height: 6.4vh;
   border-radius: 50%;
   background: var(--sunflower);
-  box-shadow: 0 0 0 0.6vh rgba(255, 181, 17, 0.3);
+  box-shadow:
+    0 0 0 0.6vh rgba(255, 181, 17, 0.28),
+    0 1vh 2vh -0.6vh rgba(0, 0, 0, 0.5);
   transform: translate(-50%, -50%);
-  transition: left 120ms var(--ease);
+  transition: transform var(--d-tap) var(--ease);
+}
+
+.meter:active .handle {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.handle svg {
+  width: 4vh;
+  height: 2vh;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ---- what it feels like ---- */
@@ -183,12 +182,10 @@
   }
 }
 
-/* Reduced motion: the hint stands still (it still shows where to touch), and the
-   heart only changes when touched. */
+/* Reduced motion: the hint stands still (it still shows where to touch). */
 @media (prefers-reduced-motion: reduce) {
   .finger,
   .anchor {
     animation: none;
   }
 }
-

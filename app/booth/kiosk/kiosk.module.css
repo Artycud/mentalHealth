@@ -407,17 +407,6 @@
   outline: none;
 }
 
-/* The question's picture, on its own slab of paper: drawn for paper, it keeps
-   its colours, and it reads as a card held up beside the question. */
-.quizArt {
-  height: 30vh;
-  margin-top: 3vh;
-  padding: 1.6vh;
-  border-radius: 3vh;
-  background: var(--paper-raised);
-  box-shadow: 0 2vh 4vh -2vh rgba(0, 0, 0, 0.5);
-}
-
 /* One column of big cards. Two answers make two very tall cards and three make
    three shorter ones; either way each is easy to hit standing up. */
 .answers {
@@ -532,39 +521,6 @@
   color: var(--sunflower);
 }
 
-/* The heart so far, in the home's own mood colour: a round badge with its word.
-   It changes as the bag is dragged, so the two questions read as one heart. */
-.mood {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4vh;
-  width: 24vh;
-  height: 24vh;
-  margin-top: 3.4vh;
-  border-radius: 50%;
-  background: var(--mood);
-  color: var(--ink);
-  box-shadow:
-    0 0 0 1.2vh color-mix(in srgb, var(--mood) 30%, transparent),
-    0 2vh 4vh -2vh rgba(0, 0, 0, 0.5);
-  text-align: center;
-  transition: background-color 200ms var(--ease);
-}
-
-.moodLabel {
-  font-size: 2vh;
-  font-weight: 500;
-}
-
-.moodWord {
-  font-family: var(--font-heading);
-  font-size: 4.6vh;
-  font-weight: 600;
-  line-height: 1.15;
-}
-
 /* The drag and its "next" button. */
 .meterSide {
   display: flex;
@@ -650,23 +606,219 @@
   text-wrap: balance;
 }
 
-/* ---- Result: the payoff, so it carries more than a name ---- */
+/* ---- The heart the student made, beside the later questions ---- */
 
-.result {
+/* While the weight is dragged: the feeling so far, in words. */
+.liveWord {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4vw;
-  flex-grow: 1;
-  min-height: 0;
-  margin-top: 1vh;
+  gap: 1vw;
+  margin-top: 3vh;
+  font-family: var(--font-heading);
+  font-size: 2.6vh;
+  font-weight: 500;
 }
 
-.resultText {
+/* A feeling's word on its heart's own colour. */
+.chip {
+  padding: 0.5vh 1.8vw;
+  border-radius: 999px;
+  background: var(--mood);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 3.2vh;
+  font-weight: 600;
+  line-height: 1.3;
+  transition: background-color 200ms var(--ease);
+}
+
+.sideHeart {
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
-  width: 50%;
+  align-items: center;
+  align-self: flex-start;
+  gap: 1vh;
+  margin-top: 2.6vh;
 }
+
+.sideHeartArt {
+  height: 26vh;
+}
+
+/* ---- Result: the heart they made, and the flower for it ---- */
+
+/* The coupon, as a notification that slides in at the top: something good just
+   arrived. Staff read it too, and hand over both. */
+.toast {
+  position: fixed;
+  top: 2.4vh;
+  right: max(4vw, env(safe-area-inset-right));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+  max-width: 46vw;
+  padding: 1.2vh 1.8vw 1.2vh 1.2vh;
+  border-radius: 2.4vh;
+  background: var(--paper-raised);
+  color: var(--ink);
+  box-shadow: 0 2vh 4vh -1.5vh rgba(0, 0, 0, 0.6);
+  animation: toast-in 640ms var(--ease-overshoot) 600ms both;
+}
+
+.toastIcon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 6.4vh;
+  height: 6.4vh;
+  border-radius: 1.8vh;
+  background: var(--sunflower);
+}
+
+.toastIcon svg {
+  width: 4.4vh;
+  height: auto;
+  fill: var(--paper-raised);
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+.toastIcon .toastPerf {
+  fill: none;
+  stroke-dasharray: 3 3;
+}
+
+.toastText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.toastTitle {
+  font-family: var(--font-heading);
+  font-size: 2.6vh;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.toastBody {
+  font-size: 2vh;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.resultGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vw;
+  flex-grow: 1;
+  min-height: 0;
+  margin-top: 0.6vh;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5vh;
+  min-height: 0;
+  padding: 1.8vh 2vw 2vh;
+  border: 2px solid rgba(252, 241, 230, 0.16);
+  border-radius: 3vh;
+  background: rgba(252, 241, 230, 0.07);
+  text-align: center;
+}
+
+.panelLabel {
+  font-family: var(--font-note);
+  font-size: 2.8vh;
+  line-height: 1.3;
+  color: var(--tv-note);
+}
+
+/* Taller than the flower's box: the heart's drawing keeps room for its glow and
+   shadow, so this makes the two look the same size. */
+.resultHeart {
+  height: 27vh;
+  margin-block: -2vh -1vh;
+}
+
+.resultFlower {
+  height: 22vh;
+  aspect-ratio: 1;
+}
+
+.feelingWord {
+  margin-top: 0.4vh;
+}
+
+.feelingMessage {
+  max-width: 40ch;
+  margin-top: 0.6vh;
+  font-size: 2.6vh;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.panel .flowerName {
+  margin-top: 0.2vh;
+  font-size: 6.4vh;
+}
+
+.flowerBody {
+  font-family: var(--font-heading);
+  font-size: 2.6vh;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--tv-soft);
+  text-wrap: balance;
+}
+
+/* For the staff: what to hand over. */
+.take {
+  margin-top: auto;
+  padding: 0.8vh 1.6vw;
+  border: 2px dashed var(--sunflower);
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 2.2vh;
+  font-weight: 500;
+  color: var(--sunflower);
+}
+
+.resultBottom {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 2vw;
+  margin-top: 1.4vh;
+}
+
+.resultBottom .reply,
+.resultBottom .qrCard {
+  margin-top: 0;
+}
+
+.resultBottom .qrBox {
+  width: 12vh;
+}
+
+.resultGrid > :nth-child(1) { animation-delay: 60ms; }
+.resultGrid > :nth-child(2) { animation-delay: 180ms; }
+.resultBottom { animation-delay: 300ms; }
+
+@keyframes toast-in {
+  from {
+    transform: translateY(-160%);
+    opacity: 0;
+  }
+}
+
+/* ---- Result: the payoff, so it carries more than a name ---- */
 
 .flowerName {
   margin-top: 0.3vh;
@@ -688,33 +840,6 @@
 /* Inside the paper blocks the small label goes back to ink. */
 .reply .smallLabel {
   color: var(--ink-soft);
-}
-
-/* The feeling, first on the result: its label and the home's word for it, on a
-   chip of its mood colour. */
-.feelingLine {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.2vw;
-  margin-bottom: 1.4vh;
-}
-
-.feelingLabel {
-  font-family: var(--font-heading);
-  font-size: 2.6vh;
-  font-weight: 500;
-}
-
-.feelingChip {
-  padding: 0.6vh 2vw;
-  border-radius: 999px;
-  background: var(--mood);
-  color: var(--ink);
-  font-family: var(--font-heading);
-  font-size: 3.4vh;
-  font-weight: 600;
-  line-height: 1.3;
 }
 
 /* The answer to the honest question. Tinted block with one sharp corner, the same
@@ -744,65 +869,6 @@
   font-size: 2.1vh;
   line-height: 1.5;
   color: var(--ink-soft);
-}
-
-.ticket {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4vh;
-  margin-top: 1.6vh;
-  padding: 1.6vh 1.8vw;
-  border: 3px dashed var(--ink);
-  border-radius: 3vh;
-  background: var(--sun-tint);
-  color: var(--ink);
-}
-
-.ticketTitle {
-  font-family: var(--font-heading);
-  font-size: 2.8vh;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.ticketBody {
-  font-size: 2.4vh;
-  line-height: 1.6;
-}
-
-.ticketReward {
-  font-family: var(--font-heading);
-  font-size: 2.4vh;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.resultSide {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 1.2vh;
-  flex: 1;
-  min-width: 0;
-}
-
-/* Sizes the flower art. The art itself (disc, flower, bloom) is the shared
-   FlowerArt component, which fills this box. Square, so the disc stays round
-   however wide the column is. */
-.artStack {
-  align-self: center;
-  height: 30vh;
-  aspect-ratio: 1;
-}
-
-/* The flower's wish, as a handwritten caption under it. */
-.wishLine {
-  text-align: center;
-  font-family: var(--font-note);
-  font-size: 2.6vh;
-  line-height: 1.45;
-  color: var(--tv-note);
-  text-wrap: balance;
 }
 
 /* The bridge to the main site: a QR code to keep for later. A raised slab, so it
@@ -878,15 +944,6 @@
   animation: rise 240ms var(--ease) both;
 }
 
-.resultText > :nth-child(1) { animation-delay: 60ms; }
-.resultText > :nth-child(2) { animation-delay: 120ms; }
-.resultText > :nth-child(3) { animation-delay: 180ms; }
-.resultText > :nth-child(4) { animation-delay: 240ms; }
-.resultText > :nth-child(5) { animation-delay: 300ms; }
-.resultText > :nth-child(6) { animation-delay: 360ms; }
-.resultText > :nth-child(7) { animation-delay: 420ms; }
-.wishLine { animation-delay: 340ms; }
-.qrCard { animation-delay: 420ms; }
 
 @keyframes rise {
   from {

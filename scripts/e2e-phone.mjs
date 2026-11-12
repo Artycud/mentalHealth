@@ -405,7 +405,8 @@ const letters = ['a', 'b', 'c', 'd'];
   check('and says which heart the flower is for', resultText.includes(flowerWanted.body));
   check('and answers the honest question warmly, with CUD Care', resultText.includes(okayReply.hide) && resultText.includes('CUD Care'));
   check('and has a QR code to the main site', (await kiosk.$('svg[role="img"]')) !== null);
-  check('and its ticket tells staff to hand over the coupon too', resultText.includes(reward.ticketLine));
+  check('and a notification says the coupon was received, for the staff to hand over too', resultText.includes(reward.received));
+  check('and shows the heart the student made, beside the flower', (await kiosk.$(`svg[role="img"][aria-label="${feelingWanted.word}"]`)) !== null);
   await sleep(900);
   await shot(kiosk, 'kiosk-result');
 

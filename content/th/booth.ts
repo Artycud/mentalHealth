@@ -54,8 +54,9 @@ export interface Reward {
   extra: string;
   /** The kiosk's idle screen, under the start button's lead. */
   kioskLine: string;
-  /** On the result's ticket, so the staff holding the iPad hand over both. */
-  ticketLine: string;
+  /** The kiosk result's notification: a title and what was received. Staff read it too. */
+  toastTitle: string;
+  received: string;
 }
 
 export const festivals: Record<FestivalId, FestivalTheme> = {
@@ -79,7 +80,8 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
       amount: '10 บาทฟรี',
       extra: '+ ดอกไม้ไปแต่งกระทง',
       kioskLine: 'ตอบครบ รับคูปองลดไอศกรีม 10 บาท + ดอกไม้',
-      ticketLine: '+ คูปองลดไอศกรีม 10 บาท',
+      toastTitle: 'ได้คูปองแล้ว!',
+      received: 'คูปองลดไอศกรีม 10 บาท รับที่บูธพร้อมดอกไม้',
     },
   },
   christmas: {

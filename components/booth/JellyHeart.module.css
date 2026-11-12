@@ -1,0 +1,43 @@
+/* The jelly heart. Its size comes from the parent (height); the drawing keeps
+   its proportions. */
+
+.heart {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  overflow: visible;
+}
+
+/* The heart's glass edge. */
+.rim {
+  stroke: rgba(252, 241, 230, 0.75);
+  stroke-width: 5;
+}
+
+.eye {
+  fill: var(--ink);
+  stroke: var(--paper);
+  stroke-width: 4;
+  paint-order: stroke;
+}
+
+/* A face line: navy, over a wider paper line, so it reads on any colour. */
+.line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.under {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 14;
+  stroke-linecap: round;
+  stroke-opacity: 0.85;
+}
+
+.cheeks {
+  fill: var(--riso-pink);
+}
