@@ -1,0 +1,10 @@
+/* The disc is 79% of the art (the rest is its soft edge), so the art is drawn at
+   126% of the parent, centred, to lay the disc exactly over the parent's circle. */
+.moon {
+  position: absolute;
+  left: -13%;
+  top: -13%;
+  width: 126%;
+  height: 126%;
+  pointer-events: none;
+}

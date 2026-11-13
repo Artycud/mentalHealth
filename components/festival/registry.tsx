@@ -1,9 +1,11 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 import type { FestivalId } from '@/lib/types';
 
 import { LoyKrathongHero } from './loykrathong/Hero';
 import { LoyKrathongIcon } from './loykrathong/Icon';
+import { LoyKrathongMoon } from './loykrathong/Moon';
+import { LoyKrathongOffering } from './loykrathong/Offering';
 import { LoyKrathongRiver } from './loykrathong/River';
 import { LoyKrathongSky } from './loykrathong/Sky';
 
@@ -31,10 +33,21 @@ interface Pack {
   Sky?: ComponentType<{ moon?: boolean; lanterns?: boolean }>;
   /** The kiosk's idle picture, standing on the water. */
   Hero?: ComponentType;
+  /** The festival's moon, laid over a round thing the screen already has. */
+  Moon?: ComponentType;
+  /** How the result's flower is handed back (it is passed as children). */
+  Offering?: ComponentType<{ children: ReactNode }>;
 }
 
 const packs: Partial<Record<FestivalId, Pack>> = {
-  loykrathong: { Icon: LoyKrathongIcon, River: LoyKrathongRiver, Sky: LoyKrathongSky, Hero: LoyKrathongHero },
+  loykrathong: {
+    Icon: LoyKrathongIcon,
+    River: LoyKrathongRiver,
+    Sky: LoyKrathongSky,
+    Hero: LoyKrathongHero,
+    Moon: LoyKrathongMoon,
+    Offering: LoyKrathongOffering,
+  },
 };
 
 type Which = FestivalId | 'none' | undefined;
@@ -54,6 +67,17 @@ export function FestivalSky({ id, moon = false, lanterns = false }: { id: Which;
 export function FestivalHero({ id }: { id: Which }) {
   const Hero = pack(id)?.Hero;
   return Hero ? <Hero /> : null;
+}
+
+export function FestivalMoon({ id }: { id: Which }) {
+  const Moon = pack(id)?.Moon;
+  return Moon ? <Moon /> : null;
+}
+
+/** The result's flower in the festival's setting, or just the flower. */
+export function FestivalOffering({ id, children }: { id: Which; children: ReactNode }) {
+  const Offering = pack(id)?.Offering;
+  return Offering ? <Offering>{children}</Offering> : <>{children}</>;
 }
 
 export function FestivalIcon({ id }: { id: Which }) {

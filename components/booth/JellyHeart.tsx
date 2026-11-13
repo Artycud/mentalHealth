@@ -30,6 +30,15 @@ export const chargeCss = (e: number, w: number) => rgb(charge(e, w));
 
 const POINTS = 44;
 
+/** Fine veins fanning up from the tip, as on a lotus petal. Clipped to the heart,
+ *  so they need not follow its wobble. */
+const VEINS = [
+  'M0 150 Q-50 50 -98 -70',
+  'M0 150 Q-6 30 -30 -104',
+  'M0 150 Q6 30 30 -104',
+  'M0 150 Q50 50 98 -70',
+].join(' ');
+
 /**
  * A jelly ♥ around 0,0: the classic heart curve, wobbling (livelier with more
  * energy), squashed wide and drooping like a water balloon with weight, and
@@ -119,6 +128,7 @@ export function JellyHeart({
   const id = `jh${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const bodyRef = useRef<SVGPathElement>(null);
   const clipRef = useRef<SVGPathElement>(null);
+  const rimRef = useRef<SVGPathElement>(null);
   const liquidRef = useRef<SVGPathElement>(null);
   const bubblesRef = useRef<SVGGElement>(null);
   const stopTop = useRef<SVGStopElement>(null);
@@ -189,6 +199,7 @@ export function JellyHeart({
       });
       bodyRef.current?.setAttribute('d', d);
       clipRef.current?.setAttribute('d', d);
+      rimRef.current?.setAttribute('d', d);
       // A heavy heart dims, and presses a wider, darker shadow into the ground.
       shadeRef.current?.setAttribute('opacity', (w * 0.4).toFixed(3));
       shadowRef.current?.setAttribute('rx', (110 + w * 60).toFixed(1));
@@ -276,38 +287,46 @@ export function JellyHeart({
           <stop ref={stopTop} offset="0" stopColor="#ffd36b" />
           <stop ref={stopBottom} offset="1" stopColor="#ffb511" />
         </linearGradient>
-        <radialGradient id={`${id}-shine`} cx="34%" cy="22%" r="34%">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.85" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+        {/* Lit from within, like the lotus on the poster: a warm light low in the
+            heart, under whatever charge it holds. */}
+        <radialGradient id={`${id}-inner`} cx="50%" cy="74%" r="42%">
+          <stop offset="0" stopColor="#fff1c4" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#fff1c4" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id={`${id}-glass`} cx="45%" cy="35%" r="75%">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.2" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0.06" />
+        {/* The body is a petal, painted, not glass: cream at the heart, a soft
+            lilac-rose toward the edge, so the charge inside reads at once. */}
+        <radialGradient id={`${id}-petal`} cx="50%" cy="62%" r="70%">
+          <stop offset="0" stopColor="#fbf3ea" />
+          <stop offset="0.6" stopColor="#f1dfe9" />
+          <stop offset="1" stopColor="#dcbfd9" />
         </radialGradient>
         <radialGradient id={`${id}-glow`}>
-          <stop ref={glowRef} offset="0" stopColor="#ffb511" stopOpacity="0.4" />
+          <stop ref={glowRef} offset="0" stopColor="#ffb511" stopOpacity="0.22" />
           <stop offset="1" stopColor="#ffb511" stopOpacity="0" />
         </radialGradient>
         <radialGradient id={`${id}-shadow`}>
-          <stop offset="0" stopColor="#000000" stopOpacity="0.4" />
-          <stop offset="1" stopColor="#000000" stopOpacity="0" />
+          <stop offset="0" stopColor="#020a1c" stopOpacity="0.4" />
+          <stop offset="1" stopColor="#020a1c" stopOpacity="0" />
         </radialGradient>
       </defs>
       {/* The charge's own light, spilling round the heart, and its shadow below. */}
       <ellipse cx="0" cy="10" rx="215" ry="195" fill={`url(#${id}-glow)`} />
       <ellipse ref={shadowRef} cx="0" cy="206" rx="120" ry="20" fill={`url(#${id}-shadow)`} />
-      {/* The glass of the heart, the charge inside it, then its shine. */}
-      <path ref={bodyRef} fill={`url(#${id}-glass)`} className={styles.rim} />
+      {/* The petal of the heart, the charge inside it, its veins and its inner
+          light; the cream edge is drawn last, over all of them. */}
+      <path ref={bodyRef} fill={`url(#${id}-petal)`} />
       <g clipPath={`url(#${id}-clip)`}>
         <path ref={liquidRef} fill={`url(#${id}-liquid)`} />
-        <g ref={bubblesRef} fill="#ffffff">
+        <g ref={bubblesRef} fill="#fff8e6">
           {[0, 1, 2, 3, 4].map((i) => (
             <circle key={i} r={5 + (i % 3) * 2} />
           ))}
         </g>
         <rect ref={shadeRef} x="-230" y="-200" width="460" height="430" fill="#0b1536" opacity="0" />
-        <rect x="-230" y="-200" width="460" height="430" fill={`url(#${id}-shine)`} />
+        <path d={VEINS} className={styles.veins} />
+        <rect x="-230" y="-200" width="460" height="430" fill={`url(#${id}-inner)`} />
       </g>
+      <path ref={rimRef} className={styles.rim} />
       {/* The face. Each line is drawn twice, paper under navy, so it reads on the
           dark glass and on bright charge alike. */}
       <g ref={faceRef}>

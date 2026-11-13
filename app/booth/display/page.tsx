@@ -8,7 +8,7 @@ import { NewFlowerMoment } from '@/components/booth/NewFlowerMoment';
 import { QrCode } from '@/components/booth/QrCode';
 import { TvControls } from '@/components/booth/TvControls';
 import { TvRotate } from '@/components/booth/TvRotate';
-import { FestivalRiver, FestivalSky } from '@/components/festival/registry';
+import { FestivalMoon, FestivalRiver, FestivalSky } from '@/components/festival/registry';
 import { tintInk, WallFlower } from '@/components/booth/WallFlower';
 import { Wordmark } from '@/components/illustrations/icons';
 import { festivals, qrInvite, tv } from '@/content/th/booth';
@@ -155,17 +155,11 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
       <AutoRefresh />
       <KeepAwake />
       <TvControls label={tv.fullscreen} />
-      {/* The festival's sky texture, behind everything. The count is the moon, and
-          the TV has its own lanterns, so the sky draws neither. */}
+      {/* The festival's sky, behind everything: its texture and lanterns rising
+          off the water, so the night is alive. The count is the moon, so the sky
+          draws none of its own. */}
       <div className={styles.sky}>
-        <FestivalSky id={active} />
-      </div>
-      {/* Lanterns rising off the water, behind everything: the night is alive. */}
-      <div className={styles.lanterns} aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
+        <FestivalSky id={active} lanterns />
       </div>
       <div className={styles.head}>
         <span className={styles.brand}>
@@ -225,6 +219,7 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
         <div className={styles.stats}>
           <div className={styles.count}>
             <div className={styles.moon}>
+              <FestivalMoon id={active} />
               <span className={styles.countNum}>{wall.today}</span>
             </div>
             <p className={styles.countLabel}>{tv.hook.countLabel}</p>

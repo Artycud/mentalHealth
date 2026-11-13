@@ -238,6 +238,8 @@
 /* The moon holds today's count: the brightest round thing in the sky, and the
    number on it is the first thing the room reads after the coupon. */
 .moon {
+  /* A festival may lay its own moon over this one; the count stays on top. */
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,6 +251,7 @@
 }
 
 .countNum {
+  position: relative;
   font-family: var(--font-heading);
   font-size: min(16vh, 10vw);
   font-weight: 700;
@@ -471,33 +474,6 @@
   text-wrap: balance;
 }
 
-/* ---- Lanterns: a few lights rising slowly off the water, behind everything ---- */
-
-.lanterns {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.lanterns span {
-  position: absolute;
-  bottom: 18vh;
-  width: 1.5vh;
-  height: 2vh;
-  border-radius: 0.6vh 0.6vh 0.4vh 0.4vh;
-  background: radial-gradient(#fff3b0, var(--sunflower));
-  box-shadow: 0 0 2.8vh 1vh rgba(255, 181, 17, 0.35);
-  opacity: 0;
-  animation: rise-up 20s linear infinite;
-}
-
-.lanterns span:nth-child(1) { left: 52%; }
-.lanterns span:nth-child(2) { left: 61%; animation-delay: -5s; }
-.lanterns span:nth-child(3) { left: 46%; animation-delay: -11s; }
-.lanterns span:nth-child(4) { left: 70%; animation-delay: -16s; }
-
 /* ---- No booth live ---- */
 
 .intro {
@@ -527,12 +503,20 @@
   --bank-h: 88%;
 }
 
-/* The festival's sky texture, behind everything. */
+/* The festival's sky, behind everything. Its lanterns rise in the gap between the
+   hook's words and the QR card: they come up from behind the stats and are gone
+   before the header's line, so none ever passes behind a word or a number. */
 .sky {
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  --lanterns-x: 58%;
+  --lanterns-w: 20%;
+  --lanterns-top: 12%;
+  --lanterns-h: 0.35;
+  --lanterns-clip: 9vh;
+  --lanterns-clip-bottom: 69%;
 }
 
 /* Before the first result of the day the river is just water; this says why, and
@@ -671,23 +655,6 @@
   }
 }
 
-@keyframes rise-up {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.8;
-  }
-  85% {
-    opacity: 0.5;
-  }
-  100% {
-    transform: translateY(-62vh);
-    opacity: 0;
-  }
-}
-
 /* Still for nine seconds, one small pop, still again. */
 @keyframes pop {
   0%,
@@ -705,8 +672,7 @@
   .float,
   .liveDot,
   .barFill,
-  .amount,
-  .lanterns span {
+  .amount {
     animation: none;
   }
 }

@@ -1,0 +1,115 @@
+/* The hands and their krathong fill the parent; the flower sits at the lotus's
+   heart (about 50% across, 41% down the art). Motion is transform and opacity
+   only, and stops under reduced motion. */
+
+.offering {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Candlelight round the krathong: gold at the heart, rose at the edge. */
+.halo {
+  position: absolute;
+  inset: -12% -22% 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 214, 150, 0.42),
+    rgba(255, 138, 190, 0.2) 55%,
+    transparent 78%
+  );
+  will-change: opacity;
+  animation: flicker 3.7s ease-in-out infinite;
+}
+
+/* Held out: the hands rise a little and settle, slowly. */
+.lift {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  animation: offer 6.5s ease-in-out infinite;
+}
+
+.hands {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* The candle's flame, catching the light. */
+.flame {
+  position: absolute;
+  left: 40.3%;
+  top: 7.8%;
+  width: 16%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 236, 190, 0.85), rgba(255, 170, 80, 0.35) 50%, transparent);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  animation: flame 1.9s ease-in-out infinite;
+}
+
+/* The flower, set into the lotus. */
+.flower {
+  position: absolute;
+  left: 50%;
+  top: 41%;
+  width: 54%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+@keyframes offer {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5%);
+  }
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  22% {
+    opacity: 1;
+  }
+  41% {
+    opacity: 0.75;
+  }
+  63% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes flame {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  70% {
+    opacity: 0.75;
+    transform: scale(0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo,
+  .lift,
+  .flame {
+    animation: none;
+  }
+}

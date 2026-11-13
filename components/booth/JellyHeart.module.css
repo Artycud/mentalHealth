@@ -9,10 +9,20 @@
   overflow: visible;
 }
 
-/* The heart's glass edge. */
+/* The heart's edge: a cream line, as the poster outlines its lotus petals. */
 .rim {
-  stroke: rgba(252, 241, 230, 0.75);
+  fill: none;
+  stroke: #fff3d6;
   stroke-width: 5;
+}
+
+/* Petal veins: faint, lighter than whatever lies under them. */
+.veins {
+  fill: none;
+  stroke: #ffffff;
+  stroke-opacity: 0.16;
+  stroke-width: 3;
+  stroke-linecap: round;
 }
 
 .eye {

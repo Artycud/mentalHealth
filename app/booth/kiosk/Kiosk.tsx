@@ -12,7 +12,13 @@ import { KeepAwake } from '@/components/booth/KeepAwake';
 import { QrCode } from '@/components/booth/QrCode';
 import { TopicIcon } from '@/components/booth/TopicIcon';
 import { WallFlower } from '@/components/booth/WallFlower';
-import { FestivalHero, FestivalRiver, FestivalSky, hasFestivalHero } from '@/components/festival/registry';
+import {
+  FestivalHero,
+  FestivalOffering,
+  FestivalRiver,
+  FestivalSky,
+  hasFestivalHero,
+} from '@/components/festival/registry';
 import { BackChevron, CheckBadge, Wordmark } from '@/components/illustrations/icons';
 import { BoothMarigold } from '@/components/illustrations/scenes';
 import {
@@ -545,8 +551,12 @@ export function Kiosk({
 
         <section className={`${styles.sceneSide} ${styles.rise}`}>
           <p className={styles.sceneLabel}>{kiosk.flowerFor}</p>
+          {/* Handed back in the festival's way (a krathong held out in two hands at
+              Loy Krathong), or on its own. */}
           <div className={styles.resultFlower}>
-            <FlowerArt flower={flower} />
+            <FestivalOffering id={theme.id}>
+              <FlowerArt flower={flower} />
+            </FestivalOffering>
           </div>
           <h1 className={styles.flowerName}>{flower.name}</h1>
           <p className={styles.flowerBody}>{flower.body}</p>

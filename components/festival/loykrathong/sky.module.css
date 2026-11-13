@@ -5,6 +5,10 @@
      --moon-size          its diameter (default 26vh)
      --lanterns-x         where the lanterns' zone starts across the sky (default 52%)
      --lanterns-w         how wide the zone is (default 46%)
+     --lanterns-top       how far down their band starts (default 0%)
+     --lanterns-h         how much of the sky their band takes, as a share (default 1)
+     --lanterns-clip      above this line (from the top) they are not drawn (default 0)
+     --lanterns-clip-bottom  nor below this far up from the bottom (default 0)
 
    Everything that moves is a transform or an opacity, on its own layer, and all of
    it stops under prefers-reduced-motion, where each thing rests where it is drawn. */
@@ -77,6 +81,7 @@
 .lanterns {
   position: absolute;
   inset: 0;
+  clip-path: inset(var(--lanterns-clip, 0) 0 var(--lanterns-clip-bottom, 0) 0);
 }
 
 /* Each one rises through where it is drawn and fades out above it, then starts
@@ -84,7 +89,7 @@
 .lantern {
   position: absolute;
   left: calc(var(--lanterns-x, 52%) + var(--lanterns-w, 46%) * var(--x));
-  top: var(--y);
+  top: calc(var(--lanterns-top, 0%) + var(--y) * var(--lanterns-h, 1));
   height: var(--s);
   aspect-ratio: 3 / 4;
   filter: drop-shadow(0 0 var(--s) rgba(255, 184, 80, 0.45)) drop-shadow(0 0 0.4vh rgba(255, 214, 140, 0.9));
