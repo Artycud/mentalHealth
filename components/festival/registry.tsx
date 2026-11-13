@@ -2,8 +2,10 @@ import type { ComponentType } from 'react';
 
 import type { FestivalId } from '@/lib/types';
 
+import { LoyKrathongHero } from './loykrathong/Hero';
 import { LoyKrathongIcon } from './loykrathong/Icon';
 import { LoyKrathongRiver } from './loykrathong/River';
+import { LoyKrathongSky } from './loykrathong/Sky';
 
 /**
  * The festival layer's registry: what each festival draws, by slot.
@@ -21,22 +23,45 @@ import { LoyKrathongRiver } from './loykrathong/River';
 interface Pack {
   /** The small mark beside the booth's name on the home page. */
   Icon?: ComponentType;
-  /** Water (or its equivalent) for the TV's bottom band and the kiosk's idle screen. */
-  River?: ComponentType<{ moon?: boolean }>;
+  /** Water (or its equivalent) for the TV's bottom band and the kiosk's idle screen;
+   *  `bank` adds what stands on the far side of it. */
+  River?: ComponentType<{ moon?: boolean; bank?: boolean }>;
+  /** What fills the booth screens' sky, behind everything: texture, and on request
+   *  the moon and things rising through it. */
+  Sky?: ComponentType<{ moon?: boolean; lanterns?: boolean }>;
+  /** The kiosk's idle picture, standing on the water. */
+  Hero?: ComponentType;
 }
 
 const packs: Partial<Record<FestivalId, Pack>> = {
-  loykrathong: { Icon: LoyKrathongIcon, River: LoyKrathongRiver },
+  loykrathong: { Icon: LoyKrathongIcon, River: LoyKrathongRiver, Sky: LoyKrathongSky, Hero: LoyKrathongHero },
 };
 
 type Which = FestivalId | 'none' | undefined;
+
+const pack = (id: Which) => (id && id !== 'none' ? packs[id] : undefined);
+
+/** Whether the festival draws its own idle picture (else the screen keeps its own). */
+export function hasFestivalHero(id: Which): boolean {
+  return Boolean(pack(id)?.Hero);
+}
+
+export function FestivalSky({ id, moon = false, lanterns = false }: { id: Which; moon?: boolean; lanterns?: boolean }) {
+  const Sky = pack(id)?.Sky;
+  return Sky ? <Sky moon={moon} lanterns={lanterns} /> : null;
+}
+
+export function FestivalHero({ id }: { id: Which }) {
+  const Hero = pack(id)?.Hero;
+  return Hero ? <Hero /> : null;
+}
 
 export function FestivalIcon({ id }: { id: Which }) {
   const Icon = id && id !== 'none' ? packs[id]?.Icon : undefined;
   return Icon ? <Icon /> : null;
 }
 
-export function FestivalRiver({ id, moon = true }: { id: Which; moon?: boolean }) {
-  const River = id && id !== 'none' ? packs[id]?.River : undefined;
-  return River ? <River moon={moon} /> : null;
+export function FestivalRiver({ id, moon = true, bank = false }: { id: Which; moon?: boolean; bank?: boolean }) {
+  const River = pack(id)?.River;
+  return River ? <River moon={moon} bank={bank} /> : null;
 }

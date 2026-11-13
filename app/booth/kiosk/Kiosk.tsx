@@ -12,7 +12,7 @@ import { KeepAwake } from '@/components/booth/KeepAwake';
 import { QrCode } from '@/components/booth/QrCode';
 import { TopicIcon } from '@/components/booth/TopicIcon';
 import { WallFlower } from '@/components/booth/WallFlower';
-import { FestivalRiver } from '@/components/festival/registry';
+import { FestivalHero, FestivalRiver, FestivalSky, hasFestivalHero } from '@/components/festival/registry';
 import { BackChevron, CheckBadge, Wordmark } from '@/components/illustrations/icons';
 import { BoothMarigold } from '@/components/illustrations/scenes';
 import {
@@ -224,11 +224,23 @@ export function Kiosk({
     </div>
   );
 
+  // The quiz and the result share the idle screen's night, quieter: a small moon
+  // between the two columns and a few lanterns, so nothing competes with the heart.
+  const quietSky = (
+    <div className={`${styles.sky} ${styles.skyQuiet}`}>
+      <FestivalSky id={theme.id} moon lanterns />
+    </div>
+  );
+
   if (stage.kind === 'idle') {
     const given = stock.reduce((sum, f) => sum + f.count, 0);
+    const hero = hasFestivalHero(theme.id);
     return (
       <main className={`${styles.stage} ${styles.withShore}`} data-festival={theme.id}>
         <KeepAwake />
+        <div className={styles.sky}>
+          <FestivalSky id={theme.id} moon lanterns />
+        </div>
         {head}
         <div className={styles.idle}>
           <div className={styles.idleText}>
@@ -268,20 +280,32 @@ export function Kiosk({
             </p>
           </div>
 
+          {/* The festival's own picture stands on the water (below); a festival
+              without one keeps the booth's marigold here. */}
           <div className={styles.idleArt}>
-            <div className={styles.layer}>
-              <IdleBackdrop />
-            </div>
-            {/* The flower sways and its petals breathe; see kiosk.module.css. */}
-            <div className={`${styles.layer} ${styles.idleFlower}`}>
-              <BoothMarigold />
-            </div>
+            {!hero && (
+              <>
+                <div className={styles.layer}>
+                  <IdleBackdrop />
+                </div>
+                {/* The flower sways and its petals breathe; see kiosk.module.css. */}
+                <div className={`${styles.layer} ${styles.idleFlower}`}>
+                  <BoothMarigold />
+                </div>
+              </>
+            )}
           </div>
         </div>
-        {/* A slim river along the bottom: the festival's water, with no moon. */}
+        {/* A slim river along the bottom: the festival's water, with no moon, and
+            its far bank. */}
         <div className={styles.shore}>
-          <FestivalRiver id={theme.id} moon={false} />
+          <FestivalRiver id={theme.id} moon={false} bank />
         </div>
+        {hero && (
+          <div className={styles.hero}>
+            <FestivalHero id={theme.id} />
+          </div>
+        )}
         {foot(<span>{event.date}</span>, true)}
       </main>
     );
@@ -318,6 +342,7 @@ export function Kiosk({
     return (
       <main className={styles.stage} data-festival={theme.id}>
         <KeepAwake />
+        {quietSky}
         {head}
         {/* Re-keyed per question so each one slides in from the side it came. */}
         <div className={styles.quiz} key={question.id} data-dir={stage.dir}>
@@ -459,6 +484,7 @@ export function Kiosk({
       onPointerDown={() => setRemaining(kiosk.resetSeconds)}
     >
       <KeepAwake />
+      {quietSky}
       {head}
       {/* The coupon arrives as a notification, the way a phone tells you something
           good just came in. For the staff too: hand over both. */}

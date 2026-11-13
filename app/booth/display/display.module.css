@@ -31,6 +31,8 @@
   --u: min(1vh, 0.56vw);
 
   position: relative;
+  /* So the festival's sky (z-index -1) paints over this background, under the rest. */
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   width: 100vw;
@@ -519,6 +521,18 @@
   right: 0;
   bottom: 0;
   height: 24vh;
+  /* The festival's far bank stands on the right, below the QR card and clear of
+     the bars. */
+  --bank-x: 79%;
+  --bank-h: 88%;
+}
+
+/* The festival's sky texture, behind everything. */
+.sky {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* Before the first result of the day the river is just water; this says why, and

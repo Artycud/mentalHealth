@@ -1,0 +1,166 @@
+/* The night sky's art. It fills its wrapper; the screen places the moon and the
+   lanterns by setting these on the wrapper:
+
+     --moon-x, --moon-y   the moon's centre, as a share of the sky (default 63%, 19%)
+     --moon-size          its diameter (default 26vh)
+     --lanterns-x         where the lanterns' zone starts across the sky (default 52%)
+     --lanterns-w         how wide the zone is (default 46%)
+
+   Everything that moves is a transform or an opacity, on its own layer, and all of
+   it stops under prefers-reduced-motion, where each thing rests where it is drawn. */
+
+.sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The ribbons sway a little sideways, slower than anything else on screen. Drawn
+   wider than the sky, so the sway never shows their ends. */
+.ribbons {
+  left: -4%;
+  width: 108%;
+  will-change: transform;
+  animation: sway-sky 48s ease-in-out infinite alternate;
+}
+
+/* Each group of stars dims and comes back on its own clock, so the sky twinkles
+   without ever blinking as one. */
+.stars {
+  will-change: opacity;
+  animation: twinkle var(--twinkle, 5s) ease-in-out var(--twinkle-delay, 0s) infinite;
+}
+
+/* ---- The moon, in its own light ---- */
+
+.moon {
+  --size: var(--moon-size, 26vh);
+  position: absolute;
+  left: calc(var(--moon-x, 63%) - var(--size) / 2);
+  top: calc(var(--moon-y, 19%) - var(--size) / 2);
+  width: var(--size);
+  height: var(--size);
+}
+
+/* Moonlight: a wide warm haze that breathes, very slowly. */
+.moonGlow {
+  position: absolute;
+  inset: -90%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 246, 214, 0.4),
+    rgba(190, 205, 215, 0.16) 45%,
+    transparent
+  );
+  will-change: transform, opacity;
+  animation: moonlight 10s ease-in-out infinite;
+}
+
+.moonArt {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- Lanterns ---- */
+
+.lanterns {
+  position: absolute;
+  inset: 0;
+}
+
+/* Each one rises through where it is drawn and fades out above it, then starts
+   again from the water. Under reduced motion it simply rests where it is drawn. */
+.lantern {
+  position: absolute;
+  left: calc(var(--lanterns-x, 52%) + var(--lanterns-w, 46%) * var(--x));
+  top: var(--y);
+  height: var(--s);
+  aspect-ratio: 3 / 4;
+  filter: drop-shadow(0 0 var(--s) rgba(255, 184, 80, 0.45)) drop-shadow(0 0 0.4vh rgba(255, 214, 140, 0.9));
+  will-change: transform, opacity;
+  animation: rise var(--t) linear var(--d) infinite;
+}
+
+.lantern svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: bob-lantern 6s ease-in-out var(--d) infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes sway-sky {
+  from {
+    transform: translateX(-1.5%);
+  }
+  to {
+    transform: translateX(1.5%);
+  }
+}
+
+@keyframes moonlight {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(14vh);
+    opacity: 0;
+  }
+  12%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-18vh);
+    opacity: 0;
+  }
+}
+
+@keyframes bob-lantern {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ribbons,
+  .stars,
+  .moonGlow,
+  .lantern,
+  .lantern svg {
+    animation: none;
+  }
+}

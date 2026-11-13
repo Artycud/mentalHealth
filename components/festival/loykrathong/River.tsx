@@ -1,5 +1,8 @@
+import Image from 'next/image';
+
 import { SpeckleDefs } from '@/components/illustrations/paper';
 
+import watArt from './art/wat.webp';
 import styles from './river.module.css';
 
 /**
@@ -35,9 +38,17 @@ const GLINTS = [
   [1960, 176], [2340, 214], [2820, 168], [3100, 226], [3420, 190], [2620, 250],
 ] as const;
 
-export function LoyKrathongRiver({ moon = true }: { moon?: boolean }) {
+export function LoyKrathongRiver({ moon = true, bank = false }: { moon?: boolean; bank?: boolean }) {
   return (
     <div className={styles.scene} aria-hidden="true">
+      {/* The far bank: Wat Arun against the sky, its foot behind the far water.
+          The screen says where it stands (river.module.css). */}
+      {bank && (
+        <div className={styles.bank}>
+          <Image src={watArt} alt="" sizes="25vh" className={styles.bankArt} />
+        </div>
+      )}
+
       {moon && (
         <div className={styles.moon}>
           <svg viewBox="-150 -150 300 300">

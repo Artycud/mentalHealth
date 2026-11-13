@@ -1,0 +1,123 @@
+/* The krathong on the water. Its box takes the art's shape at the height it is
+   given. Motion is transform and opacity only, and stops under reduced motion. */
+
+.hero {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 843 / 957;
+}
+
+/* Candlelight: rose at the edge, gold at the heart, centred on the flower. It
+   flickers on an uneven clock, as a flame does. */
+.halo {
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  top: 8%;
+  bottom: 8%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 214, 150, 0.6),
+    rgba(255, 138, 190, 0.32) 52%,
+    transparent 76%
+  );
+  will-change: opacity, transform;
+  animation: flicker 3.7s ease-in-out infinite;
+}
+
+/* The same light, lying on the water under it. */
+.pool {
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  bottom: -6%;
+  height: 26%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 210, 150, 0.5), rgba(255, 150, 190, 0.18) 55%, transparent);
+  will-change: opacity;
+  animation: flicker 3.7s ease-in-out -1.3s infinite;
+}
+
+/* Afloat: it rises and settles, and rocks a little, about its waterline. */
+.float {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 82%;
+  will-change: transform;
+  animation: float 7s ease-in-out infinite;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The sparkler on the incense, catching: a quick bright breath now and then. */
+.spark {
+  position: absolute;
+  left: 36%;
+  top: 16%;
+  width: 22%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 252, 235, 0.95), rgba(255, 214, 130, 0.45) 45%, transparent);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  animation: spark 2.3s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  34% {
+    opacity: 0.78;
+  }
+  52% {
+    opacity: 0.95;
+    transform: scale(1.01);
+  }
+  71% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-1.4%) rotate(1deg);
+  }
+}
+
+@keyframes spark {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo,
+  .pool,
+  .float,
+  .spark {
+    animation: none;
+  }
+}

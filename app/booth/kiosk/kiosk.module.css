@@ -16,6 +16,10 @@
 .stage {
   --tv-soft: rgba(252, 241, 230, 0.8);
   --tv-note: #ffb8de;
+  /* Its own stacking context, so the festival's sky (z-index -1) paints over this
+     background and under everything else. */
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   width: 100vw;
@@ -30,7 +34,7 @@
     radial-gradient(circle at 91% 4%, rgba(255, 255, 255, 0.85) 0 0.16vh, transparent 0.26vh),
     radial-gradient(circle at 38% 9%, rgba(255, 255, 255, 0.5) 0 0.12vh, transparent 0.22vh),
     radial-gradient(circle at 18% 4%, rgba(255, 255, 255, 0.6) 0 0.14vh, transparent 0.24vh),
-    var(--fest-sky, linear-gradient(180deg, #0b1536, #26307f));
+    var(--fest-sky, linear-gradient(180deg, #1d4a96, #262f78));
   color: var(--paper);
   overflow: hidden;
   overflow: clip;
@@ -50,17 +54,63 @@
   padding-bottom: 15vh;
 }
 
-/* The water is the festival's (components/festival/); this only sizes its band and
-   sets the footer on it, in paper colour, because it sits on the water. */
+/* The festival's sky, behind everything (components/festival/). On the idle
+   screen the moon rises between the words and the krathong, and the lanterns use
+   the right half of the sky, clear of the text. */
+.sky {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  --moon-x: 63%;
+  --moon-y: 19%;
+  --moon-size: 26vh;
+  --lanterns-x: 52%;
+  --lanterns-w: 46%;
+}
+
+/* The quiz and the result: a small moon in the gap between the two columns. */
+.skyQuiet {
+  --moon-x: 47%;
+  --moon-y: 11%;
+  --moon-size: 13vh;
+  --lanterns-x: 30%;
+  --lanterns-w: 68%;
+}
+
+/* What is read stays above the scene. */
+.head,
+.idle {
+  position: relative;
+  z-index: 2;
+}
+
+/* The water is the festival's (components/festival/); this only sizes its band,
+   says where its far bank stands (left of the krathong, clear of the stock line),
+   and sets the footer on it, in paper colour, because it sits on the water. */
 .shore {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   height: 13vh;
+  --bank-x: 41%;
+  --bank-h: 115%;
+}
+
+/* The festival's idle picture, afloat on the right. Its foot stays above the
+   footer line, so the date is never read over a petal. */
+.hero {
+  position: absolute;
+  z-index: 1;
+  right: max(4vw, env(safe-area-inset-right));
+  bottom: 5.5vh;
+  height: 56vh;
+  pointer-events: none;
 }
 
 .foot.footOnWater {
+  z-index: 2;
   position: absolute;
   left: max(4vw, env(safe-area-inset-left));
   right: max(4vw, env(safe-area-inset-right));
@@ -107,8 +157,8 @@
 }
 
 /* Without the river at the bottom (the quiz and the result), the sky is
-   stretched so the screen ends in its dusk pink, not the bright glow just above
-   the water: the footer's paper-coloured text stays readable on it. */
+   stretched so the screen ends in its deep purple rather than the band that
+   meets the water, so the bottom edge stays calm under the footer. */
 .stage:not(.withShore) {
   background-size: 100% 135%;
   background-position: top;

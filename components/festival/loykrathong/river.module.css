@@ -26,6 +26,23 @@
   height: 100%;
 }
 
+/* The far bank. Its foot sits below the far water's edge (about 17% down the band),
+   so the water covers it. The screen places it with --bank-x (its left edge across
+   the band) and --bank-h (its height, as a share of the band). */
+.bank {
+  position: absolute;
+  left: var(--bank-x, 40%);
+  bottom: 72%;
+  height: var(--bank-h, 110%);
+}
+
+.bankArt {
+  display: block;
+  width: auto;
+  height: 100%;
+  opacity: 0.92;
+}
+
 /* Two periods wide, slid by exactly one (half of itself), so the loop has no seam.
    will-change so it is painted once and only moved: the layers are large. */
 .layer {

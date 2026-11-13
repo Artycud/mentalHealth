@@ -8,7 +8,7 @@ import { NewFlowerMoment } from '@/components/booth/NewFlowerMoment';
 import { QrCode } from '@/components/booth/QrCode';
 import { TvControls } from '@/components/booth/TvControls';
 import { TvRotate } from '@/components/booth/TvRotate';
-import { FestivalRiver } from '@/components/festival/registry';
+import { FestivalRiver, FestivalSky } from '@/components/festival/registry';
 import { tintInk, WallFlower } from '@/components/booth/WallFlower';
 import { Wordmark } from '@/components/illustrations/icons';
 import { festivals, qrInvite, tv } from '@/content/th/booth';
@@ -155,6 +155,11 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
       <AutoRefresh />
       <KeepAwake />
       <TvControls label={tv.fullscreen} />
+      {/* The festival's sky texture, behind everything. The count is the moon, and
+          the TV has its own lanterns, so the sky draws neither. */}
+      <div className={styles.sky}>
+        <FestivalSky id={active} />
+      </div>
       {/* Lanterns rising off the water, behind everything: the night is alive. */}
       <div className={styles.lanterns} aria-hidden="true">
         <span />
@@ -236,9 +241,10 @@ export default async function BoothDisplayPage(props: PageProps<'/booth/display'
       {/* The river band. The water is the festival's (an empty slot if it has none);
           the flowers on it are the base's: each one is a student's result, floating
           away. ปล่อยวางความทุกข์, the booth's own theme. The moon is up in the sky
-          holding the count, so the river draws none of its own. */}
+          holding the count, so the river draws none of its own; its far bank stands
+          on the right, under the QR card. */}
       <div className={styles.river}>
-        <FestivalRiver id={active} moon={false} />
+        <FestivalRiver id={active} moon={false} bank />
         {empty && <p className={styles.emptyRiver}>{tv.empty}</p>}
         <div className={styles.track}>
           {river.map((copy) => (
