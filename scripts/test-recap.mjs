@@ -64,14 +64,14 @@ for (let i = 0; i < 22; i += 1) {
   const start = new Date(Date.parse('2026-11-19T05:00:00Z') + i * 60_000).toISOString();
   const end = new Date(Date.parse(start) + 60_000).toISOString();
   const ok = i < 12 ? 'hide' : i < 16 ? 'depends' : 'real';
-  await add({ start, end, flower: i % 3 === 0 ? 'lotus' : 'marigold', answers: [['energy', i % 2 ? 'low' : 'mid'], ['weight', 'mid'], ['topic', 'study'], ['ok', ok]] });
+  await add({ start, end, flower: i % 3 === 0 ? 'hydrangea' : 'sunflower', answers: [['q1', i % 2 ? 'sad' : 'happy'], ['q2', 'love'], ['q5', 'happy'], ['ok', ok]] });
 }
 // One unfinished on day 1, which counts for nothing.
-await add({ start: '2026-11-19T05:40:00Z', answers: [['energy', 'high'], ['ok', 'hide']] });
+await add({ start: '2026-11-19T05:40:00Z', answers: [['q1', 'excited'], ['ok', 'hide']] });
 // Day 2 (20th): 3 finished; the honest question too few to show.
 for (let i = 0; i < 3; i += 1) {
   const start = new Date(Date.parse('2026-11-20T04:00:00Z') + i * 120_000).toISOString();
-  await add({ start, end: new Date(Date.parse(start) + 90_000).toISOString(), flower: 'lotus', answers: [['energy', 'high'], ['ok', 'real']] });
+  await add({ start, end: new Date(Date.parse(start) + 90_000).toISOString(), flower: 'hydrangea', answers: [['q1', 'excited'], ['ok', 'real']] });
 }
 // A check-in on day 1, which is not the booth's.
 await add({ start: '2026-11-19T05:10:00Z', end: '2026-11-19T05:12:00Z', mode: 'checkin', festival: 'loykrathong' });
@@ -81,13 +81,13 @@ await add({ start: '2026-11-19T05:10:00Z', end: '2026-11-19T05:12:00Z', mode: 'c
   eq('the days with a finished booth session', d1.days, ['2026-11-19', '2026-11-20']);
   eq('one day counts only its finished booth sessions', d1.players, 22);
   eq('the date label is that day', d1.dateLabel, '19 พ.ย. 2569');
-  eq('flowers are sorted, most first, as shares of the day', d1.flowers.slice(0, 2).map((f) => [f.id, f.count, f.pct]), [['marigold', 14, 64], ['lotus', 8, 36]]);
+  eq('flowers are sorted, most first, as shares of the day', d1.flowers.slice(0, 2).map((f) => [f.id, f.count, f.pct]), [['sunflower', 14, 64], ['hydrangea', 8, 36]]);
   eq('the busiest 10 minutes (finishes from 12.01 to 12.22)', d1.peak, { from: '12.10', to: '12.20', count: 10 });
   eq('every player took a minute', d1.medianSeconds, 60);
-  const energy = d1.questions.find((q) => q.id === 'energy');
-  eq('the feeling questions are counted per choice', [energy.answered, energy.choices.map((ch) => ch.count)], [22, [11, 11, 0]]);
-  const topic = d1.questions.find((q) => q.id === 'topic');
-  eq('and the topic, with every choice listed', [topic.answered, topic.choices.length, topic.choices[0].count], [22, 9, 22]);
+  const q1 = d1.questions.find((q) => q.id === 'q1');
+  eq('the questions are counted per choice', [q1.answered, q1.choices.map((ch) => ch.count)], [22, [11, 11, 0, 0, 0, 0]]);
+  const q5 = d1.questions.find((q) => q.id === 'q5');
+  eq('with every choice listed', [q5.answered, q5.choices.length, q5.choices[0].count], [22, 6, 22]);
   eq('the honest question, as tenths, with its base', d1.okay, { answered: 22, hide: 5, depends: 2, real: 3 });
   eq('the next booth after Loy Krathong', d1.next?.name, 'คริสต์มาส');
 

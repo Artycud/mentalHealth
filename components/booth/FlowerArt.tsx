@@ -6,6 +6,7 @@ import type { Flower } from '@/content/th/booth';
 import { backdropToneFor, ResultBackdrop } from './art';
 import styles from './FlowerArt.module.css';
 import { WALL_FLOWER_RING } from './flower-marks';
+import { FlowerPortrait, hasPortrait } from './FlowerPortrait';
 import { WallFlower } from './WallFlower';
 
 type Ring = { cx: number; cy: number; r: number };
@@ -40,10 +41,9 @@ function ringBox([vx, vy, vw, vh]: readonly number[], { cx, cy, r }: Ring): CSSP
  * (an old iPad cannot keep up), where a layer of its own is simply rotated by the
  * GPU. Nothing in the drawing overlaps the ring, so it looks the same.
  *
- * INTERIM ART: only the marigold has a hand-drawn illustration. The other five
- * show the tinted rosette from the TV wall until each gets its own drawing. It is
- * a stand-in, not the finished art, and must not be mistaken for a lotus or an
- * orchid.
+ * Each of the six booth flowers has its own drawing (./FlowerPortrait); the old
+ * marigold keeps its hand-drawn one, and anything else falls back to the TV
+ * wall's tinted rosette.
  */
 export function FlowerArt({ flower }: { flower: Flower }) {
   const marigold = flower.id === 'marigold';
@@ -58,6 +58,8 @@ export function FlowerArt({ flower }: { flower: Flower }) {
       <div className={`${styles.flowerWrap} ${styles.bloom}`} key={flower.id}>
         {marigold ? (
           <BoothMarigold viewBox={viewBox.join(' ')} ring={false} />
+        ) : hasPortrait(flower.id) ? (
+          <FlowerPortrait id={flower.id} />
         ) : (
           <WallFlower tint={flower.tint} size={320} ring={false} />
         )}

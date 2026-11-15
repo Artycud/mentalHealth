@@ -695,7 +695,7 @@
   padding: 0.5vh 1.8vw;
   border-radius: 999px;
   background: var(--mood);
-  color: var(--ink);
+  color: var(--mood-ink, var(--ink));
   font-family: var(--font-heading);
   font-size: clamp(14px, 3.4vh, 36px);
   font-weight: 600;
@@ -1151,6 +1151,50 @@
   .start::after,
   .bridgePath,
   .spark {
+    animation: none;
+  }
+}
+
+/* ---- the result's feeling side (Kiosk.tsx ScorePetals) ---- */
+
+/* One petal for each answer that pointed at the feeling, in the flower's colour. */
+.petals {
+  display: block;
+  width: auto;
+  height: 100%;
+  margin-inline: auto;
+}
+
+.petalOn {
+  animation: petal 420ms var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 110ms + 300ms);
+}
+
+@keyframes petal {
+  from {
+    opacity: 0;
+  }
+}
+
+.scoreLine {
+  margin-top: 0.6vh;
+  font-family: var(--font-note);
+  font-size: 2.2vh;
+  color: var(--tv-note);
+}
+
+/* "ลอยมันไปกับกระทง" / "ส่งต่อให้คนอื่น": a small label before the release line. */
+.way {
+  display: block;
+  margin-bottom: 0.4vh;
+  font-family: var(--font-note);
+  font-size: 2.2vh;
+  font-weight: 400;
+  color: var(--sunflower);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petalOn {
     animation: none;
   }
 }

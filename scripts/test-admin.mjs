@@ -51,9 +51,9 @@ const add = async (n, s) => {
 await add(1, { mode: 'checkin', start: '2026-11-19T04:00:00Z', end: '2026-11-19T04:01:40Z', state: 'drained', primary: 'study', secondary: 'rest',
   answers: [['q1-study', 'c'], ['q2-pressure', 'b'], ['q3-sleep', 'd']] });
 await add(2, { mode: 'checkin', start: '2026-11-19T17:30:00Z', answers: [['q1-study', 'a'], ['q2-pressure', 'a']] }); // unfinished
-await add(3, { mode: 'booth', start: '2026-11-20T04:10:00Z', end: '2026-11-20T04:10:40Z', flower: 'lotus', device: 'tablet',
-  answers: [['energy', 'low'], ['weight', 'light'], ['topic', 'study']] });
-await add(4, { mode: 'booth', start: '2026-11-20T04:20:00Z', end: '2026-11-20T04:20:20Z', flower: 'marigold', device: 'tablet', answers: [['energy', 'mid']] });
+await add(3, { mode: 'booth', start: '2026-11-20T04:10:00Z', end: '2026-11-20T04:10:40Z', flower: 'hydrangea', device: 'tablet',
+  answers: [['q1', 'sad'], ['q2', 'sad'], ['q3', 'love']] });
+await add(4, { mode: 'booth', start: '2026-11-20T04:20:00Z', end: '2026-11-20T04:20:20Z', flower: 'sunflower', device: 'tablet', answers: [['q1', 'happy']] });
 await add(5, { mode: 'checkin', start: '2026-11-21T04:00:00Z', end: '2026-11-21T04:01:00Z', state: 'heavy', primary: 'family', secondary: 'friends', answers: [['q1-study', 'c']] });
 
 const NOW = Date.parse('2026-11-20T10:00:00Z'); // 17:00 on the 20th in Thailand
@@ -81,12 +81,12 @@ const all = await A.getAdminData({}, NOW);
   eq('per day, on the THAI calendar: 00:30 on the 20th is the 20th, not the 19th', all.perDay,
     [{ day: '2026-11-19', total: 1, completed: 1 }, { day: '2026-11-20', total: 3, completed: 2 }, { day: '2026-11-21', total: 1, completed: 1 }]);
   eq('result states count finished check-ins only', all.states.map((s) => [s.state, s.count]), [['ok', 0], ['thinking', 0], ['drained', 1], ['heavy', 1]]);
-  eq('flowers count finished booth sessions', all.flowers.filter((f) => f.count).map((f) => [f.id, f.count]), [['lotus', 1], ['marigold', 1]]);
+  eq('flowers count finished booth sessions', all.flowers.filter((f) => f.count).map((f) => [f.id, f.count]), [['sunflower', 1], ['hydrangea', 1]]);
   eq("today is counted on Thailand's calendar and ignores filters", [(await A.getAdminData({}, NOW)).summary.today, (await A.getAdminData({ mode: 'booth' }, NOW)).summary.today], [3, 3]);
   const q1 = all.checkinQuestions.find((q) => q.id === 'q1-study');
   eq('q1: three answered; two chose c and one chose a, as percentages of those who answered', [q1.answered, q1.choices.find((x) => x.id === 'c').pct, q1.choices.find((x) => x.id === 'a').pct], [3, 67, 33]);
   eq('every choice of a question is listed, even at zero', q1.choices.length, 4);
-  const b1 = all.boothQuestions.find((q) => q.id === 'energy');
+  const b1 = all.boothQuestions.find((q) => q.id === 'q1');
   eq('the booth questions are counted separately', [b1.answered, b1.choices.filter((x) => x.count).length], [2, 2]);
   eq('percentages of a question add to about 100', q1.choices.reduce((s, x) => s + x.pct, 0), 100);
 }
@@ -123,7 +123,7 @@ const all = await A.getAdminData({}, NOW);
   check('the question is the Thai headline', s1.answers[0].question === 'เรื่องเรียนช่วงนี้เป็นยังไงบ้าง?', s1.answers[0].question);
   const s2 = all.sessions.find((s) => s.id === id(2));
   eq('an unfinished session is listed, with no duration', [s2.completedAt, s2.durationSeconds, s2.day], [null, null, '2026-11-20']);
-  eq('a booth session shows the flower by name', all.sessions.find((s) => s.id === id(3)).flower, 'ดอกบัว');
+  eq('a booth session shows the flower by name', all.sessions.find((s) => s.id === id(3)).flower, 'ไฮเดรนเยียสีฟ้า');
   eq('and its festival by name', all.sessions.find((s) => s.id === id(3)).festivalName, 'ลอยกระทง');
   await c.execute({ sql: 'INSERT INTO answer (session_id, question_id, choice_id, answered_at) VALUES (?, ?, ?, ?)', args: [id(5), 'q-removed', 'z', '2026-11-21T04:00:30Z'] });
   const s5 = (await A.getAdminData({}, NOW)).sessions.find((s) => s.id === id(5));
@@ -145,7 +145,7 @@ const all = await A.getAdminData({}, NOW);
   check('a CSV starts with a byte-order mark so Excel reads the Thai', s.startsWith('﻿'));
   const lines = s.replace('﻿', '').trim().split('\r\n');
   eq('one row per session plus the header', lines.length, 6);
-  check('it uses Thai labels and Thai time', lines.some((l) => l.includes('ดอกบัว') && l.includes('2026-11-20 11:10:00')), lines[3]);
+  check('it uses Thai labels and Thai time', lines.some((l) => l.includes('ไฮเดรนเยียสีฟ้า') && l.includes('2026-11-20 11:10:00')), lines[3]);
   check('oldest first, like a log', lines[1].startsWith(id(1)) && lines[5].startsWith(id(5)));
   eq('the filters apply to the export', (await A.sessionsCsv({ mode: 'booth' })).trim().split('\r\n').length, 3);
   const a = await A.answersCsv({});

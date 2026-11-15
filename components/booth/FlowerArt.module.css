@@ -140,3 +140,23 @@
     animation: none;
   }
 }
+
+/* A booth flower's own drawing (./FlowerPortrait) grows in as one piece, from
+   its centre; its round parts still bloom one after another above. */
+.bloom > svg[data-portrait] {
+  transform-origin: center;
+  animation: portrait 520ms var(--ease) both;
+}
+
+@keyframes portrait {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bloom > svg[data-portrait] {
+    animation: none;
+  }
+}

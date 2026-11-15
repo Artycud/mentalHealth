@@ -1,0 +1,128 @@
+/* The kiosk's answers (FloatChoices.tsx): six slips of paper on the night sky,
+   two to a row. A chosen slip lights up and floats away; the rest step back. */
+
+.slips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 1.8vh 1.4vw;
+  align-content: center;
+  min-width: 0;
+}
+
+.slip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.1vw;
+  min-height: 14vh;
+  padding: 1.6vh 1.4vw;
+  border: none;
+  border-radius: 2.4vh 2.4vh 2.4vh 0.8vh;
+  background: var(--paper-raised);
+  box-shadow:
+    0 0.5vh 0 var(--line),
+    0 2vh 4vh -2vh rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: clamp(14px, min(3.3vh, 2.15vw), 34px);
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  /* An upward flick must move the slip, not the page. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 260ms var(--ease),
+    opacity 260ms var(--ease),
+    background-color var(--d-color) var(--ease);
+}
+
+/* Each a little crooked, like slips laid down by hand. */
+.slip[data-i='0'] { rotate: -0.6deg; }
+.slip[data-i='1'] { rotate: 0.5deg; }
+.slip[data-i='2'] { rotate: 0.4deg; }
+.slip[data-i='3'] { rotate: -0.5deg; }
+.slip[data-i='4'] { rotate: -0.3deg; }
+.slip[data-i='5'] { rotate: 0.6deg; }
+
+.slip:active {
+  transform: translateY(0.3vh);
+}
+
+.slip:focus-visible {
+  outline: 0.5vh solid var(--sunflower);
+  outline-offset: 0.5vh;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 5.2vh;
+  height: 5.2vh;
+  border-radius: 50%;
+  background: var(--sun-tint);
+}
+
+.icon svg {
+  width: 72%;
+  height: 72%;
+}
+
+.label {
+  flex-grow: 1;
+  min-width: 0;
+  text-wrap: balance;
+}
+
+/* The pictures, in the slip's own inks. */
+.fill { fill: var(--riso-pink); }
+.fillSoft { fill: var(--ink); opacity: 0.85; }
+.flame { fill: var(--sunflower); }
+.stroke { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.strokeSoft { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; opacity: 0.5; }
+
+/* ---- chosen: it lights up, then floats away ---- */
+
+.slip[data-picked='true'] {
+  background: var(--sunflower);
+  box-shadow:
+    0 0.5vh 0 rgba(0, 0, 0, 0.18),
+    0 0 6vh 1vh rgba(255, 181, 17, 0.45);
+  animation: float-away 720ms var(--ease) 140ms forwards;
+}
+
+.slip[data-picked='true'] .icon {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* The others step back while it goes. */
+.slips[data-picking='true'] .slip:not([data-picked='true']) {
+  opacity: 0.35;
+  transform: scale(0.97);
+}
+
+.slip:disabled {
+  cursor: default;
+}
+
+@keyframes float-away {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -22vh, 0) scale(0.92) rotate(-2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slip[data-picked='true'] {
+    animation: none;
+  }
+
+  .slip {
+    transition: none;
+  }
+}

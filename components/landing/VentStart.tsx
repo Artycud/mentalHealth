@@ -50,9 +50,12 @@ export function VentStart() {
 
   return (
     <form className={`${palette.paper} ${styles.slip}`} onSubmit={submit} data-flying={flying}>
+      {/* The heart asks, in a speech bubble: a reply is easier to write than a blank box. */}
       <label htmlFor="vent-start" className={styles.asks}>
         <LiveHeart energy={0.45} weight={0.35} colour="rgb(255 143 181)" className={styles.heart} />
-        <TimeAsk className={styles.ask} />
+        <span className={styles.bubble}>
+          <TimeAsk className={styles.ask} />
+        </span>
       </label>
 
       <div className={styles.bar}>
@@ -79,7 +82,7 @@ export function VentStart() {
       </div>
 
       <p className={styles.orTap}>{vent.invite.orTap}</p>
-      <Starters onPick={go} disabled={flying} />
+      <Starters onPick={go} disabled={flying} row />
       <SafeLine className={styles.safe} />
     </form>
   );

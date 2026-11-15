@@ -10,20 +10,7 @@ import { SecondaryButton, TextLink } from '@/components/ui/buttons';
 import { PhoneQuiz, type QuizQuestion } from '@/components/quiz/PhoneQuiz';
 import { Screen } from '@/components/ui/Screen';
 import { WordmarkHeader } from '@/components/ui/WordmarkHeader';
-import {
-  answersFromChoices,
-  feelingFromAnswers,
-  flowerFromChoices,
-  isOkayChoice,
-  kiosk,
-  loykrathongQuiz,
-  okayQuestion,
-  okayReply,
-  okayReplyLabel,
-  withDok,
-  type Flower,
-  type OkayChoiceId,
-} from '@/content/th/booth';
+import { kiosk, loykrathongQuiz, resultFromChoices, withDok, type BoothResult } from '@/content/th/booth';
 import { common, cudCare } from '@/content/th/common';
 import { createTracker } from '@/lib/track';
 import type { FestivalId } from '@/lib/types';
@@ -41,27 +28,25 @@ interface BoothPhoneProps {
 }
 
 /**
- * The booth quiz on a student's own phone: how the heart is right now (battery,
- * bag, what fills the head) and the honest question, then a result to show at the
- * booth to collect a real flower (BRIEF §1, §8). The kiosk at the booth asks the
- * same questions as drags on a shared device; both give the same flower for the
- * same answers. Here they are taps, which suit a phone in one hand.
+ * The booth quiz on a student's own phone: the council's five Loy Krathong
+ * questions, then a result to show at the booth to collect a real flower (BRIEF
+ * §1, §8). The kiosk at the booth asks the same questions as slips that float
+ * away; both give the same flower for the same answers. Here they are taps,
+ * which suit a phone in one hand.
  *
  * Booth mode runs on trust — staff just look at the screen — so there is no code
  * or token here, and nothing to check (§12).
  */
 export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: BoothPhoneProps) {
   const router = useRouter();
-  const [flower, setFlower] = useState<Flower | null>(null);
-  const [feeling, setFeeling] = useState<ReturnType<typeof feelingFromAnswers> | null>(null);
-  const [okay, setOkay] = useState<OkayChoiceId | null>(null);
+  const [result, setResult] = useState<BoothResult | null>(null);
+  const flower = result?.flower ?? null;
   // One per run. Going back from a result to play again makes a new one.
   const [tracker, setTracker] = useState(() => createTracker('booth'));
 
   const quiz = useMemo<QuizQuestion[]>(
     () =>
-      // The feeling questions, then the honest one, as on the booth's iPad.
-      [...loykrathongQuiz, okayQuestion].map((q) => ({
+      loykrathongQuiz.map((q) => ({
         id: q.id,
         note: q.note,
         headline: q.headline,
@@ -75,7 +60,7 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
   useEffect(() => {
     if (!flower) return;
     const back = () => {
-      setFlower(null);
+      setResult(null);
       setTracker(createTracker('booth'));
     };
     window.addEventListener('popstate', back);
@@ -92,15 +77,11 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
         onExit={() => router.push('/')}
         onFinish={(answers) => {
           tracker.complete();
-          const result = flowerFromChoices(answers);
-          if (!result) return; // unreachable: the quiz only finishes complete
-          const honest = answers.find((a) => a.questionId === okayQuestion.id)?.choiceId;
-          setOkay(honest && isOkayChoice(honest) ? honest : null);
-          const scored = answersFromChoices(answers);
-          setFeeling(scored ? feelingFromAnswers(scored) : null);
+          const got = resultFromChoices(answers);
+          if (!got) return; // unreachable: the quiz only finishes complete
           // A history entry for the result, so back has something to pop.
           window.history.pushState({ ...(window.history.state as object), quizDone: true }, '');
-          setFlower(result);
+          setResult(got);
         }}
       />
     );
@@ -114,9 +95,9 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
         <WordmarkHeader />
         <BoothLabelPill>{label}</BoothLabelPill>
 
-        {feeling && (
+        {result && (
           <p className={styles.note}>
-            {kiosk.resultNote}: {feeling.word}
+            {kiosk.resultNote}: {flower.levels[result.level].word}
           </p>
         )}
         <p className={styles.note}>{resultNote}</p>
@@ -128,17 +109,15 @@ export function BoothPhone({ festival, label, resultNote, ticketTitle, where }: 
           <FlowerArt flower={flower} />
         </div>
 
-        <p className={styles.body}>{flower.body}</p>
+        {result && <p className={styles.body}>{flower.levels[result.level].body}</p>}
+        <p className={styles.body}>{flower.release}</p>
 
-        {/* What the feeling's own message says, and the honest question answered back. */}
-        {feeling && <p className={styles.body}>{feeling.message}</p>}
-        {okay && (
-          <div className={styles.reply}>
-            <span className={styles.smallLabel}>{okayReplyLabel}</span>
-            <span className={styles.replyText}>{okayReply[okay]}</span>
-            <span className={styles.care}>{cudCare.result.body}</span>
-          </div>
-        )}
+        {/* The flower's wish, and a route to CUD Care. */}
+        <div className={styles.reply}>
+          <span className={styles.smallLabel}>{kiosk.wishLabel}</span>
+          <span className={styles.replyText}>{flower.wish}</span>
+          <span className={styles.care}>{cudCare.result.body}</span>
+        </div>
 
         <BoothTicket
           title={ticketTitle}

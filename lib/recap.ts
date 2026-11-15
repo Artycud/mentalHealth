@@ -194,8 +194,14 @@ export async function demoRecap(festival: FestivalId): Promise<Recap> {
     });
     return { id: q.id, headline: q.headline, answered: players, choices };
   };
-  // Energy, weight, then the nine topics.
-  const shares = [[38, 45, 17], [24, 49, 27], [34, 14, 12, 8, 10, 9, 6, 4, 3]];
+  // The five questions, six answers each, in the council's order.
+  const shares = [
+    [22, 18, 9, 17, 21, 13],
+    [8, 20, 14, 19, 24, 15],
+    [26, 7, 16, 18, 15, 18],
+    [6, 19, 21, 17, 22, 15],
+    [20, 9, 17, 16, 23, 15],
+  ];
   const event = await getEvent(festival);
   const shaped = shape(
     {

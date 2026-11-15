@@ -1,96 +1,75 @@
-// Checks the booth's feeling → flower rules against the REAL quiz and scoring in
-// content/th/booth.ts, so it cannot drift from what the kiosk does.
+// Checks the booth's answers → feeling → flower rules against the REAL quiz and
+// scoring in content/th/booth.ts, so it cannot drift from what the kiosk does.
 //
 // Run it after editing any booth question, answer or flower:  npm run check:booth
 //
-// The booth hands out PHYSICAL flowers. Since 2026-11-12 the flower is the one
-// "for" the student's feeling (energy × weight, the home's nine), so how many of
-// each go out depends on how the room feels and cannot be balanced in advance.
-// What CAN be checked, and is:
-//   1. every flower is reachable, and every one of the nine feelings has a flower;
-//   2. energy and weight both decide the flower, and the topic never does;
-//   3. every answer to energy and weight counts differently.
-// It also prints the map, so the council can see which heart gets which flower.
+// The booth hands out PHYSICAL flowers, one for each of six feelings, from the
+// student council's five questions (2026-11-16). What is checked:
+//   1. every question offers each of the six feelings exactly once;
+//   2. every possible set of answers (6^5) gives a flower, at one of two levels;
+//   3. every flower can come out, at both levels;
+//   4. a tie goes to the feeling answered latest, and 3+ of 5 is the strong level.
+// It also prints how often each flower comes out if every answer were equally
+// likely, so the council can see the spread before buying stock (real students
+// will not answer evenly, so stock by the staff's tally on the day).
 
-import { feelingFromAnswers, flowerFromAnswers, loykrathongFlowers, loykrathongQuiz } from '../content/th/booth.ts';
+import { EMOTIONS, loykrathongFlowers, loykrathongQuiz, resultFromChoices, resultFromEmotions } from '../content/th/booth.ts';
 
 let bad = 0;
 const fail = (msg) => {
   bad += 1;
   console.log(`FAIL ${msg}`);
 };
-const ok = (msg) => console.log(`ok   ${msg}`);
+const ok = (msg) => console.log(`PASS ${msg}`);
 
-const byAxis = (axis) => loykrathongQuiz.find((q) => q.axis === axis);
-const energy = byAxis('energy');
-const weight = byAxis('weight');
-const topic = byAxis('topic');
-if (!energy || !weight || !topic) {
-  console.log('FAIL the quiz must have an energy, a weight and a topic question');
-  process.exit(1);
+// ---- 1. each question offers each feeling once ----
+for (const q of loykrathongQuiz) {
+  const ids = q.choices.map((c) => c.id).sort().join(',');
+  if (ids !== [...EMOTIONS].sort().join(',')) fail(`${q.id} does not offer each of the six feelings once: ${ids}`);
 }
+if (loykrathongQuiz.length !== 5) fail(`expected 5 questions, found ${loykrathongQuiz.length}`);
+for (const e of EMOTIONS) if (!loykrathongFlowers.some((f) => f.emotion === e)) fail(`no flower for ${e}`);
+if (!bad) ok('5 questions, each offering the six feelings once, and a flower for every feeling');
 
-// ---- the map ----
-console.log('weight \\ energy'.padEnd(18) + energy.choices.map((c) => c.label.padEnd(22)).join(''));
-const counts = new Map(loykrathongFlowers.map((f) => [f.id, 0]));
-for (const w of weight.choices) {
-  let line = w.label.padEnd(18);
-  for (const e of energy.choices) {
-    const answers = [
-      { axis: 'energy', value: e.value },
-      { axis: 'weight', value: w.value },
-      { axis: 'topic', value: 0 },
-    ];
-    const flower = flowerFromAnswers(answers);
-    const feeling = feelingFromAnswers(answers);
-    counts.set(flower.id, counts.get(flower.id) + 1);
-    line += `${feeling.word} → ${flower.name}`.padEnd(22);
+// ---- 2 & 3. every set of answers ----
+const counts = new Map(loykrathongFlowers.map((f) => [f.id, [0, 0]]));
+let total = 0;
+const walk = (i, pairs) => {
+  if (i === loykrathongQuiz.length) {
+    const r = resultFromChoices(pairs);
+    if (!r) return fail(`no result for ${JSON.stringify(pairs)}`);
+    counts.get(r.flower.id)[r.level] += 1;
+    total += 1;
+    return;
   }
-  console.log(line);
-}
-console.log('');
-
-// ---- 1. every flower reachable ----
-for (const f of loykrathongFlowers) {
-  const n = counts.get(f.id);
-  if (n > 0) ok(`${f.name} is given for ${n} of the 9 feelings`);
-  else fail(`${f.name} can never be given (no feeling maps to it)`);
-}
-
-// ---- 2. energy and weight decide it; topic never does ----
-const flowerAt = (e, w, t = 0) =>
-  flowerFromAnswers([
-    { axis: 'energy', value: e },
-    { axis: 'weight', value: w },
-    { axis: 'topic', value: t },
-  ]).id;
-const matters = (axis) => {
-  for (let a = 0; a < 3; a += 1) {
-    const set = new Set([0, 1, 2].map((b) => (axis === 'energy' ? flowerAt(b, a) : flowerAt(a, b))));
-    if (set.size > 1) return true;
-  }
-  return false;
+  for (const c of loykrathongQuiz[i].choices) walk(i + 1, [...pairs, { questionId: loykrathongQuiz[i].id, choiceId: c.id }]);
 };
-for (const axis of ['energy', 'weight']) {
-  if (matters(axis)) ok(`${axis} changes the flower`);
-  else fail(`${axis} never changes the flower: it is decoration`);
+walk(0, []);
+if (total === 6 ** 5) ok(`all ${total} sets of answers give a flower`);
+else fail(`only ${total} of ${6 ** 5} sets of answers were scored`);
+for (const f of loykrathongFlowers) {
+  const [mild, strong] = counts.get(f.id);
+  if (!mild || !strong) fail(`${f.name} cannot come out at both levels (a little ${mild}, a lot ${strong})`);
 }
-let topicMatters = false;
-for (let e = 0; e < 3; e += 1) {
-  for (let w = 0; w < 3; w += 1) {
-    const set = new Set(topic.choices.map((c) => flowerAt(e, w, c.value)));
-    if (set.size > 1) topicMatters = true;
-  }
-}
-if (topicMatters) fail('the topic changes the flower; it must not');
-else ok('the topic never changes the flower');
+if (!bad) ok('every flower can come out, at both levels');
 
-// ---- 3. distinct answers ----
-for (const q of [energy, weight]) {
-  const values = new Set(q.choices.map((c) => c.value));
-  if (values.size === q.choices.length && q.choices.length === 3) ok(`${q.id}: 3 answers, 3 distinct values`);
-  else fail(`${q.id}: needs exactly 3 answers with distinct values (0, 1, 2)`);
+// ---- 4. the rules ----
+const r1 = resultFromEmotions(['sad', 'sad', 'angry', 'angry', 'happy']);
+if (r1.flower.emotion !== 'angry' || r1.level !== 0) fail(`a 2–2 tie should go to the later feeling (angry), mild; got ${r1.flower.emotion}, level ${r1.level}`);
+const r2 = resultFromEmotions(['worried', 'worried', 'worried', 'love', 'love']);
+if (r2.flower.emotion !== 'worried' || r2.level !== 1 || r2.score !== 3) fail(`3 of 5 should be worried, strong; got ${JSON.stringify(r2)}`);
+const r3 = resultFromEmotions(['happy', 'sad', 'angry', 'excited', 'love']);
+if (r3.flower.emotion !== 'love' || r3.level !== 0 || r3.score !== 1) fail(`all different should go to the last answer (love), mild; got ${r3.flower.emotion}`);
+if (resultFromChoices([{ questionId: 'q1', choiceId: 'sad' }]) !== null) fail('an unfinished set of answers must give no result');
+if (!bad) ok('ties go to the feeling answered latest; 3 or more of 5 is the strong level; unfinished gives nothing');
+
+// ---- the spread, if every answer were equally likely ----
+console.log('\nIf every answer were equally likely (real students will not be):');
+for (const f of loykrathongFlowers) {
+  const [mild, strong] = counts.get(f.id);
+  const pct = (n) => `${((n / total) * 100).toFixed(1)}%`;
+  console.log(`  ${f.name.padEnd(18)} ${pct(mild + strong).padStart(6)}   (a little ${pct(mild)}, a lot ${pct(strong)})`);
 }
 
-console.log(bad ? `\n${bad} problem(s)` : '\nEvery flower reachable, and only energy and weight decide it.');
+console.log(bad ? `\n${bad} FAILED` : '\nall passed');
 process.exit(bad ? 1 : 0);

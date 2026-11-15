@@ -74,6 +74,25 @@
   gap: 8px;
 }
 
+/* One line, swiped sideways, ending flush with the slip's edge. */
+.row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-right: -16px;
+  padding: 2px 16px 4px 0;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.row::-webkit-scrollbar {
+  display: none;
+}
+
+.row .starter {
+  flex-shrink: 0;
+}
+
 .starter {
   min-height: 38px;
   padding: 0 13px;

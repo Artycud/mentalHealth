@@ -14,31 +14,54 @@
   rotate: 0.5deg;
 }
 
-/* The heart, and what it asks, as if said out loud. */
+/* The heart, and what it asks, in a speech bubble: someone is asking you. */
 .asks {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-end;
+  gap: 8px;
   cursor: text;
 }
 
 .heart {
   flex-shrink: 0;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
+}
+
+.bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px 11px;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--pink-tint);
+}
+
+/* The bubble's tail, pointing back at the heart. */
+.bubble::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  bottom: 6px;
+  width: 12px;
+  height: 12px;
+  background: var(--pink-tint);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 
 .ask {
   font-family: var(--font-heading);
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1.35;
+  color: var(--paper-ink);
   text-wrap: balance;
 }
 
 /* ---- the strip of notebook paper, and the airplane ---- */
 
 .bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -55,6 +78,31 @@
 
 .bar:focus-within {
   box-shadow: inset 0 0 0 2px var(--riso-pink);
+}
+
+/* While nothing is written and nobody is typing, a soft pink glow breathes
+   around the bar: the place to start. Opacity only, on its own layer. */
+.bar::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 15px 15px 15px 6px;
+  box-shadow: 0 0 0 3px rgba(255, 72, 176, 0.35), 0 0 18px rgba(255, 72, 176, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  animation: invite 2.8s ease-in-out 1.2s infinite;
+}
+
+.bar:focus-within::after,
+.bar:has(input:not(:placeholder-shown))::after {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes invite {
+  50% {
+    opacity: 1;
+  }
 }
 
 .field {
@@ -136,7 +184,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slip[data-flying='true'] .plane {
+  .slip[data-flying='true'] .plane,
+  .bar::after {
     animation: none;
   }
 }

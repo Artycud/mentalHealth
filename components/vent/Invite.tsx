@@ -39,9 +39,18 @@ export function DriftingHints() {
 }
 
 /** Things to start with, sent with one tap. */
-export function Starters({ onPick, disabled = false }: { onPick: (text: string) => void; disabled?: boolean }) {
+export function Starters({
+  onPick,
+  disabled = false,
+  row = false,
+}: {
+  onPick: (text: string) => void;
+  disabled?: boolean;
+  /** One line that scrolls sideways, where height is precious (the home). */
+  row?: boolean;
+}) {
   return (
-    <div className={styles.starters}>
+    <div className={row ? `${styles.starters} ${styles.row}` : styles.starters}>
       {vent.invite.starters.map((s) => (
         <button key={s} type="button" className={styles.starter} data-press disabled={disabled} onClick={() => onPick(s)}>
           {s}

@@ -110,7 +110,7 @@ const checkinAnswers = ['d', 'b', 'c', 'b', 'b', 'b', 'd', 'c']; // the brief's 
 // ---- 4. A booth session, and the wall ----
 {
   const { id } = await createSession({ mode: 'booth', device: 'tablet' });
-  const path = [2, 0, 2]; // lively, self, lively -> a known flower
+  const path = [4, 0, 4, 4, 4]; // worried 3+ times -> lavender, the strong level
   const pairs = loykrathongQuiz.map((q, i) => ({ questionId: q.id, choiceId: q.choices[path[i]].id }));
   for (const p of pairs) await saveAnswer(id, p.questionId, p.choiceId);
   const want = flowerFromChoices(pairs);
@@ -141,22 +141,22 @@ const checkinAnswers = ['d', 'b', 'c', 'b', 'b', 'b', 'd', 'c']; // the brief's 
     await c.execute({ sql: "INSERT INTO session (id, mode, festival, started_at, completed_at, booth_result) VALUES (?, 'booth', 'loykrathong', ?, ?, ?)", args: [id, completedAt, completedAt, flower] });
   };
   // Two results on the 19th in Bangkok: noon, and one minute before midnight.
-  await put('2026-11-19T05:00:00Z', 'lotus'); // 12:00 Bangkok, 19th
-  await put('2026-11-19T16:59:00Z', 'orchid'); // 23:59 Bangkok, 19th
+  await put('2026-11-19T05:00:00Z', 'hydrangea'); // 12:00 Bangkok, 19th
+  await put('2026-11-19T16:59:00Z', 'gerbera'); // 23:59 Bangkok, 19th
   const beforeMidnight = await getWallData('loykrathong', at('2026-11-19T16:59:30Z'));
   eq('at 23:59:30 Bangkok both results are "today"', [beforeMidnight.today, beforeMidnight.total], [2, 2]);
   const afterMidnight = await getWallData('loykrathong', at('2026-11-19T17:00:30Z'));
   eq('thirty seconds into the 20th Bangkok, "today" is empty but the total is not', [afterMidnight.today, afterMidnight.total], [0, 2]);
-  await put('2026-11-19T17:01:00Z', 'marigold'); // 00:01 Bangkok, 20th
+  await put('2026-11-19T17:01:00Z', 'sunflower'); // 00:01 Bangkok, 20th
   const nextMorning = await getWallData('loykrathong', at('2026-11-20T02:00:00Z'));
   eq('by 09:00 on the 20th, "today" is only the result made after midnight', [nextMorning.today, nextMorning.total], [1, 3]);
-  eq('and the river is newest first', nextMorning.recent.map((r) => r.tint), [0, 2, 3]); // marigold 0, orchid 2, lotus 3
+  eq('and the river is newest first', nextMorning.recent.map((r) => r.tint), [0, 3, 1]); // sunflower 0, gerbera 3, hydrangea 1
 }
 
 // ---- 5b. The honest question ("โอเคไหม"), and its guard on the TV ----
 {
   const { id } = await createSession({ mode: 'booth', device: 'tablet' });
-  const pairs = loykrathongQuiz.map((q, i) => ({ questionId: q.id, choiceId: q.choices[[0, 1, 2][i]].id }));
+  const pairs = loykrathongQuiz.map((q, i) => ({ questionId: q.id, choiceId: q.choices[[0, 1, 2, 3, 4][i]].id }));
   for (const p of pairs) await saveAnswer(id, p.questionId, p.choiceId);
   await saveAnswer(id, okayQuestion.id, 'hide');
   eq('the honest question is stored on a booth session', (await one('SELECT choice_id FROM answer WHERE session_id = ? AND question_id = ?', [id, okayQuestion.id])).choice_id, 'hide');
@@ -174,7 +174,7 @@ const checkinAnswers = ['d', 'b', 'c', 'b', 'b', 'b', 'd', 'c']; // the brief's 
   const put = async (i, choice) => {
     const sid = crypto.randomUUID();
     const at = new Date(base + i * 60_000).toISOString();
-    await c.execute({ sql: "INSERT INTO session (id, mode, festival, started_at, completed_at, booth_result) VALUES (?, 'booth', 'loykrathong', ?, ?, 'lotus')", args: [sid, at, at] });
+    await c.execute({ sql: "INSERT INTO session (id, mode, festival, started_at, completed_at, booth_result) VALUES (?, 'booth', 'loykrathong', ?, ?, 'hydrangea')", args: [sid, at, at] });
     await c.execute({ sql: 'INSERT INTO answer (session_id, question_id, choice_id, answered_at) VALUES (?, ?, ?, ?)', args: [sid, okayQuestion.id, choice, at] });
   };
   const now = base + 3_600_000;

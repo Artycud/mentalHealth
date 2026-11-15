@@ -17,7 +17,6 @@
 
 import type { ChoiceMark, FestivalId, Tint } from '@/lib/types';
 
-import { feelings } from './heart.ts';
 
 export interface FestivalTheme {
   id: FestivalId;
@@ -75,7 +74,7 @@ export const festivals: Record<FestivalId, FestivalTheme> = {
     },
     // The council's wording, kept as announced: students read it as 10 baht off.
     reward: {
-      lead: 'ใจวันนี้ได้ดอกไม้อะไร? เล่น 4 ข้อ รับเลย',
+      lead: 'ใจวันนี้ได้ดอกไม้อะไร? เล่น 5 ข้อ รับเลย',
       headline: 'คูปองลดไอศกรีม',
       amount: '10 บาทฟรี',
       extra: '+ ดอกไม้ไปแต่งกระทง',
@@ -117,228 +116,273 @@ export const boothQuizTitle = 'ใจวันนี้ ได้ดอกไม
 export const withDok = (name: string) => (name.startsWith('ดอก') ? name : `ดอก${name}`);
 
 /**
- * Loy Krathong flower results.
+ * The six feelings the booth can name, from the council's quiz (2026-11-16). Each
+ * answer in the quiz points at one of them, and the feeling with the most answers
+ * is the student's flower. Three are things to let float away with the krathong
+ * (sad, angry, worried); three are better passed on than thrown away (happy,
+ * excited, love), as มิลินท์ put it.
+ */
+export type Emotion = 'happy' | 'sad' | 'angry' | 'excited' | 'worried' | 'love';
+
+export const EMOTIONS: readonly Emotion[] = ['happy', 'sad', 'angry', 'excited', 'worried', 'love'];
+
+/** What one of the two levels says: a little of this feeling, or a lot. */
+export interface FlowerLevel {
+  /** The feeling at this strength, short, for the big word on the result ("เศร้านิด ๆ"). */
+  word: string;
+  /** A line for a heart like this. Never advice, never a verdict. */
+  body: string;
+}
+
+/**
+ * Loy Krathong flower results: one flower for each feeling, given by the student
+ * council (2026-11-16). Every line below is a DRAFT awaiting council review.
  *
- * The six the booth actually stocks, given by the student council. Every
- * `body`, `fact` and `wish` is a DRAFT awaiting council review. (ดาวเรือง's
- * `body` began as the line written in BRIEF §8; the council later asked for its
- * closing phrase "เหมือนคำตอบเมื่อกี้ของคุณเลย" to be removed from all six.)
+ * `fact` is one plainly true thing about the real flower; `release` is what the
+ * booth suggests doing with the feeling (let it float away, or pass it on); each
+ * flower has two `levels`, by how many of the five answers pointed at its feeling.
  *
- * Each flower is given FOR a feeling (see FEELING_FLOWERS below), so `body` says
- * which heart it is for. `fact` is one plainly true thing about the real flower,
- * and `wish` is a warm line in the booth's theme of letting go.
- *
- * Order and names may still change before the booth — the council said so
- * directly — so nothing else in the codebase should assume this order or count
- * beyond `loykrathongFlowers.length` and lookup-by-`id`.
+ * Lookup is by `id` or `emotion`; nothing should assume this order.
  */
 export interface Flower {
   id: string;
+  emotion: Emotion;
+  /** The feeling's own name ("ความเศร้า"). */
+  emotionWord: string;
   name: string;
   /** Which heart this flower is for ("สำหรับใจที่…"). */
   body: string;
+  /** A little of the feeling (1–2 of 5 answers), then a lot (3 or more). */
+  levels: [FlowerLevel, FlowerLevel];
+  /** Let it float away with the krathong, or pass it on. */
+  way: 'let-go' | 'pass-on';
+  /** What to do with it, said once, warmly. */
+  release: string;
   /** One true thing about the real flower. Small caption, never advice. */
   fact: string;
-  /** A short wish for the student. Draft — never advice. */
+  /** A short wish for the student. Draft, never advice. */
   wish: string;
   /** False while the name is a placeholder rather than a real flower. */
   named: boolean;
-  /**
-   * Ink pairing for the interim rosette (components/booth/WallFlower.tsx), picked
-   * so it does not contradict the flower's real colour: the palette has only
-   * pink, blue and the festival yellow, so this is as close as it gets. It goes
-   * away for a flower once that flower has its own illustration.
-   */
+  /** The flower's colours on the TV and the stock line (components/booth/flower-marks). */
   tint: Tint;
 }
 
 export const loykrathongFlowers: Flower[] = [
   {
-    id: 'lotus',
-    tint: 3, // pink with a yellow centre, like the real thing
-    name: 'ดอกบัว',
-    body: 'สำหรับใจที่แบกอะไรไว้เยอะ ให้มันค่อย ๆ ไหลผ่านไป',
-    fact: 'น้ำกลิ้งหลุดจากใบบัวได้ ไม่เปียกติด',
-    wish: 'ขอให้เรื่องที่หนักใจ ไหลผ่านไปเหมือนน้ำบนใบบัว',
+    id: 'sunflower',
+    emotion: 'happy',
+    emotionWord: 'ความสุข',
+    tint: 0,
+    name: 'ดอกทานตะวัน',
+    body: 'สำหรับใจที่มีความสุข',
+    levels: [
+      { word: 'สุขใจเล็ก ๆ', body: 'วันนี้มีเรื่องดี ๆ อยู่ในใจ เก็บไว้ให้ดี แล้วแบ่งให้คนข้าง ๆ บ้างนะ' },
+      { word: 'สุขใจเต็มที่', body: 'ใจคุณสว่างมากวันนี้ ความสุขแบบนี้ยิ่งแบ่ง ยิ่งเยอะ' },
+    ],
+    way: 'pass-on',
+    release: 'ความสุขไม่ต้องลอยทิ้ง ส่งต่อให้คนรอบตัวแทนนะ',
+    fact: 'ทานตะวันตอนยังตูม จะค่อย ๆ หันหน้าตามแสงแดด',
+    wish: 'ขอให้ความสุขของวันนี้ ส่องไปถึงคนรอบตัวด้วย',
     named: true,
   },
   {
-    id: 'crown-flower',
-    tint: 5, // blue over pink reads as the lilac of the common variety
-    name: 'ดอกรัก',
-    body: 'สำหรับใจที่เหนื่อย อยากพัก',
-    fact: 'ชื่อแปลว่า "รัก" ตรง ๆ เลย',
-    wish: 'ขอให้วันนี้ได้รักตัวเองเพิ่มอีกนิด',
+    id: 'hydrangea',
+    emotion: 'sad',
+    emotionWord: 'ความเศร้า',
+    tint: 1,
+    name: 'ไฮเดรนเยียสีฟ้า',
+    body: 'สำหรับใจที่เศร้าอยู่',
+    levels: [
+      { word: 'เศร้านิด ๆ', body: 'มีเรื่องที่ทำให้ใจหม่นอยู่บ้าง ไม่เป็นไรนะ ใจเราก็มีวันแบบนี้' },
+      { word: 'เศร้ามาก', body: 'ใจคุณแบกความเศร้าไว้เยอะ ไม่ต้องรีบหายก็ได้ ค่อย ๆ ปล่อยทีละนิด' },
+    ],
+    way: 'let-go',
+    release: 'ฝากความเศร้าลอยไปกับกระทงนะ',
+    fact: 'สีของไฮเดรนเยียเปลี่ยนตามดิน ดินที่เป็นกรดจะได้ดอกสีฟ้า',
+    wish: 'ขอให้วันที่ฟ้าครึ้ม ผ่านไปเร็ว ๆ',
     named: true,
   },
   {
-    id: 'globe-amaranth',
-    tint: 1, // magenta-purple, the usual colour of the globe
-    name: 'ดอกบานไม่รู้โรย',
-    body: 'สำหรับใจที่สบาย ๆ ให้อยู่แบบนี้ไปนาน ๆ',
-    fact: 'ตากแห้งเก็บไว้นานแค่ไหนก็ยังสีเดิม',
-    wish: 'ขอให้ความรู้สึกดี ๆ ของวันนี้อยู่กับคุณไปนาน ๆ',
-    named: true,
-  },
-  {
-    // BRIEF §8's written reference flower — id stays 'marigold' so
-    // app/(student)/booth/page.tsx can find it by id regardless of order.
-    id: 'marigold',
-    tint: 0, // the yellow-and-orange of the hand-drawn marigold
-    name: 'ดาวเรือง',
-    body: 'สำหรับใจที่มีแรงเต็มเปี่ยม',
-    fact: 'ปลูกง่าย ชอบแดดจัด ๆ',
-    wish: 'ขอให้มีแรงใจสู้แดดสู้ฝนไปได้อีกนาน',
-    named: true,
-  },
-  {
-    id: 'orchid',
+    id: 'red-rose',
+    emotion: 'angry',
+    emotionWord: 'ความโกรธ',
     tint: 2,
-    name: 'กล้วยไม้',
-    body: 'สำหรับใจที่เฉย ๆ ไม่ขึ้นไม่ลง',
-    fact: 'ดอกบานอยู่ได้นานหลายวัน บางชนิดหลายสัปดาห์',
-    wish: 'ขอให้ได้เป็นตัวเองในแบบที่ไม่เหมือนใคร',
+    name: 'กุหลาบแดงเข้ม',
+    body: 'สำหรับใจที่ขุ่นอยู่',
+    levels: [
+      { word: 'หงุดหงิดอยู่', body: 'มีเรื่องขุ่นใจค้างอยู่ โกรธได้ ไม่ผิดเลย แค่อย่าเก็บไว้นานนะ' },
+      { word: 'โกรธมาก', body: 'ความโกรธกำลังหนักในใจ ไม่ต้องเก็บไว้ทำร้ายตัวเอง' },
+    ],
+    way: 'let-go',
+    release: 'ปล่อยความโกรธลอยไปกับกระทง ใจจะได้เบาลง',
+    fact: 'หนามของกุหลาบช่วยกันไม่ให้สัตว์มากินต้น',
+    wish: 'ขอให้เรื่องที่ทำให้ขุ่นใจ ลอยห่างออกไปเรื่อย ๆ',
     named: true,
   },
   {
-    id: 'champak',
-    tint: 4, // yellow-orange, as champak is
-    name: 'จำปี',
-    body: 'สำหรับใจที่โอเค ไปได้เรื่อย ๆ',
-    fact: 'หอมแรง ได้กลิ่นตั้งแต่ไกล',
-    wish: 'ขอให้มีเรื่องดี ๆ ให้จำ มากกว่าเรื่องที่อยากลืม',
+    id: 'gerbera',
+    emotion: 'excited',
+    emotionWord: 'ความตื่นเต้น',
+    tint: 3,
+    name: 'เยอบีร่าสีส้ม',
+    body: 'สำหรับใจที่ตื่นเต้นกับสิ่งที่รออยู่',
+    levels: [
+      { word: 'ตื่นเต้นนิด ๆ', body: 'มีอะไรบางอย่างรออยู่ข้างหน้า ใจเลยเต้นแรงขึ้นนิดนึง' },
+      { word: 'ตื่นเต้นสุด ๆ', body: 'ใจคุณพร้อมพุ่งไปข้างหน้าเต็มที่ พลังแบบนี้มีค่ามาก' },
+    ],
+    way: 'pass-on',
+    release: 'พลังนี้ส่งต่อได้ ชวนเพื่อนไปด้วยกันนะ',
+    fact: 'เยอบีร่าหนึ่งดอก จริง ๆ คือดอกเล็ก ๆ หลายร้อยดอกรวมกัน',
+    wish: 'ขอให้สิ่งใหม่ที่รออยู่ เป็นเรื่องดี',
+    named: true,
+  },
+  {
+    id: 'lavender',
+    emotion: 'worried',
+    emotionWord: 'ความกังวล',
+    tint: 4,
+    name: 'ลาเวนเดอร์สีม่วง',
+    body: 'สำหรับใจที่กังวลอยู่',
+    levels: [
+      { word: 'กังวลอยู่บ้าง', body: 'มีเรื่องวนอยู่ในหัวบ้าง เป็นเรื่องปกติ ลองหายใจลึก ๆ สักที' },
+      { word: 'กังวลมาก', body: 'หัวคุณคิดไม่หยุดเลยตอนนี้ ไม่ต้องแก้ทุกเรื่องคืนนี้ก็ได้นะ' },
+    ],
+    way: 'let-go',
+    release: 'ฝากความกังวลลอยไปกับกระทง แล้วพักใจสักหน่อย',
+    fact: 'คนนิยมใช้กลิ่นลาเวนเดอร์ เวลาอยากผ่อนคลาย',
+    wish: 'ขอให้คืนนี้หลับสบาย ไม่มีเรื่องวนในหัว',
+    named: true,
+  },
+  {
+    id: 'pink-tulip',
+    emotion: 'love',
+    emotionWord: 'ความรัก',
+    tint: 5,
+    name: 'ทิวลิปสีชมพู',
+    body: 'สำหรับใจที่มีใครบางคนอยู่ในนั้น',
+    levels: [
+      { word: 'คิดถึงใครบางคน', body: 'มีใครบางคนอยู่ในใจ ความรู้สึกแบบนี้น่ารักดีนะ' },
+      { word: 'รักเต็มหัวใจ', body: 'ใจคุณเต็มไปด้วยความรัก เป็นเรื่องที่ดีมาก ๆ' },
+    ],
+    way: 'pass-on',
+    release: 'ความรักไม่ต้องลอยทิ้ง บอกคนที่คิดถึงสักคำนะ',
+    fact: 'ทิวลิปยังยืดตัวยาวขึ้นได้อีก แม้ตัดมาใส่แจกันแล้ว',
+    wish: 'ขอให้ความรู้สึกดี ๆ ไปถึงคนที่คุณคิดถึง',
     named: true,
   },
 ];
 
-/**
- * The booth quiz: how is your heart right now? DRAFT — awaiting council review.
- *
- * It used to be three personality questions ("เช้าวันหยุด อยากทำอะไร?"). The
- * council changed it (2026-11-12): the booth now asks about the feeling itself,
- * the same two things as the home's "ใจวันนี้" (content/th/heart.ts), so a
- * student who plays at the booth has already met the idea the main site is
- * built on. It is asked through things everyone knows:
- *
- *   ENERGY  a phone battery   ใกล้หมด · พอไหว · เต็มหลอด
- *   WEIGHT  a school bag      โล่ง · ปานกลาง · หนักอึ้ง
- *
- * On the kiosk both are asked on a jelly heart, dragged directly and sideways
- * for both (components/booth/HeartMeter): the first fills it with charge, the
- * second makes it heavy, drooping like a water balloon.
- *   TOPIC   what fills your head most, one of nine (tapped; never scored)
- *
- * Energy × weight is one of the home's nine feelings (สบาย ๆ … เครียด), and each
- * feeling has a flower "for that heart" (FEELING_FLOWERS below). On the kiosk the
- * two are drags that the picture follows; what is stored is which third the
- * finger ended in, as an ordinary choice id, so the phone, the server, the admin
- * and the recap read them like any other question.
- *
- * The flowers are physical, and how many of each go out now depends on how the
- * room feels, which nobody can balance in advance; the staff's stock line on the
- * kiosk is how the booth keeps an eye on it. `npm run check:booth` checks that
- * every flower can be reached and that only energy and weight decide it.
- */
-export type Axis = 'energy' | 'weight' | 'topic';
+/** The flower for a feeling. */
+export const flowerFor = (emotion: Emotion): Flower => loykrathongFlowers.find((f) => f.emotion === emotion)!;
 
-export type TopicIcon =
-  | 'study'
-  | 'friends'
-  | 'family'
-  | 'love'
-  | 'sleep'
-  | 'social'
-  | 'future'
-  | 'self'
-  | 'none';
+/**
+ * The booth quiz, from the student council (2026-11-16): five questions set on a
+ * Loy Krathong night, each with six answers, one for each feeling. The wording is
+ * the council's, shortened where a line was long to read standing in a queue;
+ * which feeling each answer points to is exactly theirs. The answer order is
+ * theirs too, so a feeling is never always in the same place.
+ *
+ * Every choice's `id` is its feeling, so what is stored ("q2" → "love") reads
+ * plainly in the admin panel and the recap.
+ *
+ * On the kiosk each answer is a slip of paper: tap it, or flick it up, and it
+ * floats away (components/booth/FloatChoices). `scene` is the small picture each
+ * question's slips carry. On a phone they are taps (app/(student)/booth).
+ */
+export type BoothScene = 'krathong' | 'candle' | 'drift' | 'sunrise' | 'river';
 
 export interface BoothChoice {
-  id: string;
+  id: Emotion;
   label: string;
-  /** Energy: 0 low … 2 full. Weight: 0 light … 2 heavy. Topic: unused. */
+  /** The answer's position in the council's list (ก = 0). Carries no meaning. */
   value: number;
   /** The picture beside the answer where it is a tap (the phone). Carries no meaning. */
   mark: ChoiceMark;
-  /** The topic's own picture, on the kiosk's grid. */
-  icon?: TopicIcon;
 }
 
 export interface BoothQuestion {
   id: string;
   headline: string;
   note: string;
-  /** What this question is about. */
-  axis: Axis;
+  scene: BoothScene;
   choices: BoothChoice[];
-  /**
-   * Asked as a drag on the kiosk. The three `anchors` are what the picture says
-   * as the finger moves through each third; the answer is the third it ends in.
-   */
-  meter?: {
-    hint: string;
-    /** On the heart until it is touched: which way to drag. */
-    drag: string;
-    ends: { low: string; high: string };
-    anchors: [string, string, string];
-    go: string;
-  };
 }
+
+const MARKS: ChoiceMark[] = ['circle', 'square', 'leaf', 'drop', 'circle', 'square'];
+const choices = (list: [Emotion, string][]): BoothChoice[] =>
+  list.map(([id, label], i) => ({ id, label, value: i, mark: MARKS[i] }));
 
 export const loykrathongQuiz: BoothQuestion[] = [
   {
-    id: 'energy',
-    axis: 'energy',
-    note: 'ข้อ 1 · ไม่มีถูกผิด',
-    // Word joiners (U+2060) hold "แบตมือถือ" together: the browser's Thai
-    // dictionary splits it ("แบ|ต", "มือ|ถือ").
-    headline: 'ถ้าใจเป็นแบ\u2060ต\u2060มือ\u2060ถือ ตอนนี้เหลือเท่าไหร่?',
-    meter: {
-      hint: 'ลากหัวใจไปซ้าย–ขวา เติมแบ\u2060ตให้ตรงกับใจตอนนี้',
-      drag: 'ลากหัวใจ ← →',
-      ends: { low: 'ใกล้หมด', high: 'เต็มหลอด' },
-      anchors: ['เปิดโหมดประหยัดพลังงานอยู่', 'ใช้ได้ แต่อย่าเพิ่งเปิดอะไรหนัก ๆ', 'ชาร์จเต็ม พร้อมลุย'],
-      go: 'ประมาณนี้แหละ',
-    },
-    choices: [
-      { id: 'low', label: 'แบตใกล้หมด', value: 0, mark: 'circle' },
-      { id: 'mid', label: 'แบตพอไหว', value: 1, mark: 'square' },
-      { id: 'high', label: 'แบตเต็มหลอด', value: 2, mark: 'leaf' },
-    ],
+    id: 'q1',
+    scene: 'krathong',
+    note: 'ข้อ 1 จาก 5 · ไม่มีถูกผิด',
+    headline: 'คืนนี้ลอยกระทง อยากฝากอะไร ลอยไปด้วย?',
+    choices: choices([
+      ['sad', 'ความทุกข์ใจ'],
+      ['happy', 'คำขอบคุณ'],
+      ['angry', 'ความแค้น'],
+      ['excited', 'ความคาดหวัง'],
+      ['worried', 'ความเครียด'],
+      ['love', 'ความห่วงใย'],
+    ]),
   },
   {
-    id: 'weight',
-    axis: 'weight',
-    note: 'ข้อ 2 · ไม่มีถูกผิด',
-    headline: 'เรื่องที่แบกอยู่ในหัววันนี้ หนักแค่ไหน?',
-    meter: {
-      hint: 'ลากหัวใจไปทางขวา ยิ่งหนัก หัวใจยิ่งถ่วงลง',
-      drag: 'ลากหัวใจ ← →',
-      ends: { low: 'โล่ง', high: 'หนักอึ้ง' },
-      anchors: ['เหมือนกระเป๋าวันไม่มีเรียน', 'เหมือนกระเป๋าวันธรรมดา', 'เหมือนกระเป๋าวันสอบ ครบทุกวิชา'],
-      go: 'ประมาณนี้แหละ',
-    },
-    choices: [
-      { id: 'light', label: 'ใจโล่ง', value: 0, mark: 'drop' },
-      { id: 'mid', label: 'หนักปานกลาง', value: 1, mark: 'square' },
-      { id: 'heavy', label: 'หนักอึ้ง', value: 2, mark: 'circle' },
-    ],
+    id: 'q2',
+    scene: 'candle',
+    note: 'ข้อ 2 จาก 5',
+    headline: 'จุดเทียนอธิษฐาน ขอพรว่าอะไร?',
+    choices: choices([
+      ['angry', 'ให้คนที่ทำเราเจ็บ หายไปเสียที'],
+      ['love', 'ให้สมหวังในความรัก'],
+      ['sad', 'ให้ใครบางคนกลับมาหาเรา'],
+      ['excited', 'ให้ได้เจอสิ่งใหม่ ๆ'],
+      ['worried', 'ให้งานเสร็จสักที'],
+      ['happy', 'ให้ตัวเองมีความสุข'],
+    ]),
   },
   {
-    id: 'topic',
-    axis: 'topic',
-    note: 'ข้อ 3 · เลือกอันที่ใช่ที่สุดอันเดียว',
-    headline: 'ตอนนี้อะไรอยู่ในหัว เยอะที่สุด?',
-    choices: [
-      { id: 'study', label: 'เรื่องเรียน', value: 0, mark: 'square', icon: 'study' },
-      { id: 'friends', label: 'เพื่อน', value: 1, mark: 'circle', icon: 'friends' },
-      { id: 'family', label: 'ที่บ้าน', value: 2, mark: 'leaf', icon: 'family' },
-      { id: 'love', label: 'ความรัก', value: 3, mark: 'drop', icon: 'love' },
-      { id: 'sleep', label: 'การนอน', value: 4, mark: 'circle', icon: 'sleep' },
-      { id: 'social', label: 'โซเชียล', value: 5, mark: 'square', icon: 'social' },
-      { id: 'future', label: 'อนาคต', value: 6, mark: 'leaf', icon: 'future' },
-      { id: 'self', label: 'ตัวเอง', value: 7, mark: 'drop', icon: 'self' },
-      { id: 'none', label: 'ไม่มีอะไรเป็นพิเศษ', value: 8, mark: 'circle', icon: 'none' },
-    ],
+    id: 'q3',
+    scene: 'drift',
+    note: 'ข้อ 3 จาก 5',
+    headline: 'มองกระทงลอยห่างออกไป ใจรู้สึกยังไง?',
+    choices: choices([
+      ['happy', 'โล่ง ใจเบา ยิ้มออก'],
+      ['angry', 'ยังขุ่น อยากให้ลอยพ้นตาไปสักที'],
+      ['sad', 'ใจหาย อยากให้ลอยกลับมา'],
+      ['excited', 'จะลอยไปไกลแค่ไหนนะ'],
+      ['worried', 'จะจมมั้ยหว่า'],
+      ['love', 'ลอยไปหาคนที่คิดถึงด้วยนะ'],
+    ]),
+  },
+  {
+    id: 'q4',
+    scene: 'sunrise',
+    note: 'ข้อ 4 จาก 5',
+    headline: 'ตื่นมาพรุ่งนี้ เปลี่ยนได้หนึ่งอย่าง อยากให้เป็นอะไร?',
+    choices: choices([
+      ['angry', 'ความเกลียดชังหายไป'],
+      ['sad', 'ใจไม่หนักกับเรื่องที่แบกอยู่'],
+      ['happy', 'ทุกคนตื่นมามีความสุข'],
+      ['excited', 'มีโอกาสใหม่ ๆ รออยู่'],
+      ['worried', 'ปัญหาและความเครียดหายไป'],
+      ['love', 'คนที่รักอยู่ด้วยกันไปตลอด'],
+    ]),
+  },
+  {
+    id: 'q5',
+    scene: 'river',
+    note: 'ข้อ 5 จาก 5 · ข้อสุดท้าย',
+    headline: 'นั่งริมแม่น้ำเงียบ ๆ คนเดียว จะคิดถึงอะไร?',
+    choices: choices([
+      ['happy', 'ช่วงเวลาดี ๆ ที่ผ่านมา'],
+      ['angry', 'เรื่องที่ไม่พอใจ วนซ้ำไปมา'],
+      ['sad', 'ช่วงเวลาที่ย้อนกลับไปไม่ได้'],
+      ['excited', 'แผนที่อยากทำวันต่อไป'],
+      ['worried', 'ฟุ้งซ่าน คิดไปทุกเรื่อง'],
+      ['love', 'ใจลอยไปหาใครบางคน'],
+    ]),
   },
 ];
 
@@ -352,22 +396,14 @@ export interface OkayQuestion {
 }
 
 /**
- * The booth's one honest question, asked after the feeling questions.
- *
- * The booth is the quick, in-event part of the week, and its one idea is that
- * looking okay and being okay are not the same thing, and both are normal. This
- * asks it lightly, about a habit ("what do you usually answer?") rather than a
- * state, so it never reads as a screening item (BRIEF §12).
- *
- * It is never scored: the flower comes from energy and weight only. It is stored
- * like any other answer (an anonymous choice id), and the TV shows only a guarded
- * total of it (lib/booth-wall.ts). DRAFT copy, for council review.
+ * The honest "โอเคไหม" question. NO LONGER ASKED (2026-11-16): the council's
+ * five questions replaced the whole quiz. Kept so answers stored before then
+ * still read correctly in the admin panel, the recap and the TV's guarded total
+ * (lib/booth-wall.ts), which simply stays hidden while nobody answers it.
  */
 export const okayQuestion: OkayQuestion = {
   id: 'ok',
   note: 'ข้อสุดท้าย · ไม่มีผลกับดอกไม้',
-  // A word joiner (U+2060) inside "โอเคไหม", so a line never breaks between โอเค
-  // and ไหม: Thai has no spaces, and the browser's dictionary sees two words.
   headline: 'ถ้ามีคนถามว่า "โอเค⁠ไหม" ปกติคุณตอบว่า...',
   choices: [
     { id: 'real', label: 'โอเค และโอเคจริง ๆ', mark: 'circle' },
@@ -381,19 +417,6 @@ export const isOkayChoice = (id: string): id is OkayChoiceId =>
   okayQuestion.choices.some((c) => c.id === id);
 
 /**
- * What the result says back to that answer. Every answer gets a warm line, so
- * none of them is the "wrong" one, and none of them is a verdict. DRAFT.
- */
-export const okayReply: Record<OkayChoiceId, string> = {
-  real: 'ดีใจด้วยนะ วันนี้ลองถามเพื่อนข้าง ๆ ดูบ้าง ว่าเขาโอเคจริงไหม',
-  hide: 'หลายคนก็ตอบแบบนี้ ไม่โอเคก็ได้นะ เป็นเรื่องปกติมาก ๆ',
-  depends: 'แปลว่าคุณรู้ว่าพูดกับใครได้ ถ้ายังไม่มีใครแบบนั้น ก็ไม่เป็นไรนะ',
-};
-
-/** The label above okayReply on a result. */
-export const okayReplyLabel = 'เรื่อง "โอเคไหม"';
-
-/**
  * The bridge from the booth to the main site, shown beside a QR code on the TV and
  * on the kiosk's result. The booth is the quick part; the deeper questions are on
  * the site, for later, in a student's own time.
@@ -403,81 +426,68 @@ export const qrInvite = {
   body: 'สแกนเก็บไว้ เช็กใจตอนว่าง ๆ',
 } as const;
 
-/** One answer, as the kiosk holds it while the student plays. */
-export interface BoothAnswer {
-  axis: Axis;
-  value: number;
+/** One stored answer: a question and the choice picked. */
+export interface BoothPick {
+  questionId: string;
+  choiceId: string;
 }
 
-/**
- * The flower for each of the nine feelings. Rows are weight (light, in between,
- * heavy), columns are energy (low, in between, full) — the same grid as
- * content/th/heart.ts `feelings`. Each flower's `body` says which heart it is for.
- *
- *                  low energy        in between      full
- *     light        บานไม่รู้โรย       จำปี             ดาวเรือง
- *                  (สบาย ๆ)          (โอเคดี)        (ใจฟู)
- *     in between   ดอกรัก            กล้วยไม้          ดาวเรือง
- *                  (เนือย ๆ)          (เฉย ๆ)         (ฟุ้ง ๆ)
- *     heavy        ดอกรัก            ดอกบัว           ดอกบัว
- *                  (เหนื่อยใจ)         (หนัก ๆ)         (เครียด)
- */
-const FEELING_FLOWERS: string[][] = [
-  ['globe-amaranth', 'champak', 'marigold'],
-  ['crown-flower', 'orchid', 'marigold'],
-  ['crown-flower', 'lotus', 'lotus'],
-];
-
-const level = (answers: BoothAnswer[], axis: Axis) =>
-  Math.max(0, Math.min(2, answers.find((a) => a.axis === axis)?.value ?? 1));
-
-/** Which of the nine feelings (content/th/heart.ts) a set of answers is. */
-export function feelingCell(answers: BoothAnswer[]): { row: number; col: number } {
-  return { row: level(answers, 'weight'), col: level(answers, 'energy') };
+/** A booth result: the flower, how strong the feeling was, and how each feeling scored. */
+export interface BoothResult {
+  flower: Flower;
+  /** 0 a little (1–2 of 5 answers), 1 a lot (3 or more). */
+  level: 0 | 1;
+  /** How many of the answers pointed at this feeling. */
+  score: number;
+  /** How many questions there were. */
+  of: number;
+  scores: Record<Emotion, number>;
 }
 
-/** The feeling's word and message, from the home's own nine. */
-export function feelingFromAnswers(answers: BoothAnswer[]) {
-  const { row, col } = feelingCell(answers);
-  return feelings[row][col];
-}
-
-/**
- * The flower for a set of answers. Deterministic, so the server can recompute
- * it from stored answers (§3) and never has to trust the client.
- */
-export function flowerFromAnswers(answers: BoothAnswer[]): Flower {
-  const { row, col } = feelingCell(answers);
-  const id = FEELING_FLOWERS[row][col];
-  return loykrathongFlowers.find((f) => f.id === id) ?? loykrathongFlowers[0];
-}
-
-/** Stored answers (question id + choice id) back to the kiosk's own form, or null if incomplete. */
-export function answersFromChoices(pairs: { questionId: string; choiceId: string }[]): BoothAnswer[] | null {
-  // The honest question (okayQuestion) is stored with the rest but never scored.
-  const scored = pairs.filter((p) => p.questionId !== okayQuestion.id);
-  if (scored.length !== loykrathongQuiz.length) return null;
-  const answers: BoothAnswer[] = [];
+/** The answers as one feeling per question, in quiz order, or null unless each was answered once. */
+export function emotionsFromChoices(pairs: BoothPick[]): Emotion[] | null {
+  const picks: Emotion[] = [];
   for (const question of loykrathongQuiz) {
-    const matches = scored.filter((p) => p.questionId === question.id);
+    const matches = pairs.filter((p) => p.questionId === question.id);
     if (matches.length !== 1) return null;
     const choice = question.choices.find((c) => c.id === matches[0].choiceId);
     if (!choice) return null;
-    answers.push({ axis: question.axis, value: choice.value });
+    picks.push(choice.id);
   }
-  return answers;
+  return picks;
+}
+
+/** Three or more of five answers for one feeling is the strong level. */
+export const STRONG_FROM = 3;
+
+/**
+ * The result for a set of answers. Deterministic, so the server can recompute it
+ * from what it stored (BRIEF §3) and never has to trust the client.
+ *
+ * The feeling with the most answers wins. On a tie, the one answered LATEST wins:
+ * the later questions (by the river, alone) are the most telling.
+ */
+export function resultFromEmotions(picks: Emotion[]): BoothResult {
+  const scores = Object.fromEntries(EMOTIONS.map((e) => [e, 0])) as Record<Emotion, number>;
+  for (const e of picks) scores[e] += 1;
+  const top = Math.max(...EMOTIONS.map((e) => scores[e]));
+  const winner = [...picks].reverse().find((e) => scores[e] === top) ?? picks[picks.length - 1];
+  return { flower: flowerFor(winner), level: top >= STRONG_FROM ? 1 : 0, score: top, of: picks.length, scores };
+}
+
+/** The result for stored answers, or null unless every quiz question is answered once. */
+export function resultFromChoices(pairs: BoothPick[]): BoothResult | null {
+  const picks = emotionsFromChoices(pairs);
+  return picks ? resultFromEmotions(picks) : null;
 }
 
 /**
  * The flower for a set of stored answers (question id + choice id). This is what
- * the server runs to recompute a booth result from what it saved (BRIEF §3), and
- * what the phone runs to show one. Returns null unless every quiz question is
- * answered exactly once with a choice that exists. An answer to okayQuestion may be
- * among the pairs and is ignored.
+ * the server runs to recompute a booth result from what it saved (BRIEF §3).
+ * Answers to questions outside the quiz (the old okayQuestion) are ignored.
  */
-export function flowerFromChoices(pairs: { questionId: string; choiceId: string }[]): Flower | null {
-  const answers = answersFromChoices(pairs);
-  return answers ? flowerFromAnswers(answers) : null;
+export function flowerFromChoices(pairs: BoothPick[]): Flower | null {
+  return resultFromChoices(pairs)?.flower ?? null;
 }
 
 /**
@@ -514,7 +524,7 @@ export const tv = {
    */
   hook: {
     flowerOnly: {
-      lead: 'เล่น 4 ข้อ รับเลย',
+      lead: 'เล่น 5 ข้อ รับเลย',
       headline: 'ใจวันนี้ ได้ดอกไม้อะไร?',
       amount: 'รับดอกไม้ฟรี',
       extra: 'ไปแต่งกระทง',
@@ -553,15 +563,18 @@ export const tv = {
 /** Copy for the kiosk, which is read standing up by a queue. */
 export const kiosk = {
   idleTitle: 'ใจวันนี้ ได้ดอกไม้อะไร?',
-  idleBody: 'ลากหัวใจ เติมแบต ใส่ความหนัก แล้วดูว่าใจวันนี้ได้ดอกไม้อะไร เอาไปแต่งกระทงได้เลย',
+  idleBody: 'ตอบ 5 ข้อสั้น ๆ คืนลอยกระทง แล้วดูว่าใจวันนี้ได้ดอกไม้อะไร เอาไปแต่งกระทงได้เลย',
   idleAction: 'เริ่มเลย',
   resultNote: 'ใจวันนี้ของคุณ',
   /** Above the flower's name on the result. */
   flowerFor: 'ดอกไม้สำหรับใจนี้',
-  /** While dragging the bag: the heart so far. */
-  liveHeart: 'ใจตอนนี้',
-  /** Under a disabled "next" until the meter has been touched. */
-  touchFirst: 'ลากหรือแตะที่หัวใจก่อนนะ',
+  /** Under each question: how to answer. */
+  floatHint: 'แตะ หรือปัดขึ้น ให้คำตอบลอยไป',
+  /** The result: how many answers pointed at the feeling. */
+  scoreLine: (n: number, of: number) => `${n} จาก ${of} คำตอบบอกแบบนี้`,
+  /** Above the release line: let it float away, or pass it on. */
+  letGo: 'ลอยมันไปกับกระทง',
+  passOn: 'ส่งต่อให้คนอื่น',
   wishLabel: 'คำอวยพรจากดอกไม้',
   ticketTitle: 'โชว์หน้านี้ที่บูธ',
   /** Staff hold the iPad: after a result, they tap this for the next student. */

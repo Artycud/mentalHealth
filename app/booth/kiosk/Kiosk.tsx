@@ -4,13 +4,11 @@ import { useRouter } from 'next/navigation';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import { IdleBackdrop } from '@/components/booth/art';
-import { ChoiceMark } from '@/components/booth/ChoiceMark';
+import { FloatChoices } from '@/components/booth/FloatChoices';
 import { FlowerArt } from '@/components/booth/FlowerArt';
-import { HeartMeter, third } from '@/components/booth/HeartMeter';
-import { chargeCss, JellyHeart, type HeartPoke } from '@/components/booth/JellyHeart';
+import { tintInk, tintText } from '@/components/booth/flower-marks';
 import { KeepAwake } from '@/components/booth/KeepAwake';
 import { QrCode } from '@/components/booth/QrCode';
-import { TopicIcon } from '@/components/booth/TopicIcon';
 import { WallFlower } from '@/components/booth/WallFlower';
 import {
   FestivalHero,
@@ -19,26 +17,19 @@ import {
   FestivalSky,
   hasFestivalHero,
 } from '@/components/festival/registry';
-import { BackChevron, CheckBadge, Wordmark } from '@/components/illustrations/icons';
+import { BackChevron, Wordmark } from '@/components/illustrations/icons';
 import { BoothMarigold } from '@/components/illustrations/scenes';
 import {
-  feelingCell,
-  feelingFromAnswers,
-  flowerFromAnswers,
   kiosk,
   loykrathongQuiz,
-  okayQuestion,
-  okayReply,
-  okayReplyLabel,
   qrInvite,
+  resultFromChoices,
   withDok,
-  type BoothAnswer,
+  type BoothPick,
   type FestivalTheme,
-  type OkayChoiceId,
   type Reward,
 } from '@/content/th/booth';
 import { common, cudCare } from '@/content/th/common';
-import { feelings } from '@/content/th/heart';
 import type { EventText } from '@/lib/events';
 import { createTracker, type Tracker } from '@/lib/track';
 import type { Tint } from '@/lib/types';
@@ -48,8 +39,8 @@ import styles from './kiosk.module.css';
 type Stage =
   | { kind: 'idle' }
   /** `dir` is which way the last move went, so the slide can follow it. */
-  | { kind: 'quiz'; step: number; answers: BoothAnswer[]; dir: 1 | -1 }
-  | { kind: 'result'; answers: BoothAnswer[]; okay: OkayChoiceId };
+  | { kind: 'quiz'; step: number; picks: BoothPick[]; dir: 1 | -1 }
+  | { kind: 'result'; picks: BoothPick[] };
 
 /** Today's count of one flower, for the staff's stock line on the idle screen. */
 export interface StockLine {
@@ -59,27 +50,21 @@ export interface StockLine {
   count: number;
 }
 
-/** How long a tapped answer stays visibly selected before the next question. */
-const SELECT_MS = 260;
+/** How long a chosen slip takes to float away before the next question. */
+const FLOAT_MS = 820;
 
-/** The feeling questions, then the honest one (never scored). */
-const STEPS = loykrathongQuiz.length + 1;
-const OKAY_STEP = loykrathongQuiz.length;
-
-/** A meter starts in the middle, untouched. */
-const FRESH = { v: 0.5, touched: false };
+const STEPS = loykrathongQuiz.length;
 
 /**
  * The booth kiosk: the one iPad at the booth. Staff hold it, hand it to each
  * student, and take it back to give out the flower.
  *
- * It asks how the student's heart is right now, the way the home's "ใจวันนี้"
- * does, on the home's own jelly heart, dragged directly: sideways fills it with
- * charge like a phone battery, down makes it heavy like a school bag on exam day.
- * It is alive the whole time and says what that much feels like, so there is
- * nothing to explain (components/booth/HeartMeter). Then
- * one tap for what fills their head, and the honest "โอเคไหม". The result names
- * the feeling (one of the home's nine) and gives the flower for that heart.
+ * It asks the student council's five questions, set on a Loy Krathong night
+ * (content/th/booth.ts). Each answer is a slip of paper: tap it or flick it up,
+ * and it floats away before the next question comes in (components/booth/
+ * FloatChoices). The result names the feeling most of the answers pointed at, at
+ * one of two strengths, and the flower for it: one to let float away with the
+ * krathong, or one to pass on.
  *
  * What follows from being a shared device:
  *  - It must always return to a clean start. Staff tap "คนต่อไป"; if nobody does,
@@ -108,15 +93,8 @@ export function Kiosk({
   const router = useRouter();
   const [stage, setStage] = useState<Stage>({ kind: 'idle' });
   const [remaining, setRemaining] = useState<number>(kiosk.resetSeconds);
-  /** The answer just tapped, held on screen for SELECT_MS before moving on. */
+  /** The slip just chosen, floating away for FLOAT_MS before the next question. */
   const [picked, setPicked] = useState<string | null>(null);
-  /** The current drag question's position (0 → 1) and whether it has been touched. */
-  const [meter, setMeter] = useState(FRESH);
-  /** Where each drag ended, so the heart the student made stays exactly as they made it. */
-  const [energyLevel, setEnergyLevel] = useState(0.5);
-  const [weightLevel, setWeightLevel] = useState(0.5);
-  /** A hand on the small heart beside the later questions: it gives a pop on each tap. */
-  const sidePoke = useRef<HeartPoke>({ dragging: false, angle: 0, pops: 0 });
   const headingRef = useRef<HTMLHeadingElement>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // One per student. It starts when they press start and is dropped on reset, so
@@ -140,7 +118,6 @@ export function Kiosk({
     clearTimeout(advance.current);
     tracker.current = null;
     setPicked(null);
-    setMeter(FRESH);
     setStage({ kind: 'idle' });
     // A moment later, so the result just sent has reached the server first.
     setTimeout(() => void refreshStock(), 1200);
@@ -148,10 +125,10 @@ export function Kiosk({
 
   /** Entering the result also arms the countdown, so the effect below only ever
    *  runs the timer. */
-  const finish = useCallback((answers: BoothAnswer[], okay: OkayChoiceId) => {
+  const finish = useCallback((picks: BoothPick[]) => {
     tracker.current?.complete();
     setRemaining(kiosk.resetSeconds);
-    setStage({ kind: 'result', answers, okay });
+    setStage({ kind: 'result', picks });
   }, []);
 
   // Auto-reset the result for the next student, if staff have not already.
@@ -194,14 +171,13 @@ export function Kiosk({
             onClick={() => {
               clearTimeout(advance.current);
               setPicked(null);
-              setMeter(FRESH);
               if (stage.step === 0) {
                 reset();
               } else {
                 setStage({
                   kind: 'quiz',
                   step: stage.step - 1,
-                  answers: stage.answers.slice(0, stage.step - 1),
+                  picks: stage.picks.slice(0, stage.step - 1),
                   dir: -1,
                 });
               }
@@ -265,8 +241,7 @@ export function Kiosk({
               onClick={() => {
                 tracker.current = createTracker('booth');
                 tracker.current.start();
-                setMeter(FRESH);
-                setStage({ kind: 'quiz', step: 0, answers: [], dir: 1 });
+                setStage({ kind: 'quiz', step: 0, picks: [], dir: 1 });
               }}
             >
               {kiosk.idleAction}
@@ -321,32 +296,20 @@ export function Kiosk({
   }
 
   if (stage.kind === 'quiz') {
-    const isOkay = stage.step === OKAY_STEP;
-    const question = isOkay ? okayQuestion : loykrathongQuiz[stage.step];
-    const quizQ = isOkay ? null : loykrathongQuiz[stage.step];
-    const energyAnswer = stage.answers.find((a) => a.axis === 'energy');
-    const weightAnswer = stage.answers.find((a) => a.axis === 'weight');
+    const question = loykrathongQuiz[stage.step];
 
-    /** Record an answer and move on (or finish, after the honest question). */
-    const answer = (choiceId: string, value: number) => {
+    /** The slip chosen: it floats away, then the next question (or the result). */
+    const choose = (choiceId: string) => {
+      if (picked) return; // one answer per question
+      setPicked(choiceId);
       tracker.current?.answer(question.id, choiceId);
-      if (isOkay) {
-        finish(stage.answers, choiceId as OkayChoiceId);
-        return;
-      }
-      const answers = [...stage.answers, { axis: quizQ!.axis, value }];
-      setMeter(FRESH);
-      setStage({ kind: 'quiz', step: stage.step + 1, answers, dir: 1 });
+      const picks = [...stage.picks, { questionId: question.id, choiceId }];
+      advance.current = setTimeout(() => {
+        setPicked(null);
+        if (stage.step === STEPS - 1) finish(picks);
+        else setStage({ kind: 'quiz', step: stage.step + 1, picks, dir: 1 });
+      }, FLOAT_MS);
     };
-
-    // The feeling so far, in words: live while the weight is dragged.
-    const live =
-      quizQ?.axis === 'weight' && energyAnswer
-        ? { colour: chargeCss(energyLevel, meter.v), word: feelings[third(meter.v)][energyAnswer.value].word }
-        : null;
-    // Once both are answered: the feeling the student made.
-    const cellMade = energyAnswer && weightAnswer ? feelingCell(stage.answers) : null;
-    const made = cellMade ? feelings[cellMade.row][cellMade.col] : null;
 
     return (
       <main className={styles.stage} data-festival={theme.id}>
@@ -360,129 +323,26 @@ export function Kiosk({
             <h1 className={styles.headline} tabIndex={-1} ref={headingRef}>
               <Phrases text={question.headline} />
             </h1>
-            {quizQ?.meter && (
-              <p className={styles.hint}>
-                <Phrases text={quizQ.meter.hint} />
-              </p>
-            )}
-            {live && (
-              <p className={styles.liveWord}>
-                {kiosk.liveHeart}
-                <span className={styles.chip} style={{ '--mood': live.colour } as CSSProperties}>
-                  {live.word}
-                </span>
-              </p>
-            )}
-            {/* Once both are answered, the heart the student made stays with them,
-                face and all, for the rest of the questions. */}
-            {made && (
-              <div className={styles.sideHeart}>
-                <div className={styles.sideHeartArt}>
-                  <JellyHeart energy={energyLevel} weight={weightLevel} poke={sidePoke} />
-                </div>
-                <span className={styles.chip} style={{ '--mood': chargeCss(energyLevel, weightLevel) } as CSSProperties}>
-                  {made.word}
-                </span>
-              </div>
-            )}
+            <p className={styles.hint}>{kiosk.floatHint}</p>
           </div>
 
-          {quizQ?.meter ? (
-            // A drag on the heart itself; "next" once it has been touched.
-            <div className={styles.meterSide}>
-              <HeartMeter
-                axis={quizQ.axis === 'weight' ? 'weight' : 'energy'}
-                value={meter.v}
-                energy={energyLevel}
-                touched={meter.touched}
-                onChange={(v) => setMeter({ v, touched: true })}
-                ends={quizQ.meter.ends}
-                anchors={quizQ.meter.anchors}
-                label={quizQ.headline}
-                dragMe={quizQ.meter.drag}
-              />
-              <button
-                type="button"
-                className={styles.next}
-                disabled={!meter.touched}
-                onClick={() => {
-                  const choice = quizQ.choices[third(meter.v)];
-                  if (quizQ.axis === 'energy') setEnergyLevel(meter.v);
-                  if (quizQ.axis === 'weight') setWeightLevel(meter.v);
-                  answer(choice.id, choice.value);
-                }}
-              >
-                {meter.touched ? quizQ.meter.go : kiosk.touchFirst}
-              </button>
-            </div>
-          ) : quizQ?.axis === 'topic' ? (
-            // One tap on a picture.
-            <div className={styles.topics}>
-              {quizQ.choices.map((choice) => {
-                const isPicked = picked === choice.id;
-                return (
-                  <button
-                    key={choice.id}
-                    type="button"
-                    aria-pressed={isPicked}
-                    className={`${styles.topic} ${isPicked ? styles.picked : ''}`}
-                    onClick={() => {
-                      if (picked) return; // one tap per question
-                      setPicked(choice.id);
-                      sidePoke.current.pops += 1; // the heart takes it in
-                      advance.current = setTimeout(() => {
-                        setPicked(null);
-                        answer(choice.id, choice.value);
-                      }, SELECT_MS);
-                    }}
-                  >
-                    {choice.icon && <TopicIcon icon={choice.icon} />}
-                    <span className={styles.topicLabel}>{choice.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className={styles.answers}>
-              {question.choices.map((choice) => {
-                const isPicked = picked === choice.id;
-                return (
-                  <button
-                    key={choice.id}
-                    type="button"
-                    aria-pressed={isPicked}
-                    className={`${styles.answer} ${isPicked ? styles.picked : ''}`}
-                    onClick={() => {
-                      if (picked) return; // one tap per question
-                      setPicked(choice.id);
-                      sidePoke.current.pops += 1;
-                      advance.current = setTimeout(() => {
-                        setPicked(null);
-                        answer(choice.id, 0);
-                      }, SELECT_MS);
-                    }}
-                  >
-                    <ChoiceMark mark={choice.mark} />
-                    <span className={styles.answerLabel}>{choice.label}</span>
-                    {/* The badge's space is always reserved, so nothing reflows. */}
-                    <span className={styles.tick} aria-hidden="true">
-                      <span className={styles.tickBadge}>
-                        <CheckBadge />
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <FloatChoices
+            choices={question.choices}
+            scene={question.scene}
+            picked={picked}
+            onPick={choose}
+            label={question.headline}
+          />
         </div>
         {foot(<span>{event.date}</span>)}
       </main>
     );
   }
 
-  const flower = flowerFromAnswers(stage.answers);
-  const feeling = feelingFromAnswers(stage.answers);
+  const result = resultFromChoices(stage.picks)!;
+  const { flower } = result;
+  const level = flower.levels[result.level];
+  const ink = tintInk(flower.tint);
 
   return (
     // Any touch on the result restarts the countdown: a student still reading
@@ -517,15 +377,17 @@ export function Kiosk({
       <div className={styles.scene}>
         <section className={`${styles.sceneSide} ${styles.rise}`}>
           <p className={styles.sceneLabel}>{kiosk.resultNote}</p>
+          {/* How strongly: one petal for each answer that pointed at this feeling. */}
           <div className={styles.resultHeart}>
-            <JellyHeart energy={energyLevel} weight={weightLevel} label={feeling.word} />
+            <ScorePetals score={result.score} of={result.of} ink={ink} label={kiosk.scoreLine(result.score, result.of)} />
           </div>
           <p className={styles.feelingWord}>
-            <span className={styles.chip} style={{ '--mood': chargeCss(energyLevel, weightLevel) } as CSSProperties}>
-              {feeling.word}
+            <span className={styles.chip} style={{ '--mood': ink, '--mood-ink': tintText(flower.tint) } as CSSProperties}>
+              {level.word}
             </span>
           </p>
-          <p className={styles.feelingMessage}>{feeling.message}</p>
+          <p className={styles.feelingMessage}>{level.body}</p>
+          <p className={styles.scoreLine}>{kiosk.scoreLine(result.score, result.of)}</p>
         </section>
 
         <div className={`${styles.bridge} ${styles.rise}`} aria-hidden="true">
@@ -562,19 +424,22 @@ export function Kiosk({
             </FestivalOffering>
           </div>
           <h1 className={styles.flowerName}>{flower.name}</h1>
-          <p className={styles.flowerBody}>{flower.body}</p>
+          <p className={styles.flowerBody}>
+            <span className={styles.way}>{flower.way === 'let-go' ? kiosk.letGo : kiosk.passOn}</span>
+            {flower.release}
+          </p>
           {/* For the staff: what to hand over. */}
           <p className={styles.take}>
-            {kiosk.ticketTitle} · รับ{withDok(flower.name)}ไปแต่งกระทงได้เลย
+            รับ{withDok(flower.name)}ไปแต่งกระทงได้เลย
           </p>
         </section>
       </div>
 
       <div className={`${styles.resultFoot} ${styles.rise}`}>
-        {/* The honest question, answered back warmly, with a route to CUD Care. */}
+        {/* The flower's wish, warmly, with a route to CUD Care. */}
         <div className={styles.reply}>
-          <span className={styles.replyLabel}>{okayReplyLabel}</span>
-          <span className={styles.replyText}>{okayReply[stage.okay]}</span>
+          <span className={styles.replyLabel}>{kiosk.wishLabel}</span>
+          <span className={styles.replyText}>{flower.wish}</span>
           <span className={styles.care}>{cudCare.result.body}</span>
         </div>
         {/* The bridge to the main site, for later: white only behind the code. */}
@@ -596,6 +461,40 @@ export function Kiosk({
         </span>,
       )}
     </main>
+  );
+}
+
+/**
+ * How strongly the answers pointed at the feeling: a five-petal flower, one petal
+ * lit in the flower's own colour for each answer that pointed there.
+ */
+function ScorePetals({ score, of, ink, label }: { score: number; of: number; ink: string; label: string }) {
+  return (
+    <svg viewBox="0 0 100 100" role="img" aria-label={label} className={styles.petals}>
+      {Array.from({ length: of }, (_, i) => {
+        const a = (i / of) * Math.PI * 2 - Math.PI / 2;
+        const x = 50 + Math.cos(a) * 24;
+        const y = 50 + Math.sin(a) * 24;
+        const on = i < score;
+        // Turned by its group, so the petal's own fade-in never touches the turn.
+        return (
+          <g key={i} transform={`rotate(${(a * 180) / Math.PI + 90} ${x} ${y})`}>
+            <ellipse
+              cx={x}
+              cy={y}
+              rx="15"
+              ry="22"
+              fill={on ? ink : 'rgba(255, 255, 255, 0.14)'}
+              stroke={on ? 'none' : 'rgba(255, 255, 255, 0.35)'}
+              strokeWidth="1.2"
+              style={{ '--i': i } as CSSProperties}
+              className={on ? styles.petalOn : undefined}
+            />
+          </g>
+        );
+      })}
+      <circle cx="50" cy="50" r="12" fill="var(--sunflower)" />
+    </svg>
   );
 }
 

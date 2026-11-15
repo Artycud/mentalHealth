@@ -21,8 +21,7 @@ import fs from 'node:fs';
 import { createClient } from '@libsql/client';
 import puppeteer from 'puppeteer-core';
 
-import { festivals, flowerFromChoices, kiosk as kioskCopy, loykrathongQuiz, okayQuestion, okayReply } from '../content/th/booth.ts';
-import { feelings } from '../content/th/heart.ts';
+import { EMOTIONS, festivals, kiosk as kioskCopy, loykrathongQuiz, qrInvite, resultFromChoices } from '../content/th/booth.ts';
 import { questions } from '../content/th/questions.ts';
 import { buildResult } from '../content/th/results.ts';
 import { scoreCheckin } from '../lib/scoring.ts';
@@ -239,46 +238,42 @@ const letters = ['a', 'b', 'c', 'd'];
 }
 
 // =========================================================================
-// 2. The booth quiz on a phone, all nine feelings (energy × weight)
+// 2. The booth quiz on a phone: every feeling's flower, at its strong level
 // =========================================================================
 {
   const page = await newPage();
-  const topicCount = loykrathongQuiz[2].choices.length;
   let bad = 0;
   let firstBad = '';
   let ran = 0;
   const boothFrom = created.length; // this section's sessions start here
   const wantTally = {};
 
-  for (let a = 0; a < 3; a += 1) {
-    for (let b = 0; b < 3; b += 1) {
-      // The topic never changes the flower: vary it anyway.
-      const idx = [a, b, (a * 3 + b) % topicCount];
-      const pairs = loykrathongQuiz.map((q, i) => ({ questionId: q.id, choiceId: q.choices[idx[i]].id }));
-      const want = flowerFromChoices(pairs);
-      wantTally[want.id] = (wantTally[want.id] ?? 0) + 1;
+  for (const emotion of EMOTIONS) {
+    // The same feeling in all five answers: that flower, at its strong level.
+    const idx = loykrathongQuiz.map((q) => q.choices.findIndex((c) => c.id === emotion));
+    const pairs = loykrathongQuiz.map((q, i) => ({ questionId: q.id, choiceId: q.choices[idx[i]].id }));
+    const want = resultFromChoices(pairs);
+    wantTally[want.flower.id] = (wantTally[want.flower.id] ?? 0) + 1;
 
-      await page.goto(`${BASE}/booth`, { waitUntil: 'networkidle0' });
-      for (let q = 0; q < 3; q += 1) {
-        await (await answerButtons(page))[idx[q]].click();
-        await waitCounter(page, q + 2);
-      }
-      // The honest question, which never changes the flower: vary it too.
-      await (await answerButtons(page))[(a + b) % okayQuestion.choices.length].click();
-      await page.waitForFunction(() => document.querySelector('button[aria-disabled="false"]'), { timeout: 3000 });
-      await page.click('button[aria-disabled="false"]');
-      await page.waitForFunction((n) => document.querySelector('h1')?.textContent.trim() === n, { timeout: 4000 }, want.name).catch(() => {});
-      const got = await heading(page).catch(() => '');
-      const text = await page.evaluate(() => document.body.innerText).catch(() => '');
-      ran += 1;
-      if (got !== want.name || !text.includes(feelings[b][a].word)) {
-        bad += 1;
-        if (!firstBad) firstBad = `${idx.join(',')} -> showed ${got}, wanted ${want.name} for ${feelings[b][a].word}`;
-      }
-      if (a === 0 && b === 0) await shot(page, 'phone-booth-result');
+    await page.goto(`${BASE}/booth`, { waitUntil: 'networkidle0' });
+    for (let q = 0; q < loykrathongQuiz.length; q += 1) {
+      await (await answerButtons(page))[idx[q]].click();
+      if (q < loykrathongQuiz.length - 1) await waitCounter(page, q + 2);
     }
+    await page.waitForFunction(() => document.querySelector('button[aria-disabled="false"]'), { timeout: 3000 });
+    await page.click('button[aria-disabled="false"]');
+    await page.waitForFunction((n) => document.querySelector('h1')?.textContent.trim() === n, { timeout: 4000 }, want.flower.name).catch(() => {});
+    const got = await heading(page).catch(() => '');
+    const text = await page.evaluate(() => document.body.innerText).catch(() => '');
+    ran += 1;
+    const level = want.flower.levels[want.level];
+    if (got !== want.flower.name || !text.includes(level.word) || !text.includes(want.flower.release)) {
+      bad += 1;
+      if (!firstBad) firstBad = `${emotion} -> showed ${got}, wanted ${want.flower.name} (${level.word})`;
+    }
+    if (ran === 1) await shot(page, 'phone-booth-result');
   }
-  check(`the phone booth showed the right feeling and flower for all ${ran} feelings`, bad === 0 && ran === 9, firstBad);
+  check(`the phone booth showed the right flower, level and release line for all ${ran} feelings`, bad === 0 && ran === EMOTIONS.length, firstBad);
 
   // -- and what it SAVED is exactly the flower for each feeling
   if (CHECK_DB) {
@@ -289,17 +284,17 @@ const letters = ['a', 'b', 'c', 'd'];
         const r = await rows(`SELECT booth_result f, COUNT(*) n FROM session WHERE id IN (${marks(ids)}) AND completed_at IS NOT NULL GROUP BY booth_result`, ids);
         return Object.fromEntries(r.map((x) => [x.f, Number(x.n)]));
       },
-      (t) => Object.values(t).reduce((s, n) => s + n, 0) >= 9,
+      (t) => Object.values(t).reduce((s, n) => s + n, 0) >= EMOTIONS.length,
       12000,
     );
     const same = Object.keys(wantTally).length === Object.keys(tally).length && Object.entries(wantTally).every(([k, n]) => tally[k] === n);
-    check('the 9 saved booth results are the flower for each feeling, all six flowers among them', same && Object.keys(tally).length === 6, `${JSON.stringify(tally)} vs ${JSON.stringify(wantTally)}`);
+    check('the saved booth results are the flower for each feeling, all six flowers among them', same && Object.keys(tally).length === 6, `${JSON.stringify(tally)} vs ${JSON.stringify(wantTally)}`);
   }
 
   // -- back from the result restarts the quiz rather than doing nothing
   await page.evaluate(() => history.back());
-  await page.waitForFunction(() => [...document.querySelectorAll('span')].some((s) => /^\d\/4$/.test(s.textContent.trim())), { timeout: 4000 }).catch(() => {});
-  check('back from a booth result returns to the quiz', /^\d\/4$/.test(await page.evaluate(() => [...document.querySelectorAll('span')].map((s) => s.textContent.trim()).find((t) => /^\d\/4$/.test(t)) ?? '')));
+  await page.waitForFunction(() => [...document.querySelectorAll('span')].some((s) => /^\d\/5$/.test(s.textContent.trim())), { timeout: 4000 }).catch(() => {});
+  check('back from a booth result returns to the quiz', /^\d\/5$/.test(await page.evaluate(() => [...document.querySelectorAll('span')].map((s) => s.textContent.trim()).find((t) => /^\d\/5$/.test(t)) ?? '')));
   await page.close();
 }
 
@@ -359,54 +354,30 @@ const letters = ['a', 'b', 'c', 'd'];
   check('the kiosk opens on its own idle screen', (await heading(kiosk)) === kioskCopy.idleTitle);
   check('and tells the student about the coupon', (await kiosk.evaluate(() => document.body.innerText)).includes(reward.kioskLine));
   await kiosk.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('เริ่มเลย'))?.click());
-  // Battery nearly empty, bag light, "เรื่องเรียน": the first answer of each, which is สบาย ๆ.
-  const flowerWanted = flowerFromChoices(loykrathongQuiz.map((q) => ({ questionId: q.id, choiceId: q.choices[0].id })));
-  const feelingWanted = feelings[0][0];
-  /** Drag the heart sideways, as a finger would. The answer uses the middle 80% of
-   *  the stage, so a share maps to 10% + share × 80%. */
-  const dragTo = async (share) => {
-    const box = await (await kiosk.$('[role="slider"]')).boundingBox();
-    const cx = box.x + box.width / 2;
-    const cy = box.y + box.height / 2;
-    const to = { x: box.x + box.width * (0.1 + 0.8 * share), y: cy };
-    await kiosk.mouse.move(cx, cy);
-    await kiosk.mouse.down();
-    for (let k = 1; k <= 8; k += 1) await kiosk.mouse.move(cx + (to.x - cx) * (k / 8), cy + (to.y - cy) * (k / 8));
-    await kiosk.mouse.up();
-  };
-  const nextButton = () => kiosk.$('button[class*="next"]');
-  for (let i = 0; i < 2; i += 1) {
+  // Worried three times, then love twice: lavender, the strong level (3 of 5).
+  const plan = ['worried', 'worried', 'worried', 'love', 'love'];
+  const pairs = loykrathongQuiz.map((q, i) => ({ questionId: q.id, choiceId: plan[i] }));
+  const wanted = resultFromChoices(pairs);
+  const flowerWanted = wanted.flower;
+  const levelWanted = flowerWanted.levels[wanted.level];
+  for (let i = 0; i < loykrathongQuiz.length; i += 1) {
     const q = loykrathongQuiz[i];
     await kiosk.waitForFunction((h) => document.querySelector('h1')?.textContent.trim() === h, { timeout: 4000 }, q.headline);
     await sleep(400); // the slide-in
-    if (i === 0) {
-      check('the kiosk asks the battery question as a drag on the heart', (await kiosk.$('[role="slider"] svg')) !== null);
-      check('and "next" waits until the meter is touched', await (await nextButton()).evaluate((b) => b.disabled));
-    }
-    await dragTo(0.05);
-    const live = await kiosk.evaluate(() => document.body.innerText);
-    check(`dragging ${q.id} says what it feels like ("${q.meter.anchors[0]}")`, live.includes(q.meter.anchors[0]));
-    if (i === 1) check(`and shows the heart so far ("${feelingWanted.word}")`, live.includes(feelingWanted.word));
-    await (await nextButton()).click();
+    const slips = await answerButtons(kiosk);
+    if (i === 0) check('the kiosk offers six answers as slips', slips.length === 6, String(slips.length));
+    await slips[q.choices.findIndex((c) => c.id === plan[i])].click();
   }
-  // Third, what fills the head: one tap on a tile.
-  await kiosk.waitForFunction((h) => document.querySelector('h1')?.textContent.trim() === h, { timeout: 4000 }, loykrathongQuiz[2].headline);
-  await sleep(400);
-  await (await answerButtons(kiosk))[0].click();
-  // Fourth, the honest question: "บอกว่าโอเค แต่จริง ๆ ไม่ค่อย".
-  await kiosk.waitForFunction((h) => document.querySelector('h1')?.textContent.trim() === h, { timeout: 4000 }, okayQuestion.headline);
-  check('the kiosk asks the honest question fourth', (await heading(kiosk)) === okayQuestion.headline);
-  await sleep(400);
-  await (await answerButtons(kiosk))[1].click();
-  await kiosk.waitForFunction((n) => document.querySelector('h1')?.textContent.trim() === n, { timeout: 5000 }, flowerWanted.name);
-  check(`the kiosk shows the right flower (${flowerWanted.name}), unchanged by the honest answer`, (await heading(kiosk)) === flowerWanted.name);
+  await kiosk.waitForFunction((n) => document.querySelector('h1')?.textContent.trim() === n, { timeout: 6000 }, flowerWanted.name);
+  check(`the kiosk shows the right flower (${flowerWanted.name})`, (await heading(kiosk)) === flowerWanted.name);
   const resultText = await kiosk.evaluate(() => document.body.innerText);
-  check(`the result names the feeling ("${feelingWanted.word}") and says its message`, resultText.includes(feelingWanted.word) && resultText.includes(feelingWanted.message));
-  check('and says which heart the flower is for', resultText.includes(flowerWanted.body));
-  check('and answers the honest question warmly, with CUD Care', resultText.includes(okayReply.hide) && resultText.includes('CUD Care'));
-  check('and has a QR code to the main site', (await kiosk.$('svg[role="img"]')) !== null);
+  check(`the result names the feeling at its level ("${levelWanted.word}") and says its line`, resultText.includes(levelWanted.word) && resultText.includes(levelWanted.body));
+  check('and how many answers pointed there', resultText.includes(kioskCopy.scoreLine(wanted.score, wanted.of)));
+  check(`and to let it float away ("${kioskCopy.letGo}")`, resultText.includes(kioskCopy.letGo) && resultText.includes(flowerWanted.release));
+  check("and the flower's wish, with CUD Care", resultText.includes(flowerWanted.wish) && resultText.includes('CUD Care'));
+  check('and has a QR code to the main site', (await kiosk.$(`svg[role="img"][aria-label="${qrInvite.title}"]`)) !== null);
   check('and a notification says the coupon was received, for the staff to hand over too', resultText.includes(reward.received));
-  check('and shows the heart the student made, beside the flower', (await kiosk.$(`svg[role="img"][aria-label="${feelingWanted.word}"]`)) !== null);
+  check('and draws one petal for each answer that pointed there', (await kiosk.$(`svg[role="img"][aria-label="${kioskCopy.scoreLine(wanted.score, wanted.of)}"]`)) !== null);
   await sleep(900);
   await shot(kiosk, 'kiosk-result');
 
@@ -416,16 +387,11 @@ const letters = ['a', 'b', 'c', 'd'];
       (r) => r.length >= 1,
     ))[0];
     check('the kiosk saved its result, as a tablet-sized device', !!s && s.booth_result === flowerWanted.id, JSON.stringify(s));
-    const honest = await eventually(
-      () => rows('SELECT choice_id FROM answer WHERE session_id = ? AND question_id = ?', [created[kioskFrom] ?? '', okayQuestion.id]),
-      (r) => r.length >= 1,
-    );
-    check('and the honest answer, as an anonymous choice id', honest[0]?.choice_id === 'hide', JSON.stringify(honest));
-    const feelingRows = await rows(
-      `SELECT question_id q, choice_id c FROM answer WHERE session_id = ? AND question_id IN ('energy', 'weight', 'topic') ORDER BY question_id`,
+    const answers = await rows(
+      'SELECT question_id q, choice_id c FROM answer WHERE session_id = ? ORDER BY question_id',
       [created[kioskFrom] ?? ''],
     );
-    check('and the feeling as choice ids: the third each drag ended in, and the topic', JSON.stringify(feelingRows.map((r) => [r.q, r.c])) === JSON.stringify([['energy', 'low'], ['topic', 'study'], ['weight', 'light']]), JSON.stringify(feelingRows));
+    check('and each answer as an anonymous choice id: the feeling it pointed at', JSON.stringify(answers.map((r) => [r.q, r.c])) === JSON.stringify(pairs.map((p) => [p.questionId, p.choiceId])), JSON.stringify(answers));
   }
 
   // -- the TV notices, on its own, without reloading. Headless Chrome shows only
