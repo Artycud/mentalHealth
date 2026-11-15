@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -167,7 +168,14 @@ export function db(): Promise<Client> {
  * token. For /api/health, so "the data keeps disappearing" can be told apart from
  * the outside: a `file:` or `:memory:` database on Vercel is wiped by every deploy.
  */
-export function databaseInfo(): { from: 'DATABASE_URL' | 'TURSO_DATABASE_URL' | 'default'; kind: 'turso' | 'hosted' | 'file' | 'memory' | 'none' } {
+export function databaseInfo(): {
+  from: 'DATABASE_URL' | 'TURSO_DATABASE_URL' | 'default';
+  kind: 'turso' | 'hosted' | 'file' | 'memory' | 'none';
+  /** The database's own name (the first part of its host), which is no secret without the token. */
+  name: string | null;
+  /** A short fingerprint of the whole address, to see whether two deploys use the same one. */
+  fingerprint: string | null;
+} {
   const from = process.env.DATABASE_URL ? 'DATABASE_URL' : process.env.TURSO_DATABASE_URL ? 'TURSO_DATABASE_URL' : 'default';
   const url = (process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || (process.env.VERCEL ? '' : 'file:./data/app.db')).trim();
   const kind = !url
@@ -179,7 +187,14 @@ export function databaseInfo(): { from: 'DATABASE_URL' | 'TURSO_DATABASE_URL' | 
         : /\.turso\.io/.test(url)
           ? 'turso'
           : 'hosted';
-  return { from, kind };
+  let name: string | null = null;
+  try {
+    name = kind === 'turso' || kind === 'hosted' ? new URL(url.replace(/^libsql:/, 'https:')).hostname.split('.')[0] : null;
+  } catch {
+    name = null;
+  }
+  const fingerprint = url ? createHash('sha256').update(url).digest('hex').slice(0, 10) : null;
+  return { from, kind, name, fingerprint };
 }
 
 /** The database file on this machine, or null for a hosted database. */
