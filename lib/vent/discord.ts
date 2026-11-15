@@ -18,11 +18,18 @@ const API = 'https://discord.com/api/v10';
 
 export type DiscordMode = 'bot' | 'webhook' | null;
 
+/** A setting as pasted into Vercel can carry spaces, a line break or quotes: drop them. */
+const setting = (value: string | undefined) => (value ?? '').trim().replace(/^["']|["']$/g, '').trim();
+
 export function discordMode(env = process.env): DiscordMode {
-  if (env.DISCORD_BOT_TOKEN && env.DISCORD_CHANNEL_ID && env.DISCORD_PUBLIC_KEY) return 'bot';
-  if (env.DISCORD_WEBHOOK_URL) return 'webhook';
+  if (setting(env.DISCORD_BOT_TOKEN) && setting(env.DISCORD_CHANNEL_ID) && setting(env.DISCORD_PUBLIC_KEY)) return 'bot';
+  if (setting(env.DISCORD_WEBHOOK_URL)) return 'webhook';
   return null;
 }
+
+const webhookUrl = () => setting(process.env.DISCORD_WEBHOOK_URL);
+const channelId = () => setting(process.env.DISCORD_CHANNEL_ID);
+const roleId = () => setting(process.env.DISCORD_ROLE_ID);
 
 async function call(url: string, init: RequestInit): Promise<Response | null> {
   try {
@@ -35,10 +42,10 @@ async function call(url: string, init: RequestInit): Promise<Response | null> {
   }
 }
 
-const botHeaders = () => ({ Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' });
+const botHeaders = () => ({ Authorization: `Bot ${setting(process.env.DISCORD_BOT_TOKEN)}`, 'Content-Type': 'application/json' });
 
 function headline(urgent: boolean, isNew: boolean) {
-  const role = process.env.DISCORD_ROLE_ID ? `<@&${process.env.DISCORD_ROLE_ID}> ` : '';
+  const role = roleId() ? `<@&${roleId()}> ` : '';
   if (urgent) return `${role}⚠️ **ด่วน** มีข้อความที่อาจต้องการความช่วยเหลือ ช่วยดูเร็ว ๆ นะ`;
   return `${role}💬 ${isNew ? 'มีน้องเพิ่งระบายมา' : 'น้องเขียนเพิ่มในแชทเดิม'}`;
 }
@@ -50,10 +57,10 @@ function headline(urgent: boolean, isNew: boolean) {
 export async function notifySapa(p: { ref: string; urgent: boolean; isNew: boolean; origin: string }): Promise<string | null> {
   const mode = discordMode();
   const link = `${p.origin}/sapa?t=${p.ref}`;
-  const allowed_mentions = { roles: process.env.DISCORD_ROLE_ID ? [process.env.DISCORD_ROLE_ID] : [] };
+  const allowed_mentions = { roles: roleId() ? [roleId()] : [] };
 
   if (mode === 'bot') {
-    const res = await call(`${API}/channels/${process.env.DISCORD_CHANNEL_ID}/messages`, {
+    const res = await call(`${API}/channels/${channelId()}/messages`, {
       method: 'POST',
       headers: botHeaders(),
       body: JSON.stringify({
@@ -79,7 +86,7 @@ export async function notifySapa(p: { ref: string; urgent: boolean; isNew: boole
   }
 
   if (mode === 'webhook') {
-    await call(process.env.DISCORD_WEBHOOK_URL!, {
+    await call(webhookUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: `${headline(p.urgent, p.isNew)}\n${link}`, allowed_mentions }),
@@ -91,9 +98,41 @@ export async function notifySapa(p: { ref: string; urgent: boolean; isNew: boole
 /** The student ended the chat: say so on its ping and take the buttons away. */
 export async function markEnded(discordId: string | null): Promise<void> {
   if (!discordId || discordMode() !== 'bot') return;
-  await call(`${API}/channels/${process.env.DISCORD_CHANNEL_ID}/messages/${discordId}`, {
+  await call(`${API}/channels/${channelId()}/messages/${discordId}`, {
     method: 'PATCH',
     headers: botHeaders(),
     body: JSON.stringify({ content: '✔️ แชทนี้จบแล้ว ข้อความถูกลบหมดแล้ว', components: [] }),
   });
+}
+
+export type DiscordTest =
+  | { ok: true; mode: Exclude<DiscordMode, null> }
+  | { ok: false; reason: 'not_set' | 'bad_url' | 'not_found' | 'refused' | 'unreachable'; status?: number };
+
+/**
+ * For the admin panel's "ทดสอบแจ้งเตือน Discord": sends one test ping and says
+ * exactly what happened, so a setup mistake shows on screen, not only in the logs.
+ */
+export async function testDiscord(origin: string): Promise<DiscordTest> {
+  const mode = discordMode();
+  if (!mode) return { ok: false, reason: 'not_set' };
+  const content = `🔔 ทดสอบการแจ้งเตือนจากเว็บ ถ้าเห็นข้อความนี้ แปลว่าพร้อมแล้ว
+${origin}/sapa`;
+  let url: string;
+  let init: RequestInit;
+  if (mode === 'webhook') {
+    url = webhookUrl();
+    if (!/^https:\/\/(discord|discordapp)\.com\/api\/webhooks\/\d+\/[\w-]+/.test(url)) return { ok: false, reason: 'bad_url' };
+    init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }) };
+  } else {
+    url = `${API}/channels/${channelId()}/messages`;
+    init = { method: 'POST', headers: botHeaders(), body: JSON.stringify({ content, allowed_mentions: { parse: [] } }) };
+  }
+  try {
+    const res = await fetch(url, { ...init, signal: AbortSignal.timeout(6000) });
+    if (res.ok) return { ok: true, mode };
+    return { ok: false, reason: res.status === 404 ? 'not_found' : 'refused', status: res.status };
+  } catch {
+    return { ok: false, reason: 'unreachable' };
+  }
 }

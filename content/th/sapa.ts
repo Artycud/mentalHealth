@@ -71,5 +71,15 @@ export const sapa = {
       none: 'Discord: ยังไม่ได้ตั้งค่า ดูวิธีใน docs/sapa.md',
     },
     open: 'เปิดกล่องระบาย',
+    test: 'ทดสอบแจ้งเตือน Discord',
+    testing: 'กำลังส่ง…',
+    testResult: {
+      ok: 'ส่งแล้ว ✓ ไปดูในช่อง Discord ได้เลย',
+      not_set: 'เซิร์ฟเวอร์ยังไม่เห็น DISCORD_WEBHOOK_URL: เช็กว่าตั้งใน Vercel ให้ Production แล้ว และกด Redeploy หลังตั้ง',
+      bad_url: 'URL ของ webhook ไม่ถูกต้อง: ต้องขึ้นต้นด้วย https://discord.com/api/webhooks/ คัดลอกใหม่จาก Discord ให้ครบ',
+      not_found: 'Discord บอกว่าไม่มี webhook นี้แล้ว (ถูกลบ หรือคัดลอกไม่ครบ): สร้างใหม่แล้ววาง URL ใหม่',
+      refused: 'Discord ไม่รับข้อความ',
+      unreachable: 'ติดต่อ Discord ไม่ได้ ลองใหม่อีกที',
+    },
   },
 } as const;

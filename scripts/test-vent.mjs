@@ -25,7 +25,7 @@ const { db, closeDb } = await import('../lib/db.ts');
 const { needsCare } = await import('../lib/vent/safety.ts');
 const threads = await import('../lib/vent/threads.ts');
 const { takeVentSlot, CODE_CAP_PER_MINUTE } = await import('../lib/vent/cap.ts');
-const { discordMode } = await import('../lib/vent/discord.ts');
+const { discordMode, testDiscord } = await import('../lib/vent/discord.ts');
 
 let failures = 0;
 const check = (label, ok, detail = '') => {
@@ -109,6 +109,12 @@ try {
   check('no Discord settings: no pings, nothing breaks', discordMode({}) === null);
   check('a webhook alone: pings with a link', discordMode({ DISCORD_WEBHOOK_URL: 'x' }) === 'webhook');
   check('bot token + channel + public key: answer in Discord', discordMode({ DISCORD_BOT_TOKEN: 'a', DISCORD_CHANNEL_ID: 'b', DISCORD_PUBLIC_KEY: 'c' }) === 'bot');
+  check('a webhook pasted with spaces, a line break or quotes still counts', discordMode({ DISCORD_WEBHOOK_URL: '  "https://discord.com/api/webhooks/1/x"' + String.fromCharCode(10) }) === 'webhook');
+  check('an empty or blank setting is "not set", not a broken ping', discordMode({ DISCORD_WEBHOOK_URL: '   ' }) === null);
+  process.env.DISCORD_WEBHOOK_URL = ' https://example.com/not-a-webhook ';
+  check('the admin test says plainly when the address is not a Discord webhook', (await testDiscord('http://x')).reason === 'bad_url');
+  delete process.env.DISCORD_WEBHOOK_URL;
+  check('  and when nothing is set up at all', (await testDiscord('http://x')).reason === 'not_set');
 
   process.env.DISCORD_PUBLIC_KEY = '0'.repeat(64);
   const { POST } = await import('../app/api/discord/route.ts').catch(() => ({ POST: null }));

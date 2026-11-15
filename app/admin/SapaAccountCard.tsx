@@ -28,6 +28,17 @@ export function SapaAccountCard({
   const [fresh, setFresh] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [test, setTest] = useState<{ text: string; ok: boolean } | null>(null);
+
+  async function testPing() {
+    setBusy(true);
+    setTest({ text: sapa.admin.testing, ok: true });
+    const r = await send('/api/admin/discord-test', 'POST', {});
+    setBusy(false);
+    const reason = (r.data?.ok ? 'ok' : r.data?.reason) as keyof typeof sapa.admin.testResult | undefined;
+    const text = reason && reason in sapa.admin.testResult ? sapa.admin.testResult[reason] : 'ทำไม่สำเร็จ ลองใหม่อีกที';
+    setTest({ text: r.data?.status ? `${text} (Discord ${String(r.data.status)})` : text, ok: Boolean(r.data?.ok) });
+  }
 
   async function choose(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -102,9 +113,15 @@ export function SapaAccountCard({
         </button>
       </form>
 
-      <p className={styles.hint} style={{ marginTop: 10 }}>
-        {discord ? sapa.admin.discord[discord] : sapa.admin.discord.none}
-      </p>
+      <div className={styles.row} style={{ marginTop: 10 }}>
+        <span className={styles.hint} style={{ margin: 0 }}>
+          {discord ? sapa.admin.discord[discord] : sapa.admin.discord.none}
+        </span>
+        <button className={`${styles.button} ${styles.buttonQuiet}`} type="button" onClick={() => void testPing()} disabled={busy}>
+          {sapa.admin.test}
+        </button>
+      </div>
+      {test && <p className={`${styles.msg} ${test.ok ? styles.ok : styles.bad}`}>{test.text}</p>}
 
       {fresh && (
         <div className={styles.secret} role="status">
