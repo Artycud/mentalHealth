@@ -1,17 +1,21 @@
 /**
- * A ceiling on VENT calls across everyone, because each one may cost an AI
- * request. Like the session cap (lib/session.ts), it is counted in the database,
- * not in memory, and it counts per minute only: no person, address or text.
+ * Ceilings on ระบาย across everyone, so it cannot be flooded: messages per minute,
+ * and (much lower) chat-code lookups per minute, which is what makes guessing
+ * someone's code hopeless (31^8 codes at 20 tries a minute). Like the session
+ * cap (lib/session.ts), counted in the database, not in memory, and per minute
+ * only: no person, address or text.
  */
 
 import { db } from '../db.ts';
 
 export const VENT_CAP_PER_MINUTE = 60;
+export const CODE_CAP_PER_MINUTE = 20;
 
 /** Count this call; false when the minute's ceiling is already reached. */
-export async function takeVentSlot(now = new Date()): Promise<boolean> {
+export async function takeVentSlot(now = new Date(), kind: 'message' | 'code' = 'message'): Promise<boolean> {
   const c = await db();
-  const minute = now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM, UTC
+  // YYYY-MM-DDTHH:MM, UTC; code lookups get their own count beside it (it still sorts by minute).
+  const minute = now.toISOString().slice(0, 16) + (kind === 'code' ? '#code' : '');
   const row = await c.execute({
     sql: `INSERT INTO vent_tick (minute, count) VALUES (?, 1)
           ON CONFLICT (minute) DO UPDATE SET count = count + 1
@@ -21,5 +25,5 @@ export async function takeVentSlot(now = new Date()): Promise<boolean> {
   // Old minutes are of no use to anyone; keep the table to the last hour.
   const hourAgo = new Date(now.getTime() - 3_600_000).toISOString().slice(0, 16);
   await c.execute({ sql: 'DELETE FROM vent_tick WHERE minute < ?', args: [hourAgo] });
-  return Number(row.rows[0].count) <= VENT_CAP_PER_MINUTE;
+  return Number(row.rows[0].count) <= (kind === 'code' ? CODE_CAP_PER_MINUTE : VENT_CAP_PER_MINUTE);
 }

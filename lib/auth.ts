@@ -83,7 +83,8 @@ export function generateBoothPassword(): string {
 
 // ---- signed cookies ----
 
-export type Role = 'admin' | 'booth';
+/** `sapa`: the พี่สภา team answering ระบาย (app/sapa), one shared password. */
+export type Role = 'admin' | 'booth' | 'sapa';
 
 export interface TokenPayload {
   role: Role;
@@ -117,7 +118,7 @@ export function verifyToken(token: string | undefined, secret: string, now = Dat
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
   try {
     const payload = JSON.parse(unb64(body).toString('utf8')) as TokenPayload;
-    if ((payload.role !== 'admin' && payload.role !== 'booth') || typeof payload.v !== 'string') return null;
+    if (!['admin', 'booth', 'sapa'].includes(payload.role) || typeof payload.v !== 'string') return null;
     if (typeof payload.exp !== 'number' || payload.exp <= now) return null;
     return payload;
   } catch {
@@ -126,7 +127,7 @@ export function verifyToken(token: string | undefined, secret: string, now = Dat
 }
 
 /** How long a login lasts (BRIEF §11): the admin for a working day, the booth for a booth day. */
-export const SESSION_MS: Record<Role, number> = { admin: 8 * 3_600_000, booth: 12 * 3_600_000 };
+export const SESSION_MS: Record<Role, number> = { admin: 8 * 3_600_000, booth: 12 * 3_600_000, sapa: 12 * 3_600_000 };
 
 // ---- the lockout ----
 
@@ -134,7 +135,7 @@ export const SESSION_MS: Record<Role, number> = { admin: 8 * 3_600_000, booth: 1
 export const MAX_FAILURES = 5;
 export const LOCK_MS = 10 * 60_000;
 
-export type LockKey = 'admin' | 'booth' | 'setup';
+export type LockKey = 'admin' | 'booth' | 'setup' | 'sapa';
 
 /**
  * Kept in the database, not in memory: memory is not shared between server instances
@@ -224,6 +225,31 @@ export async function setBoothUsername(username: string): Promise<void> {
 export async function regenerateBoothPassword(): Promise<string> {
   const password = generateBoothPassword();
   await writeSetting('booth_password_hash', await hashPassword(password));
+  return password;
+}
+
+// ---- the พี่สภา account (ระบาย's answering team), in the setting table ----
+
+/** Fixed: the team shares one login, so the password is the only thing to type. */
+export const SAPA_USERNAME = 'sapa';
+
+export interface SapaAccount {
+  /** Null until the admin has generated a password: nobody can answer until then. */
+  hash: string | null;
+  changedAt: string | null;
+}
+
+export async function getSapaAccount(): Promise<SapaAccount> {
+  const c = await db();
+  const r = await c.execute({ sql: "SELECT value, updated_at FROM setting WHERE key = 'sapa_password_hash'", args: [] });
+  const row = r.rows[0];
+  return { hash: row ? String(row.value) : null, changedAt: row ? String(row.updated_at) : null };
+}
+
+/** Like the booth's: only the hash is kept, the password is shown to the admin once. */
+export async function regenerateSapaPassword(): Promise<string> {
+  const password = generateBoothPassword();
+  await writeSetting('sapa_password_hash', await hashPassword(password));
   return password;
 }
 

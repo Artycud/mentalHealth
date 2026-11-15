@@ -6,10 +6,11 @@ import { admin } from '@/content/th/admin';
 import { recap } from '@/content/th/recap';
 import { festivalOrder, festivals } from '@/content/th/booth';
 import { filtersToQuery, getAdminData, parseFilters, thaiDay } from '@/lib/admin-data';
-import { getBoothAccount } from '@/lib/auth';
+import { getBoothAccount, getSapaAccount } from '@/lib/auth';
 import { getEvent } from '@/lib/events';
 import { adminConfig, requireAdminPage } from '@/lib/guard';
 import { getActiveFestival, getRewardOn } from '@/lib/settings';
+import { discordMode } from '@/lib/vent/discord';
 
 import { AccountCard } from './AccountCard';
 import styles from './admin.module.css';
@@ -21,6 +22,7 @@ import { Filters } from './Filters';
 import { formatDuration, fullDay, thaiStamp } from './format';
 import { LogoutButton } from './LogoutButton';
 import { RewardControl } from './RewardControl';
+import { SapaAccountCard } from './SapaAccountCard';
 import { SessionList } from './SessionList';
 import { ThemeControl } from './ThemeControl';
 
@@ -34,7 +36,7 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
   await requireAdminPage();
 
   const filters = parseFilters(await props.searchParams);
-  const [data, live, booth, account, events, rewardOn] = await Promise.all([
+  const [data, live, booth, account, events, rewardOn, sapaAccount] = await Promise.all([
     getAdminData(filters),
     getActiveFestival(),
     getBoothAccount(),
@@ -46,6 +48,7 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
       }),
     ),
     getRewardOn(),
+    getSapaAccount(),
   ]);
   // The coupon switch shows only while the live booth has a reward to switch.
   const liveReward = live === 'none' ? undefined : festivals[live].reward;
@@ -162,6 +165,11 @@ export default async function AdminPage(props: PageProps<'/admin'>) {
 
       <div className={`${styles.grid2} ${styles.section}`} style={{ alignItems: 'start' }}>
         <BoothAccountCard username={booth.username} hasPassword={booth.hash !== null} changedAt={booth.changedAt ? thaiStamp(booth.changedAt) : ''} />
+        <SapaAccountCard
+          hasPassword={sapaAccount.hash !== null}
+          changedAt={sapaAccount.changedAt ? thaiStamp(sapaAccount.changedAt) : ''}
+          discord={discordMode()}
+        />
         <AccountCard username={account?.username ?? ''} managedByServer={account?.source === 'env'} />
       </div>
 

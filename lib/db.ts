@@ -90,12 +90,42 @@ CREATE TABLE IF NOT EXISTS auth_lock (
   updated_at   TEXT NOT NULL
 );
 
--- VENT's global ceiling (lib/vent/cap.ts): a count per minute, nothing else. What a
--- student writes in VENT is never stored anywhere, so it has no table at all.
+-- VENT's global ceiling (lib/vent/cap.ts): a count per minute, nothing else.
 CREATE TABLE IF NOT EXISTS vent_tick (
   minute TEXT PRIMARY KEY,
   count  INTEGER NOT NULL
 );
+
+-- ระบายให้พี่ๆ สภาฟัง (lib/vent/threads.ts): the ONE place this app keeps what a
+-- student writes, because a person answers it later. The deliberate exception to
+-- "no free text" (BRIEF §3, §12): no name, class, address or device is kept with
+-- it, and the whole conversation is deleted when the student ends it (or after 30
+-- quiet days). scripts/test-db.mjs allows exactly these two tables and no others.
+--   id   the student's own secret key (kept on their phone); never shown to staff
+--   code the short chat code, the student's second way back in
+--   ref  how staff and Discord name the conversation (so the student's key never leaves the server)
+CREATE TABLE IF NOT EXISTS vent_thread (
+  id          TEXT PRIMARY KEY,
+  code        TEXT NOT NULL UNIQUE,
+  ref         TEXT NOT NULL UNIQUE,
+  feel        TEXT,
+  urgent      INTEGER NOT NULL DEFAULT 0,
+  waiting     INTEGER NOT NULL DEFAULT 1,
+  discord_id  TEXT,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS vent_message (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  thread_id  TEXT NOT NULL REFERENCES vent_thread(id) ON DELETE CASCADE,
+  sender     TEXT NOT NULL CHECK (sender IN ('student', 'sapa')),
+  body       TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_vent_message_thread ON vent_message (thread_id, id);
+CREATE INDEX IF NOT EXISTS idx_vent_thread_updated ON vent_thread (updated_at);
 
 CREATE INDEX IF NOT EXISTS idx_session_started ON session (started_at);
 CREATE INDEX IF NOT EXISTS idx_session_booth ON session (mode, festival, completed_at);

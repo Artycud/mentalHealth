@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import {
-  getBoothAccount, getSessionSecret, getStoredAdmin, passwordVersion, SESSION_MS, signToken, verifyToken, type Role,
+  getBoothAccount, getSapaAccount, getSessionSecret, getStoredAdmin, passwordVersion, SESSION_MS, signToken, verifyToken, type Role,
 } from './auth.ts';
 import { ApiError } from './session.ts';
 
@@ -22,6 +22,7 @@ import { ApiError } from './session.ts';
 
 export const ADMIN_COOKIE = 'cud_admin';
 export const BOOTH_COOKIE = 'cud_booth';
+export const SAPA_COOKIE = 'cud_sapa';
 
 export interface AdminConfig {
   username: string;
@@ -68,6 +69,15 @@ export async function isBooth(): Promise<boolean> {
   return payload?.role === 'booth' && payload.v === passwordVersion(account.hash);
 }
 
+/** The พี่สภา team (ระบาย's inbox): the sapa cookie, or an admin. */
+export async function isSapa(): Promise<boolean> {
+  if (await isAdmin()) return true;
+  const account = await getSapaAccount();
+  if (!account.hash) return false;
+  const payload = verifyToken((await cookies()).get(SAPA_COOKIE)?.value, await getSessionSecret());
+  return payload?.role === 'sapa' && payload.v === passwordVersion(account.hash);
+}
+
 // ---- pages ----
 
 /** For an admin page. Anyone else goes to the login page (which sends a first visit to setup). */
@@ -84,6 +94,11 @@ export async function requireBooth(next: '/booth/kiosk' | '/booth/display'): Pro
   const account = await getBoothAccount();
   if (!account.hash) return;
   if (!(await isBooth())) redirect(`/booth/login?next=${encodeURIComponent(next)}`);
+}
+
+/** For the พี่สภา inbox. Anyone else goes to its login. */
+export async function requireSapaPage(): Promise<void> {
+  if (!(await isSapa())) redirect('/sapa/login');
 }
 
 // ---- API routes ----
@@ -117,6 +132,12 @@ export async function assertAdmin(request: Request): Promise<void> {
   if (!(await isAdmin())) throw new ApiError(401, 'unauthorized');
 }
 
+/** For an /api/sapa/* route: the พี่สภา team or an admin, and (for a change) from this site. */
+export async function assertSapa(request: Request): Promise<void> {
+  if (request.method !== 'GET' && request.method !== 'HEAD') assertSameOrigin(request);
+  if (!(await isSapa())) throw new ApiError(401, 'unauthorized');
+}
+
 // ---- cookies ----
 
 /** Secure only over HTTPS (directly, or as reported by the proxy in front). */
@@ -129,23 +150,27 @@ function isHttps(request: Request): boolean {
  * (8 hours for the admin, 12 for the booth). The booth cookie is sent only under
  * /booth, so it never even travels to /admin.
  */
+const cookieName = (role: Role) => (role === 'admin' ? ADMIN_COOKIE : role === 'booth' ? BOOTH_COOKIE : SAPA_COOKIE);
+/** Each cookie travels only where it is needed: the booth's under /booth, the team's to its inbox and API. */
+const cookiePath = (role: Role) => (role === 'admin' ? '/' : role === 'booth' ? '/booth' : '/');
+
 export async function signIn(request: Request, role: Role, passwordHash: string): Promise<void> {
   const ms = SESSION_MS[role];
   const token = signToken({ role, exp: Date.now() + ms, v: passwordVersion(passwordHash) }, await getSessionSecret());
-  (await cookies()).set(role === 'admin' ? ADMIN_COOKIE : BOOTH_COOKIE, token, {
+  (await cookies()).set(cookieName(role), token, {
     httpOnly: true,
     secure: isHttps(request),
     sameSite: 'lax',
-    path: role === 'admin' ? '/' : '/booth',
+    path: cookiePath(role),
     maxAge: Math.floor(ms / 1000),
   });
 }
 
 export async function signOut(role: Role): Promise<void> {
-  (await cookies()).set(role === 'admin' ? ADMIN_COOKIE : BOOTH_COOKIE, '', {
+  (await cookies()).set(cookieName(role), '', {
     httpOnly: true,
     sameSite: 'lax',
-    path: role === 'admin' ? '/' : '/booth',
+    path: cookiePath(role),
     maxAge: 0,
   });
 }

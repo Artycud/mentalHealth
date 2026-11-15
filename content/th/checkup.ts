@@ -87,15 +87,15 @@ export const checkup = {
     factSource: 'ที่มา',
     /** Above the message chosen for their heart (content/th/heart.ts). */
     messageNote: (word: string) => `ถึงใจที่ "${word}"`,
-    /** For the heaviest row: the next step is to say it out loud (VENT; the body still says an AI answers). */
+    /** For the heaviest row: the next step is to say it out loud (ระบาย, answered by พี่สภา). */
     vent: {
       note: 'ไม่ต้องเก็บไว้คนเดียว',
       title: 'เล่าออกมาก่อนไหม',
-      body: 'พิมพ์สิ่งที่ค้างอยู่ออกมา มี AI ช่วยตอบจากสิ่งที่เขียนจริง ๆ ไม่เก็บข้อความ',
+      body: 'พิมพ์สิ่งที่ค้างอยู่ออกมา พี่ๆ สภาจะอ่านและตอบเอง ไม่ต้องใส่ชื่อ',
     },
     next: 'ลองต่อด้วยอันนี้ไหม',
     ways: {
-      vent: { title: 'ระบายออกมา', body: 'พิมพ์สิ่งที่ค้างในใจ แล้วได้คำตอบจากสิ่งที่เขียนจริง ๆ' },
+      vent: { title: 'ระบายให้พี่ๆ สภาฟัง', body: 'พิมพ์สิ่งที่ค้างในใจ พี่ๆ สภาอ่านและตอบเอง' },
       checkin: { title: 'อยากรู้ว่ามาจากเรื่องไหน?', body: 'ต่อจากที่เพิ่งตอบ: เช็กละเอียด 8 คำถาม เรื่องเรียน การนอน เพื่อน ที่บ้าน' },
       self: { title: 'รู้จักตัวเองอีกนิด', body: 'ตอบไม่กี่ข้อ แล้วดูว่าเป็นคนแบบไหน' },
     },

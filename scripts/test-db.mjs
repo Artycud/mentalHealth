@@ -41,17 +41,27 @@ const one = async (sql, args = []) => (await c.execute({ sql, args })).rows[0];
 // ---- 1. Schema and seed ----
 {
   const tables = (await c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")).rows.map((r) => r.name).sort();
-  eq('the six tables exist (VENT’s is a count per minute, never text)', tables.filter((t) => t !== 'sqlite_sequence'), ['answer', 'auth_lock', 'event', 'session', 'setting', 'vent_tick']);
+  eq('the eight tables exist', tables.filter((t) => t !== 'sqlite_sequence'), ['answer', 'auth_lock', 'event', 'session', 'setting', 'vent_message', 'vent_thread', 'vent_tick']);
   eq('the live festival is seeded as Loy Krathong', await getActiveFestival(), 'loykrathong');
 
   // Privacy by construction (BRIEF sections 3 and 12): no column could hold a
   // person. If someone adds one, this fails.
   const columns = [];
-  for (const t of ['session', 'answer', 'setting', 'event', 'auth_lock', 'vent_tick']) {
+  // Every table, so a new one is checked without anyone remembering to add it here.
+  for (const t of tables.filter((x) => x !== 'sqlite_sequence')) {
     for (const r of (await c.execute(`PRAGMA table_info(${t})`)).rows) columns.push(`${t}.${r.name}`);
   }
   const forbidden = /(^|\.)(name|student|class|grade|email|phone|ip|ip_address|user_agent|ua|note|comment|text|message|free)/i;
   check('no column could hold a name, an ID, an IP address or free text', !columns.some((x) => forbidden.test(x)), columns.filter((x) => forbidden.test(x)).join(', '));
+  // The one deliberate exception: what a student writes to พี่สภา in ระบาย, kept only
+  // until they end the conversation (lib/vent/threads.ts). Exactly one column may
+  // hold their words, and nothing beside it says who they are.
+  const ventColumns = columns.filter((x) => x.startsWith('vent_thread.') || x.startsWith('vent_message.'));
+  eq('ระบาย keeps exactly these columns, and only vent_message.body holds words', [...ventColumns].sort(), [
+    'vent_thread.id', 'vent_thread.code', 'vent_thread.ref', 'vent_thread.feel', 'vent_thread.urgent', 'vent_thread.waiting',
+    'vent_thread.discord_id', 'vent_thread.created_at', 'vent_thread.updated_at',
+    'vent_message.id', 'vent_message.thread_id', 'vent_message.sender', 'vent_message.body', 'vent_message.created_at',
+  ].sort());
 }
 
 // ---- 2. A check-in, end to end on the server ----

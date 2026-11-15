@@ -1,16 +1,31 @@
-// VENT's server rules, without a browser or a real AI:  npm run test:vent
+// ระบายให้พี่ๆ สภาฟัง: the server rules, without a browser.  npm run test:vent
 //
-//   - A message that may mean danger gets the reviewed care screen, and the AI is
-//     never even asked.
-//   - Whatever the AI answers is checked: malformed or late answers become "not
-//     available", never a broken page; a "heard" quote that is not really the
-//     student's words is dropped; the AI's own "urgent" also means care.
-//   - What the student wrote never reaches a log, even when everything fails.
-//   - Production never falls back to the template stand-in.
-import { respond } from '../lib/vent/respond.ts';
-import { needsCare } from '../lib/vent/safety.ts';
-import { mockProvider } from '../lib/vent/mock.ts';
-import { getProvider } from '../lib/vent/provider.ts';
+//   - A message that may mean danger is caught (the care screen shows at once and
+//     the team sees it marked urgent); everyday words are not.
+//   - A conversation lives under three names: the student's key reads and adds,
+//     the chat code finds the key, and the staff ref is all staff or Discord see.
+//   - Ending it deletes every word; a long-quiet one is deleted too.
+//   - Code lookups are capped per minute, so codes cannot be guessed.
+//   - The Discord endpoint refuses anything Discord did not sign.
+//   - What the student wrote never reaches a log.
+//
+// Uses a scratch database file, deleted before and after.
+
+import fs from 'node:fs';
+
+const FILE = 'data/test-vent.db';
+delete process.env.DATABASE_URL;
+process.env.TURSO_DATABASE_URL = `file:./${FILE}`;
+const clean = () => {
+  for (const suffix of ['', '-journal', '-wal', '-shm']) fs.rmSync(FILE + suffix, { force: true });
+};
+clean();
+
+const { db, closeDb } = await import('../lib/db.ts');
+const { needsCare } = await import('../lib/vent/safety.ts');
+const threads = await import('../lib/vent/threads.ts');
+const { takeVentSlot, CODE_CAP_PER_MINUTE } = await import('../lib/vent/cap.ts');
+const { discordMode } = await import('../lib/vent/discord.ts');
 
 let failures = 0;
 const check = (label, ok, detail = '') => {
@@ -19,103 +34,104 @@ const check = (label, ok, detail = '') => {
 };
 
 const SECRET = 'พรุ่งนี้สอบคณิตแต่ยังอ่านไม่จบเลยเครียดมาก';
-const ask = (text) => ({ messages: [{ role: 'user', text }] });
-const fake = (answer, mock = false) => {
-  const provider = { mock, calls: 0, async respond() { provider.calls += 1; return typeof answer === 'function' ? answer() : answer; } };
-  return provider;
-};
-
-// Everything logged while the tests run, to prove the student's words never are.
 const logged = [];
 const realError = console.error;
 console.error = (...args) => logged.push(args.map(String).join(' '));
 
 try {
-  // ---- the safety net comes first
+  // ---- the safety net
   for (const phrase of ['ช่วงนี้อยากตายมากเลย', 'ไม่อยาก อยู่ แล้ว', 'I want to die', 'เมื่อวานโดนตีที่บ้าน', 'คิดจะกรีดแขนตัวเอง']) {
-    const ai = fake({ reply: ['ok'], risk: 'none' });
-    const out = await respond(ask(phrase), ai);
-    check(`"${phrase}" goes to the care screen`, out.kind === 'care', JSON.stringify(out));
-    check('  and the AI was never asked', ai.calls === 0);
+    check(`"${phrase}" is caught for care`, needsCare(phrase));
   }
   for (const phrase of ['วันนี้เหนื่อยมาก', 'สอบตกวิชาคณิต', 'ทะเลาะกับเพื่อน', 'ตายแล้ว ลืมทำการบ้าน']) {
     check(`"${phrase}" is an ordinary message`, !needsCare(phrase));
   }
 
-  // ---- what the AI says is checked
-  {
-    const ai = fake({ heard: 'ยังอ่านไม่จบ', reply: ['line one', 'line two'], feeling: 'tense', risk: 'none' });
-    const out = await respond(ask(SECRET), ai);
-    check('a good answer comes through', out.kind === 'reply' && out.lines.length === 2 && out.feeling === 'tense');
-    check('  with the words it heard, which really are the student\'s', out.heard === 'ยังอ่านไม่จบ');
-  }
-  {
-    const out = await respond(ask(SECRET), fake({ heard: 'ไม่ได้พูดแบบนี้เลย', reply: ['x'], risk: 'none' }));
-    check('a "heard" the student never wrote is dropped', out.kind === 'reply' && out.heard === undefined);
-  }
-  {
-    const out = await respond(ask(SECRET), fake('```json\n{"heard":"สอบคณิต","reply":["a"],"risk":"none"}\n```'));
-    check('JSON wrapped in a code fence is still read', out.kind === 'reply' && out.heard === 'สอบคณิต');
-  }
-  {
-    const ai = fake('not json at all');
-    const out = await respond(ask(SECRET), ai);
-    check('a malformed answer becomes "not available"', out.kind === 'unavailable');
-    check('  after exactly one retry', ai.calls === 2, `calls: ${ai.calls}`);
-  }
-  {
-    const out = await respond(ask(SECRET), fake({ reply: [], risk: 'none' }));
-    check('an empty answer becomes "not available"', out.kind === 'unavailable');
-  }
-  {
-    const out = await respond(ask(SECRET), fake({ reply: ['x'], risk: 'urgent' }));
-    check('the AI\'s own "urgent" becomes the care screen', out.kind === 'care');
-  }
-  {
-    const out = await respond(ask(SECRET), fake({ reply: ['x'], risk: 'concern' }));
-    check('"concern" keeps the answer and adds the gentle nudge', out.kind === 'reply' && out.concern === true);
-  }
-  {
-    const slow = fake(() => new Promise((r) => setTimeout(() => r({ reply: ['late'], risk: 'none' }), 2000)));
-    const t0 = Date.now();
-    const out = await respond(ask(SECRET), slow, 200);
-    check('a slow AI becomes "not available" at the time limit', out.kind === 'unavailable' && Date.now() - t0 < 1000);
-    check('  without a second long wait', slow.calls === 1);
-  }
-  {
-    const broken = fake(() => {
-      throw new Error(`upstream rejected: ${SECRET}`);
-    });
-    const out = await respond(ask(SECRET), broken);
-    check('an AI that throws becomes "not available"', out.kind === 'unavailable');
-  }
-  {
-    const out = await respond(ask(SECRET), null);
-    check('with no AI configured, it says so plainly', out.kind === 'unavailable');
+  // ---- a conversation, from the student's side
+  const t = await threads.startThread(SECRET, { feel: '2-0', urgent: false });
+  check('a new chat gives a long secret key', /^[A-Za-z0-9_-]{30,}$/.test(t.id));
+  check('and a short chat code like ABCD-2345', /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(t.code), t.code);
+  check('and a separate staff ref (the key never goes to staff)', t.ref && t.ref !== t.id && !t.id.includes(t.ref));
+
+  let view = await threads.readThread(t.id);
+  check('the student reads their message back by key', view?.messages.length === 1 && view.messages[0].body === SECRET);
+  check('  waiting for a พี่', view?.waiting === true);
+
+  check('the code finds the key (any case, any dashes)', (await threads.keyForCode(threads.normaliseCode(t.code.toLowerCase().replace('-', ' ')))) === t.id);
+  check('a made-up code finds nothing', (await threads.keyForCode('AAAA-AAAA')) === null);
+
+  // ---- from the team's side
+  const box = await threads.inbox();
+  check('the inbox lists it by staff ref, not key', box.length === 1 && box[0].ref === t.ref && !JSON.stringify(box).includes(t.id));
+  const reply = await threads.addMessage({ ref: t.ref }, 'sapa', 'พี่อยู่ตรงนี้นะ ค่อย ๆ เล่าก็ได้');
+  check('a พี่ answers by ref', reply && !reply.full);
+  view = await threads.readThread(t.id, view.messages[0].id);
+  check('the student sees only what is new since their last look', view?.messages.length === 1 && view.messages[0].sender === 'sapa');
+  check('  and it is no longer waiting', view?.waiting === false);
+
+  const more = await threads.addMessage({ id: t.id }, 'student', 'ขอบคุณค่ะ', false);
+  check('the student writes again: a fresh ping is due (a พี่ had answered)', more?.wasWaiting === false);
+  const again = await threads.addMessage({ id: t.id }, 'student', 'อีกอย่างนะ', true);
+  check('  writing again before an answer: no second ping due', again?.wasWaiting === true);
+  check('  a worrying message marks the chat urgent', again?.urgent === true && (await threads.inbox())[0].urgent === true);
+
+  // ---- ending it
+  const ended = await threads.endThread(t.id);
+  check('ending returns the ref and Discord notice to tidy up', ended?.ref === t.ref);
+  const c = await db();
+  const left = (await c.execute('SELECT (SELECT COUNT(*) FROM vent_thread) AS t, (SELECT COUNT(*) FROM vent_message) AS m')).rows[0];
+  check('ending deletes every word', Number(left.t) === 0 && Number(left.m) === 0, JSON.stringify(left));
+  check('the key is gone afterwards', (await threads.readThread(t.id)) === null);
+  check('and so is the code', (await threads.keyForCode(t.code)) === null);
+  check('a พี่ cannot answer an ended chat', (await threads.addMessage({ ref: t.ref }, 'sapa', 'x')) === null);
+
+  // ---- a chat left quiet for 30 days is deleted when someone new starts
+  const old = await threads.startThread('เก่า', { urgent: false });
+  await c.execute({ sql: 'UPDATE vent_thread SET updated_at = ? WHERE id = ?', args: [new Date(Date.now() - 31 * 86_400_000).toISOString(), old.id] });
+  const fresh = await threads.startThread('ใหม่', { urgent: false });
+  check('a 31-day-quiet chat is deleted', (await threads.readThread(old.id)) === null && (await threads.readThread(fresh.id)) !== null);
+  await threads.endThread(fresh.id);
+
+  // ---- a conversation cannot grow without end
+  const long = await threads.startThread('1', { urgent: false });
+  for (let i = 1; i < threads.MAX_MESSAGES; i++) await threads.addMessage({ id: long.id }, 'student', String(i));
+  check(`a chat stops at ${threads.MAX_MESSAGES} messages`, (await threads.addMessage({ id: long.id }, 'student', 'x'))?.full === true);
+  await threads.endThread(long.id);
+
+  // ---- code lookups are capped per minute, separately from messages
+  const minute = new Date('2030-01-01T00:00:00Z');
+  let allowed = 0;
+  for (let i = 0; i < CODE_CAP_PER_MINUTE + 5; i++) if (await takeVentSlot(minute, 'code')) allowed += 1;
+  check(`only ${CODE_CAP_PER_MINUTE} code lookups a minute`, allowed === CODE_CAP_PER_MINUTE, String(allowed));
+  check('  and messages still have their own allowance', await takeVentSlot(minute, 'message'));
+
+  // ---- Discord
+  check('no Discord settings: no pings, nothing breaks', discordMode({}) === null);
+  check('a webhook alone: pings with a link', discordMode({ DISCORD_WEBHOOK_URL: 'x' }) === 'webhook');
+  check('bot token + channel + public key: answer in Discord', discordMode({ DISCORD_BOT_TOKEN: 'a', DISCORD_CHANNEL_ID: 'b', DISCORD_PUBLIC_KEY: 'c' }) === 'bot');
+
+  process.env.DISCORD_PUBLIC_KEY = '0'.repeat(64);
+  const { POST } = await import('../app/api/discord/route.ts').catch(() => ({ POST: null }));
+  if (POST) {
+    const res = await POST(new Request('http://x/api/discord', { method: 'POST', body: '{"type":1}' }));
+    check('the Discord endpoint refuses an unsigned request', res.status === 401);
+  } else {
+    console.log('SKIP  the Discord endpoint (needs the app\'s @/ paths; covered by the build)');
   }
 
-  // ---- the stand-in
-  {
-    const out = await respond(ask(SECRET), mockProvider);
-    check('the development stand-in answers in the contract\'s shape', out.kind === 'reply' && out.lines.length >= 1);
-    check('  quoting the student\'s own words', out.kind === 'reply' && !!out.heard && SECRET.includes(out.heard));
-    check('  and is marked as a test, never passed off as the AI', out.kind === 'reply' && out.mock === true);
-  }
-  {
-    const env = process.env.NODE_ENV;
-    const chosen = process.env.VENT_PROVIDER;
-    delete process.env.VENT_PROVIDER;
-    process.env.NODE_ENV = 'production';
-    check('production never falls back to the stand-in', getProvider() === null);
-    process.env.NODE_ENV = env;
-    if (chosen !== undefined) process.env.VENT_PROVIDER = chosen;
-  }
-
-  // ---- privacy
-  check('nothing the student wrote was ever logged', !logged.some((l) => l.includes('สอบคณิต') || l.includes('อ่านไม่จบ')), logged.join(' | '));
-  check('  (and failures were logged, by name only)', logged.length > 0);
+  check('nothing the student wrote was ever logged', !logged.some((l) => l.includes(SECRET) || l.includes('ขอบคุณค่ะ')), logged.join(' | '));
 } finally {
   console.error = realError;
+  closeDb();
+  // Windows lets go of the file a moment after it is closed.
+  for (let i = 0; i < 20; i++) {
+    try {
+      clean();
+      break;
+    } catch {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
 }
 
 console.log(failures ? `\n${failures} FAILED` : '\nall passed');

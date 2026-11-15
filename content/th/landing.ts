@@ -73,8 +73,8 @@ export const landing = {
     vent: {
       note: 'มีอะไรค้างอยู่ในใจไหม',
       title: 'อยากระบาย พิมพ์มาเลย',
-      /** Still says plainly that an AI answers, just quietly. */
-      foot: 'มี AI ช่วยตอบ · ไม่เก็บข้อความ',
+      /** Says plainly who answers. */
+      foot: 'พี่ๆ สภาอ่านและตอบเอง · ไม่ต้องใส่ชื่อ',
     },
   },
 
