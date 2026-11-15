@@ -18,8 +18,11 @@ import styles from './Sky.module.css';
  * the phone's GPU does all of it and the page itself does nothing per frame.
  */
 
-const W = 400;
-const H = 800;
+/* The sky is drawn wide (a desktop's shape) and cut to the screen from the
+   middle out (`slice`), so a phone sees the middle strip at the size it was made
+   for, and a wide screen sees more of it rather than the same strip blown up. */
+const W = 1600;
+const H = 900;
 
 function seeded(seed: number) {
   let s = seed;
@@ -32,10 +35,10 @@ type Dot = { x: number; y: number; r: number; o: number };
 const STARS: Dot[][] = (() => {
   const rnd = seeded(11);
   const groups: Dot[][] = [[], [], []];
-  for (let i = 0; i < 75; i++) {
+  for (let i = 0; i < 300; i++) {
     const big = rnd() < 0.07;
     const y = rnd() ** 1.6 * H * 0.75;
-    groups[i % 3].push({ x: rnd() * W, y, r: big ? 1.7 : 0.45 + rnd() * 0.75, o: 0.45 + rnd() * 0.55 });
+    groups[i % 3].push({ x: rnd() * W, y, r: big ? 1.9 : 0.5 + rnd() * 0.8, o: 0.45 + rnd() * 0.55 });
   }
   return groups;
 })();
@@ -84,8 +87,9 @@ for (const [x0, y0, cols, rows] of [
 /* Not every room is lit: a fixed few stay dark. */
 const LIT = WINDOWS.filter((_, i) => (i * 7) % 5 !== 0);
 
-const TOWN = (
-  <svg className={styles.town} viewBox="0 0 400 130" preserveAspectRatio="xMidYMax slice">
+/** One stretch of the school, 400 wide. */
+const SCHOOL = (
+  <>
     <g className={styles.townFar}>
       <circle cx="120" cy="96" r="22" />
       <circle cx="140" cy="102" r="18" />
@@ -109,7 +113,7 @@ const TOWN = (
       <rect x="96" y="110" width="4" height="26" />
       <circle cx="356" cy="104" r="22" />
       <circle cx="394" cy="112" r="16" />
-      <rect x="0" y="122" width="400" height="10" />
+      <rect x="-2" y="122" width="404" height="10" />
     </g>
     <g className={styles.windows}>
       {LIT.map(([x, y]) => (
@@ -117,6 +121,21 @@ const TOWN = (
       ))}
       <circle cx="187" cy="38" r="5" />
     </g>
+  </>
+);
+
+/* The roofline, 1600 wide: the school five times along it, every other one
+   turned round so it never reads as a copy. The middle one's clock tower sits at
+   the centre (x 800), which is the part a phone shows. */
+const STRETCHES = [-187, 213, 613, 1013, 1413];
+
+const TOWN = (
+  <svg className={styles.town} viewBox="0 0 1600 130" preserveAspectRatio="xMidYMax slice">
+    {STRETCHES.map((x, i) => (
+      <g key={x} transform={i % 2 ? `translate(${x + 400} 0) scale(-1 1)` : `translate(${x} 0)`}>
+        {SCHOOL}
+      </g>
+    ))}
   </svg>
 );
 
