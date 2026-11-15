@@ -1,29 +1,244 @@
+/* The student pages' sky, in four moods (components/heart/Sky.tsx). The mood is
+   `data-time` on <html>; without it (no script), it is the day.
+
+   One fixed layer behind everything, the height of the tallest viewport, so the
+   roofline does not jump when Safari's toolbar slides away. Colours sit in
+   variables per mood; every part reads them. Only the parts a mood uses are
+   shown (display: none stops the others' animations too). */
+
 .sky {
+  /* day */
+  --sky: linear-gradient(180deg, #7fb8e2 0%, #a6cfec 45%, #d0e6f3 78%, #e8f2f5 100%);
+  --town-far: #c5dbeb;
+  --town: #a9c6dd;
+  --window: #c7dcec;
+  --cloud: #ffffff;
+  --sun: #ffd36b;
+
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: -2;
+  height: 100lvh;
+  overflow: hidden;
   pointer-events: none;
   background:
     url('/textures/paper-grain.png') 0 0 / 192px 192px repeat,
-    radial-gradient(70% 40% at 88% 4%, rgba(255, 168, 196, 0.34) 0%, transparent 70%),
-    radial-gradient(60% 38% at 6% 38%, rgba(255, 214, 120, 0.2) 0%, transparent 70%),
-    radial-gradient(80% 45% at 72% 78%, rgba(150, 222, 196, 0.18) 0%, transparent 70%),
-    linear-gradient(#fffaf8 0%, #fff3f4 100%);
+    var(--sky);
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 1.5dppx) {
   .sky {
     background:
       url('/textures/paper-grain-2x.png') 0 0 / 192px 192px repeat,
-      radial-gradient(70% 40% at 88% 4%, rgba(255, 168, 196, 0.34) 0%, transparent 70%),
-      radial-gradient(60% 38% at 6% 38%, rgba(255, 214, 120, 0.2) 0%, transparent 70%),
-      radial-gradient(80% 45% at 72% 78%, rgba(150, 222, 196, 0.18) 0%, transparent 70%),
-      linear-gradient(#fffaf8 0%, #fff3f4 100%);
+      var(--sky);
+  }
+}
+
+:global(:root[data-time='morning']) .sky {
+  --sky: linear-gradient(180deg, #f4b3a2 0%, #fbcdb0 38%, #ffe6c9 72%, #fff3e1 100%);
+  --town-far: #f6d3bb;
+  --town: #ecbfa4;
+  --window: #f7d8c3;
+  --cloud: #fff7ee;
+  --sun: #ffb511;
+}
+
+:global(:root[data-time='dusk']) .sky {
+  /* Dark enough for cream words down to the roofline; the warm light is low,
+     mostly behind the roofs. */
+  --sky: linear-gradient(180deg, #2a2f6b 0%, #463780 26%, #6e3f85 50%, #8a4585 72%, #a24d86 81%, #e0737f 92%, #ffb36b 100%);
+  /* With no roofs to hide the warm light, words reach the foot: it stays dusk. */
+  --sky-bare: linear-gradient(180deg, #2a2f6b 0%, #463780 30%, #6e3f85 60%, #8a4585 84%, #a24d86 100%);
+  --town-far: #5a3a73;
+  --town: #33264f;
+  --window: #ffc86b;
+  --sun: #ffb36b;
+}
+
+:global(:root[data-time='night']) .sky {
+  --sky: linear-gradient(180deg, #0b1433 0%, #15214a 55%, #24345f 100%);
+  --town-far: #1a2650;
+  --town: #0a1129;
+  --window: #ffd27a;
+}
+
+/* A sky with no roofline (.bare): the moods that keep their warm light behind
+   the roofs use their bare variant instead. */
+.bare {
+  background:
+    url('/textures/paper-grain.png') 0 0 / 192px 192px repeat,
+    var(--sky-bare, var(--sky));
+}
+
+@media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 1.5dppx) {
+  .bare {
+    background:
+      url('/textures/paper-grain-2x.png') 0 0 / 192px 192px repeat,
+      var(--sky-bare, var(--sky));
+  }
+}
+
+.bare .sun {
+  display: none !important;
+}
+
+/* ---- stars: night, and the first few at dusk ---- */
+
+.stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  animation: twinkle var(--twinkle) ease-in-out var(--delay) infinite alternate;
+}
+
+:global(:root[data-time='night']) .stars {
+  display: block;
+}
+
+:global(:root[data-time='dusk']) .stars {
+  display: block;
+  -webkit-mask-image: linear-gradient(#000 0%, transparent 34%);
+  mask-image: linear-gradient(#000 0%, transparent 34%);
+}
+
+@keyframes twinkle {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* ---- the sun: low in the morning, setting behind the roofs at dusk ---- */
+
+.sun {
+  position: absolute;
+  display: none;
+  width: 92px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--sun);
+}
+
+:global(:root[data-time='morning']) .sun {
+  display: block;
+  left: 12%;
+  bottom: calc(min(19vh, 170px) - 10px);
+}
+
+:global(:root[data-time='dusk']) .sun {
+  display: block;
+  right: 14%;
+  bottom: calc(min(19vh, 170px) - 46px);
+  width: 120px;
+}
+
+/* ---- the moon: a small paper disc, its own shadow cut a little off ---- */
+
+.moon {
+  position: absolute;
+  display: none;
+  top: max(3vh, calc(env(safe-area-inset-top) + 14px));
+  right: 7%;
+  width: 40px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff3d6;
+  box-shadow: -7px 3px 0 0 #e8d5ad inset;
+}
+
+:global(:root[data-time='night']) .moon {
+  display: block;
+}
+
+/* ---- clouds: morning and day, drifting very slowly ---- */
+
+.clouds {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+:global(:root:not([data-time])) .clouds,
+:global(:root[data-time='day']) .clouds,
+:global(:root[data-time='morning']) .clouds {
+  display: block;
+}
+
+.cloud {
+  position: absolute;
+  fill: var(--cloud);
+  will-change: transform;
+}
+
+.cloudA {
+  top: 12vh;
+  left: 58%;
+  width: 120px;
+  animation: drift 70s ease-in-out infinite alternate;
+}
+
+.cloudB {
+  top: 34vh;
+  left: 6%;
+  width: 86px;
+  opacity: 0.85;
+  animation: drift 90s ease-in-out -30s infinite alternate-reverse;
+}
+
+:global(:root[data-time='morning']) .cloudA {
+  opacity: 0.7;
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-24px);
+  }
+  to {
+    transform: translateX(24px);
+  }
+}
+
+/* ---- the school's roofline ---- */
+
+.town {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: min(19vh, 170px);
+}
+
+.townFar {
+  fill: var(--town-far);
+}
+
+.townNear {
+  fill: var(--town);
+}
+
+.windows {
+  fill: var(--window);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stars,
+  .cloud {
+    animation: none;
   }
 }
 
 @media print, (forced-colors: active) {
   .sky {
-    background: #fff8fa;
+    background: #ffffff;
+  }
+
+  .sky > * {
+    display: none !important;
   }
 }

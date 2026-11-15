@@ -4,9 +4,9 @@ import styles from './HeartTheme.module.css';
 import { Sky } from './Sky';
 
 /**
- * Puts a student screen in the User Mode look: the light sky, and the base
- * tokens redefined to the home's pinks. Booth screens never use this; they keep
- * the paper identity and their festival.
+ * Puts a student screen in the User Mode look: the time-of-day sky, with the
+ * screen laid on it as a sheet of paper. Booth screens never use this; they keep
+ * their festival.
  */
 export function HeartTheme({ children }: { children: ReactNode }) {
   return (

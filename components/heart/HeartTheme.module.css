@@ -1,29 +1,30 @@
-/* The User Mode look (home, check-up) laid over the older student screens.
+/* The student look laid over the older student screens (check-in, result).
+
    Those screens are built from the base components (answer cards, progress row,
-   buttons, CUD Care block), which read the base tokens; redefining the tokens
-   here turns them into the light pink identity without touching the components,
-   so the booth, which uses the same components, keeps its own look. */
+   buttons, CUD Care block), which already speak BRIEF's own inks, so the tokens
+   are left as they are. The screen itself becomes a sheet of paper laid on the
+   time-of-day sky (components/heart/Sky): a band of sky shows above it, and
+   beside it on a wide screen, and the words always sit on paper, whatever the
+   hour. */
 
 .theme {
-  --ink: #2a2140;
-  --ink-soft: #5f566f;
-  --ink-muted: #5f566f;
-  --note-pink: #c8336a;
-  --riso-pink: #f0588a;
-  --riso-blue: #9baaff;
-  --sunflower: #ffc94d;
-  --paper: #fff8fa;
-  --paper-raised: #ffffff;
-  --paper-surface: transparent;
-  --pink-tint: #ffe3ec;
-  --track: rgba(42, 33, 64, 0.1);
-  --line: rgba(42, 33, 64, 0.12);
-  --slab-shadow: 0 2px 0 rgba(200, 51, 106, 0.08), 0 18px 36px -20px rgba(200, 51, 106, 0.45);
-  /* The primary button, as on the home and the check-up. */
-  --button: #c8336a;
-
   position: relative;
   color: var(--ink);
+  padding-top: max(44px, calc(env(safe-area-inset-top) + 28px));
 }
 
-/* The sky (and its grain, without a blend mode) is components/heart/Sky. */
+.theme > main {
+  min-height: calc(100vh - 44px);
+  min-height: calc(100dvh - 44px);
+  background: var(--paper-surface);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -2px 0 rgba(27, 43, 94, 0.08), 0 -14px 28px -18px rgba(12, 22, 56, 0.45);
+}
+
+@media (min-width: 520px) {
+  .theme > main {
+    border-radius: 22px 22px 6px 22px;
+    min-height: auto;
+    margin-bottom: 44px;
+  }
+}

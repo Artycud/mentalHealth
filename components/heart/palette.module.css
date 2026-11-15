@@ -1,64 +1,136 @@
-/* The User Mode palette, shared by the home, the check-up and VENT.
+/* The student pages' palette, shared by the home, the check-up and VENT.
 
-   One vivid colour: --accent (the school's rose). It is used ONLY for what can
-   be acted on next (each screen's primary action, the send button), for what
-   is selected or current (a picked chip, the next round), and for focus rings.
-   Everything else sits on soft pastel paper, so the eye goes straight to the
-   one thing that is rose.
+   BRIEF §4's own inks, on paper, under a sky that follows the time of day
+   (components/heart/Sky). Two kinds of text:
+   - on paper (slips, sheets, fields): navy ink, always;
+   - straight on the sky (the intro line, a note between slips): --sky-ink, navy
+     in the morning and by day, cream at dusk and at night.
 
-   Surfaces are card stock, not frosted glass: a solid pastel sheet, a hairline
-   edge, a thin darker lip below and a soft warm contact shadow. */
+   Surfaces are paper slips laid on the sky: warm off-white (or a tint of one ink),
+   one sharp corner (BRIEF §6), a flat paper-thickness lip and one short shadow.
+   No gloss, no glow, no gradients on anything you press.
+
+   The one primary action on a screen is navy. Pink (the deep, readable one) is
+   only for what is selected or current, and for focus. */
 
 .palette {
-  /* text */
-  --ink: #2a2140;
-  --ink-soft: #5f566f;
-  --ink-line: rgba(42, 33, 64, 0.1);
+  /* text on paper. A screen whose words sit on the sky (the check-up, VENT)
+     points --ink at --sky-ink; anything paper inside it puts --ink back with
+     .paper (below). */
+  --paper-ink: #1b2b5e;
+  --paper-ink-soft: #46507a;
+  --paper-line: rgba(27, 43, 94, 0.14);
+  --ink: var(--paper-ink);
+  --ink-soft: var(--paper-ink-soft);
+  --ink-line: var(--paper-line);
 
-  /* the one accent */
-  --accent: #c8336a;
-  --accent-deep: #a8285a;
-  --accent-soft: #ffe3ec;
-  --accent-ring: rgba(200, 51, 106, 0.28);
+  /* text on the sky: day and morning */
+  --sky-ink: #1b2b5e;
+  --sky-ink-soft: #2f3c6c;
+  --sky-line: rgba(27, 43, 94, 0.24);
+  --sky-shadow: none;
+  --sky-tag: rgba(254, 249, 245, 0.92);
+  /* pink that reads on the sky; and the sky's own colour at its top and at the
+     roofline, for anything that fades into the sky (components/heart/Sky) */
+  --sky-accent: #7e0d43;
+  --sky-top: #7fb8e2;
+  --sky-foot: #e8f2f5;
 
-  /* paper */
-  --card: #fffdfb;
-  --card-blush: #fff0f2;
-  --card-lilac: #f1f0ff;
-  --card-mint: #e9f8f1;
-  --card-sun: #fff5da;
-  --card-coral: #ffeee9;
+  /* selected / current / focus: riso pink, the deep one where it is text */
+  --accent: #b0155f;
+  --accent-deep: #7e0d43;
+  --accent-soft: #ffd9e6;
+  --accent-ring: rgba(255, 72, 176, 0.5);
 
-  /* inks that sit on those papers (all ≥ 4.5:1 on their card) */
-  --mint: #6fd7b8;
-  --mint-ink: #0b7458;
-  --sun: #ffc94d;
-  --sun-ink: #8a5900;
-  --coral: #ff9a85;
-  --coral-ink: #b43d28;
-  --lilac: #9baaff;
-  --lilac-ink: #4a46a8;
-  --blush: #ff8fb5;
+  /* the primary action */
+  --button: #1b2b5e;
+  --button-lip: #0c1638;
 
-  /* depth: resting, and lifted (hover / the primary card) */
-  --edge: inset 0 0 0 1px rgba(42, 33, 64, 0.06);
+  /* paper, and paper tinted with each ink */
+  --card: #fef9f5;
+  --card-blush: #ffe2ec;
+  --card-lilac: #dfeaf6;
+  --card-mint: #dfeaf6;
+  --card-sun: #ffe9b0;
+  --card-coral: #ffe2ec;
+
+  /* inks that sit on those papers (all ≥ 4.5:1 on their tint) */
+  --mint: #8fc3e6;
+  --mint-ink: #005a91;
+  --sun: #ffb511;
+  --sun-ink: #6e4600;
+  --coral: #ff8fc6;
+  --coral-ink: #a0124f;
+  --lilac: #a9bde9;
+  --lilac-ink: #1b2b5e;
+  --blush: #ff48b0;
+
+  /* depth: a paper lip, and one short shadow under it */
+  --edge: inset 0 0 0 1px rgba(27, 43, 94, 0.06);
   --lift-1:
-    0 1px 0 rgba(120, 72, 60, 0.1),
-    0 2px 0 rgba(120, 72, 60, 0.05),
-    0 14px 24px -18px rgba(90, 50, 40, 0.45);
+    0 2px 0 rgba(27, 43, 94, 0.14),
+    0 12px 18px -14px rgba(12, 22, 56, 0.55);
   --lift-2:
-    0 1px 0 rgba(120, 72, 60, 0.1),
-    0 4px 0 rgba(120, 72, 60, 0.05),
-    0 22px 34px -18px rgba(90, 50, 40, 0.5);
-  --accent-lift: 0 2px 0 var(--accent-deep), 0 14px 22px -12px rgba(200, 51, 106, 0.6);
+    0 3px 0 rgba(27, 43, 94, 0.16),
+    0 18px 26px -16px rgba(12, 22, 56, 0.6);
+  --accent-lift: 0 3px 0 var(--button-lip);
 
-  color: var(--ink);
+  /* the slip's shape: three soft corners and one sharp */
+  --slip: 16px 16px 16px 4px;
+
+  color: var(--sky-ink);
 }
 
-/* A card you can press: lifts on hover where there is a mouse, settles on press. */
+:global(:root[data-time='morning']) .palette {
+  --sky-ink-soft: #3a3f66;
+  --sky-top: #f4b3a2;
+  --sky-foot: #fff3e1;
+}
+
+:global(:root[data-time='dusk']) .palette {
+  --sky-top: #2a2f6b;
+  --sky-foot: #a24d86;
+}
+
+:global(:root[data-time='night']) .palette {
+  --sky-top: #0b1433;
+  --sky-foot: #24345f;
+}
+
+:global(:root[data-time='dusk']) .palette,
+:global(:root[data-time='night']) .palette {
+  --sky-ink: #fff6e6;
+  --sky-ink-soft: #f3e6f0;
+  --sky-line: rgba(255, 246, 230, 0.4);
+  --sky-accent: #ffc2e2;
+  --sky-shadow: 0 1px 2px rgba(20, 12, 48, 0.55), 0 0 18px rgba(20, 12, 48, 0.35);
+  --sky-tag: rgba(254, 249, 245, 0.94);
+}
+
+/* Dusk is lighter near the roofs than night is: its softer words and its pink
+   stay close to cream there (npm run check:theme measures them). */
+:global(:root[data-time='dusk']) .palette {
+  --sky-ink-soft: #fff6e6;
+  --sky-accent: #ffe6f2;
+}
+
+/* Words on paper, inside a screen whose words otherwise sit on the sky. */
+.paper,
+.card,
+.pill,
+.primary {
+  --ink: var(--paper-ink);
+  --ink-soft: var(--paper-ink-soft);
+  --ink-line: var(--paper-line);
+  /* The words' colour is inherited as a colour, not a variable: set it again. */
+  color: var(--ink);
+  text-shadow: none;
+}
+
+/* A slip you can press: settles on press, lifts a hair under a mouse. */
 .card {
   display: block;
-  border-radius: 24px;
+  border-radius: var(--slip);
   background: var(--card);
   box-shadow: var(--edge), var(--lift-1);
   color: var(--ink);
@@ -82,7 +154,8 @@
 }
 
 .card:active {
-  transform: translateY(0) scale(0.985);
+  transform: translateY(1px);
+  box-shadow: var(--edge), 0 1px 0 rgba(27, 43, 94, 0.14);
   transition-duration: var(--d-tap);
 }
 
@@ -91,7 +164,21 @@
   outline-offset: 4px;
 }
 
-/* The round "go" mark on a secondary card: white disc, rose chevron. */
+/* A strip of tape holding a slip to the sky. Put on a slip with position set. */
+.tape {
+  position: absolute;
+  z-index: 2;
+  top: -10px;
+  left: calc(50% - 34px);
+  width: 68px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 0 rgba(27, 43, 94, 0.08);
+  rotate: -3deg;
+  pointer-events: none;
+}
+
+/* The round "go" mark on a secondary slip: a navy disc, a cream chevron. */
 .go {
   display: grid;
   place-items: center;
@@ -99,9 +186,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #ffffff;
-  color: var(--accent);
-  box-shadow: 0 1px 0 rgba(120, 72, 60, 0.12), 0 8px 14px -10px rgba(90, 50, 40, 0.5);
+  background: var(--button);
+  color: #fef9f5;
   transition: transform 180ms var(--ease);
 }
 
@@ -111,7 +197,7 @@
   }
 }
 
-/* The one primary action on a screen. */
+/* The one primary action on a screen: navy, one sharp corner, a flat lip. */
 .primary {
   display: inline-flex;
   align-items: center;
@@ -121,8 +207,8 @@
   padding: 0 28px;
   border: 0;
   border-radius: var(--r-primary);
-  background: linear-gradient(180deg, #d4437a 0%, var(--accent) 100%);
-  box-shadow: var(--accent-lift), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: var(--button);
+  box-shadow: var(--accent-lift);
   color: #ffffff;
   font-family: var(--font-heading);
   font-size: 18px;
@@ -142,22 +228,22 @@
 
 @media (hover: hover) {
   .primary:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 }
 
 .primary:active {
-  transform: translateY(1px) scale(0.985);
-  box-shadow: 0 1px 0 var(--accent-deep), 0 8px 14px -10px rgba(200, 51, 106, 0.6);
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--button-lip);
   transition-duration: var(--d-tap);
 }
 
 .primary:focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--accent-ring);
   outline-offset: 4px;
 }
 
-/* A quiet pill: secondary, but clearly a button (white, rose outline). */
+/* A quiet button: secondary, but clearly a button (paper, navy outline). */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -165,10 +251,10 @@
   min-height: 48px;
   padding: 0 20px;
   border: 0;
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1.5px var(--accent-ring), 0 8px 14px -12px rgba(90, 50, 40, 0.45);
-  color: var(--accent);
+  border-radius: var(--r-secondary);
+  background: #fef9f5;
+  box-shadow: inset 0 0 0 1.5px var(--ink), 0 2px 0 rgba(27, 43, 94, 0.18);
+  color: var(--ink);
   font-family: var(--font-heading);
   font-size: 16px;
   font-weight: 500;
@@ -181,23 +267,23 @@
 }
 
 .pill:hover {
-  color: var(--accent);
+  color: var(--ink);
 }
 
 @media (hover: hover) {
   .pill:hover {
-    transform: translateY(-2px);
-    background: var(--accent-soft);
+    transform: translateY(-1px);
+    background: #ffffff;
   }
 }
 
 .pill:active {
-  transform: scale(0.97);
+  transform: translateY(1px);
   transition-duration: var(--d-tap);
 }
 
 .pill:focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--accent-ring);
   outline-offset: 3px;
 }
 

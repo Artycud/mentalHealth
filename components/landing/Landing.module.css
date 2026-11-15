@@ -1,6 +1,7 @@
 /* The User Mode home. Colours come from components/heart/palette.module.css
-   (set on the page by components/heart/UserPage): one rose accent for the
-   check-up card and the next round, soft pastel paper for everything else. */
+   (set on the page by components/heart/UserPage). The top of the home is slips
+   taped to the time-of-day sky; the event below it is printed on one sheet of
+   paper (.sheet), so its longer text always sits on paper, whatever the hour. */
 
 .root {
   position: relative;
@@ -24,21 +25,12 @@
   line-height: 1.25;
 }
 
-/* A hand-drawn marker stroke under the words. */
+/* A flat marigold highlighter band behind the words, as if run over them once. */
 .underlined {
-  position: relative;
-  display: inline-block;
-  z-index: 0;
-}
-
-.squiggle {
-  position: absolute;
-  z-index: -1;
-  left: -2%;
-  bottom: -0.14em;
-  width: 104%;
-  height: 0.3em;
-  opacity: 0.9;
+  padding-inline: 0.06em;
+  background: linear-gradient(transparent 58%, var(--sunflower) 58%, var(--sunflower) 92%, transparent 92%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .lead {
@@ -48,16 +40,124 @@
   color: var(--ink-soft);
 }
 
-/* ---------- the check-up, after the intro ----------
-   Pulled up by half a screen, so it scrolls into the lower half of the intro
-   while the question sits in the top half: one screen, nothing on top of
-   anything, and no empty stretch before it. Above the intro's hearts. */
-.check {
+/* ---------- the three ways in, on the first screen (inside IntroStory) ---------- */
+
+/* The check-up slip, and the tape holding it to the sky (drawn here: the slip
+   itself clips anything that pokes out of it, for its press ripple). */
+.taped {
   position: relative;
-  z-index: 2;
-  max-width: 520px;
-  margin: -50svh auto 0;
-  padding: 0 20px;
+}
+
+.taped::before {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  top: -9px;
+  left: calc(50% - 34px);
+  width: 68px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 1px 0 rgba(27, 43, 94, 0.08);
+  rotate: -4deg;
+  pointer-events: none;
+}
+
+/* "or": between the check-up (the one thing the home asks for) and VENT. A
+   hand-written word on the sky between two fine rules; a pause, not a wall. */
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 6px -2px;
+  font-family: var(--font-note);
+  font-size: 16px;
+  color: var(--sky-ink-soft);
+  text-shadow: var(--sky-shadow);
+  white-space: nowrap;
+}
+
+.or::before,
+.or::after {
+  content: '';
+  flex: 1;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--sky-line);
+}
+
+/* VENT and CUD Care: smaller slips, words on the left, the way in on the right. */
+.slip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 16px 16px 18px;
+}
+
+.slip[data-slip='vent'] {
+  background:
+    url('/textures/paper-grain.png') 0 0 / 192px 192px repeat,
+    var(--card);
+  border-radius: 18px 5px 18px 18px;
+  rotate: 0.7deg;
+}
+
+.slip[data-slip='care'] {
+  gap: 10px;
+  margin-top: 6px;
+  padding: 11px 12px 11px 14px;
+  background:
+    url('/textures/paper-grain.png') 0 0 / 192px 192px repeat,
+    var(--pink-tint);
+  rotate: -0.6deg;
+}
+
+/* The quiet one: smaller words, a smaller way in. */
+.slip[data-slip='care'] .slipTitle {
+  font-size: 16px;
+}
+
+.slip[data-slip='care'] .slipFoot {
+  font-size: 13px;
+}
+
+.goSmall {
+  width: 36px;
+  height: 36px;
+}
+
+.slipWords {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.slipNote {
+  font-family: var(--font-note);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.slipTitle {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.slipFoot {
+  margin-top: 2px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.careMark {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 4px;
 }
 
 /* ---------- sections ---------- */
@@ -79,7 +179,39 @@
 .note {
   font-family: var(--font-note);
   font-size: 19px;
-  color: var(--ink-soft);
+  color: var(--sky-ink-soft);
+  text-shadow: var(--sky-shadow);
+}
+
+/* ---------- the sheet: the event, printed on paper below the sky ----------
+   Torn along its top edge; it runs to the foot of the page. */
+.sheet {
+  position: relative;
+  margin-top: 72px;
+  padding-bottom: 8px;
+  background: var(--paper-surface);
+  color: var(--ink);
+  box-shadow: 0 -14px 28px -20px rgba(12, 22, 56, 0.5);
+}
+
+.sheet::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -11px;
+  height: 12px;
+  background: var(--paper);
+  clip-path: polygon(0 60%, 4% 20%, 9% 55%, 15% 10%, 21% 50%, 27% 25%, 33% 65%, 40% 15%, 46% 45%, 52% 5%, 58% 50%, 64% 20%, 71% 60%, 77% 15%, 83% 45%, 89% 10%, 95% 55%, 100% 25%, 100% 100%, 0 100%);
+}
+
+.sheet .note {
+  color: var(--note-pink);
+  text-shadow: none;
+}
+
+.sheet > .section:first-child {
+  padding-top: 40px;
 }
 
 .sectionTitle {
@@ -317,7 +449,7 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: rgba(42, 33, 64, 0.18);
+  background: rgba(27, 43, 94, 0.2);
   transition:
     width 240ms var(--ease),
     background-color 240ms var(--ease);
@@ -332,32 +464,6 @@
   outline: 3px solid var(--accent);
   outline-offset: -4px;
   border-radius: 12px;
-}
-
-/* ---- CUD Care ---- */
-
-.care {
-  padding: 22px 22px 24px;
-  border-radius: var(--r-care-home);
-  background: var(--card-mint);
-  box-shadow: var(--edge), var(--lift-1);
-}
-
-.careTitle {
-  margin-top: 10px;
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.careBody {
-  margin-top: 4px;
-  font-size: 15px;
-  color: var(--ink-soft);
-}
-
-.careLink {
-  margin-top: 14px;
 }
 
 /* ---- footer ---- */

@@ -138,6 +138,74 @@ for (const rel of festivalFiles) {
   }
 }
 
+// ---- 1b. the student pages' time-of-day sky ----
+// Words sit straight on the sky (components/heart/Sky), in the sky's ink
+// (components/heart/palette.module.css), and the sky is fixed while the words
+// scroll, so each ink must read on every colour of its sky above the roofline.
+{
+  const MOODS = ['morning', 'day', 'dusk', 'night'];
+  const ROOFLINE = 81; // % down the sky where the roofs begin (Sky.module.css .town)
+
+  /** Per mood, the declarations of every rule whose selector has `cls`; a rule
+      that names no mood is the base, and day (no attribute) is the base. */
+  const byMood = (rel, cls) => {
+    const css = read(rel).replace(/\/\*[\s\S]*?\*\//g, '');
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((r) => new RegExp(`\\.${cls}\\s*$`).test(r[1].trim()));
+    const merged = (keep) => Object.assign({}, ...rules.filter((r) => keep(r[1])).map((r) => declarations(r[2])));
+    const base = merged((sel) => !/data-time/.test(sel));
+    return Object.fromEntries(MOODS.map((m) => [m, { ...base, ...merged((sel) => sel.includes(`data-time='${m}'`)) }]));
+  };
+
+  const skies = byMood('components/heart/Sky.module.css', 'sky');
+  const inks = byMood('components/heart/palette.module.css', 'palette');
+  for (const m of MOODS) {
+    const stops = [...(skies[m]['--sky'] ?? '').matchAll(/(#[0-9a-f]{6})\s+(\d+)%/gi)]
+      .filter(([, , at]) => Number(at) <= ROOFLINE)
+      .map(([, hex]) => hex.toUpperCase());
+    check(stops.length >= 2, `the ${m} sky has colours above the roofline`);
+    // With no roofline (the check-up, VENT), words reach the foot: the whole sky.
+    const bare = [...(skies[m]['--sky-bare'] ?? skies[m]['--sky'] ?? '').matchAll(/(#[0-9a-f]{6})\s+\d+%/gi)].map(([, hex]) =>
+      hex.toUpperCase(),
+    );
+    stops.push(...bare);
+    for (const [name, need] of [
+      ['--sky-ink', 4.5],
+      ['--sky-ink-soft', 4.5],
+      ['--sky-accent', 4.5],
+    ]) {
+      const ink = colour(inks[m][name] ?? '', inks[m]);
+      if (!ink) {
+        check(false, `${name} is a plain colour in the ${m} palette`);
+        continue;
+      }
+      const worst = Math.min(...stops.map((s) => contrast(ink, s)));
+      check(worst >= need, `${m}: ${name} on its sky is at least ${worst.toFixed(1)}:1 (needs ${need}:1)`);
+    }
+  }
+
+  // Words on paper inside those screens, and on the slips' tints.
+  const p = inks.day;
+  const c = (name) => colour(p[name] ?? '', p);
+  for (const [fg, bg] of [
+    ['--paper-ink', '--card'],
+    ['--paper-ink-soft', '--card'],
+    ['--paper-ink-soft', '--card-blush'],
+    ['--paper-ink-soft', '--card-lilac'],
+    ['--paper-ink-soft', '--card-sun'],
+    ['--mint-ink', '--card-mint'],
+    ['--sun-ink', '--card-sun'],
+    ['--coral-ink', '--card-coral'],
+    ['--accent', '--card'],
+  ]) {
+    const ratio = c(fg) && c(bg) ? contrast(c(fg), c(bg)) : 0;
+    check(ratio >= 4.5, `student palette: ${fg} on ${bg} is ${ratio.toFixed(1)}:1 (needs 4.5:1)`);
+  }
+  for (const bg of ['--accent', '--button']) {
+    const ratio = c(bg) ? contrast('#FFFFFF', c(bg)) : 0;
+    check(ratio >= 4.5, `student palette: white on ${bg} is ${ratio.toFixed(1)}:1 (needs 4.5:1)`);
+  }
+}
+
 // The base never names a festival, and never defines a scene variable itself.
 const FESTIVAL_NAME = /loykrathong|christmas|cny-valentine|krathong/i;
 // Known gap, on purpose: the booth screens (components/booth/, app/booth/ and

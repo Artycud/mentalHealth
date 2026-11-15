@@ -1,25 +1,104 @@
-/* The one-page intro: pinned for a single screen of scrolling while the question
-   rises and the hearts gather around it; the check-up (the next section, pulled
-   up by half a screen) comes into the lower half over the same scroll. */
+/* The top of the home, in two states (components/landing/IntroStory.tsx):
 
-.track {
+   - the opening scene (no data-intro on <html>): one screen of sky, the question
+     in the middle, everyone's hearts out at the edges; the slips wait below it;
+   - the home (html[data-intro='done']): the question is the headline, the hearts
+     ringed round it, and the three slips straight under it, all on one screen.
+
+   The glide between them moves transforms only (see the end of this file). */
+
+.top {
   position: relative;
-  height: 200svh;
 }
 
-.stage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  overflow: hidden;
+.scene {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding-top: var(--kicker-room);
+  --kicker-top: max(4svh, calc(env(safe-area-inset-top) + 16px));
+  --kicker-room: calc(var(--kicker-top) + 32px);
+}
+
+/* The home: the scene shrinks to what it holds. */
+:global(:root[data-intro='done']) .scene {
+  min-height: 0;
+}
+
+/* On a little paper tag, so a heart never covers it. */
+.kicker {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: var(--kicker-top);
+  translate: -50% 0;
+  padding: 3px 12px 4px;
+  border-radius: 10px 10px 10px 3px;
+  background: var(--sky-tag);
+  box-shadow: 0 2px 0 rgba(27, 43, 94, 0.14);
+  white-space: nowrap;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* The question, with room above and below it for the ring of hearts
+   (--ring is measured: the gap plus the largest heart, IntroStory.tsx). */
+.question {
+  position: relative;
+  width: min(84vw, 380px);
+  padding-block: var(--ring, 72px);
+}
+
+.line {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: clamp(30px, 8.6vw, 40px);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--sky-ink);
+  text-shadow: var(--sky-shadow);
+  text-wrap: balance;
+}
+
+/* One phrase to a row. */
+.line span {
+  display: block;
+}
+
+/* ---- the hearts: around the question's centre ---- */
+
+.hearts {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
 }
 
 .heart {
   position: absolute;
   top: 0;
   left: 0;
-  will-change: transform;
-  contain: layout paint;
+  opacity: 0;
+  transform: translate3d(var(--x0, 0), var(--y0, 0), 0);
+  transition: opacity 500ms var(--ease);
+}
+
+/* Shown once they have been placed (they are measured from the question). */
+.top[data-placed='true'] .heart {
+  opacity: 1;
+}
+
+/* Gathered: on the ring, and smaller. */
+:global(:root[data-intro='done']) .heart {
+  transform: translate3d(var(--x1, 0), var(--y1, 0), 0) scale(0.741);
 }
 
 /* The slow sway, run by the compositor (no script per frame). */
@@ -39,81 +118,41 @@
   height: auto;
 }
 
-/* Above the hearts, on a little paper pill, so a heart never covers it. */
-.kicker {
-  position: absolute;
+/* ---- the three ways in ---- */
+
+.slips {
+  position: relative;
   z-index: 2;
-  left: 50%;
-  top: max(4svh, calc(env(safe-area-inset-top) + 16px));
-  translate: -50% 0;
-  padding: 3px 12px 4px;
-  border-radius: 999px;
-  background: #fffdfb;
-  box-shadow: inset 0 0 0 1px rgba(42, 33, 64, 0.06), 0 6px 12px -10px rgba(90, 50, 40, 0.5);
-  white-space: nowrap;
-  text-align: center;
-  font-family: var(--font-heading);
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 4px 20px 0;
 }
 
-.line {
-  position: absolute;
-  z-index: 1;
-  left: 50%;
-  top: 50%;
-  width: min(84vw, 380px);
-  margin: 0;
-  translate: -50% -50%;
-  text-align: center;
-  font-family: var(--font-heading);
-  font-size: clamp(30px, 8.6vw, 40px);
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink);
-  text-wrap: balance;
+/* ---- the glide (IntroStory.tsx): while html[data-gliding='run'], the question
+   and the slips slide from where they were to where they are, and the hearts
+   from scattered to gathered ---- */
+
+:global(:root[data-gliding]) .heart {
+  transition:
+    transform 850ms var(--ease),
+    opacity 500ms var(--ease);
+}
+
+:global(:root[data-gliding='run']) .question,
+:global(:root[data-gliding='run']) .slips {
+  transition: transform 850ms var(--ease);
   will-change: transform;
 }
 
-/* One phrase to a row. */
-.line span {
-  display: block;
-}
-
-
-.cue {
-  position: absolute;
-  z-index: 2;
-  left: 0;
-  right: 0;
-  bottom: max(4svh, calc(env(safe-area-inset-bottom) + 16px));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  opacity: 0;
-  text-align: center;
-  font-size: 14px;
-  color: #5f566f;
-}
-
-.cueLine {
-  width: 1.5px;
-  height: 30px;
-  background: linear-gradient(#5f566f, transparent);
-  transform-origin: top;
-  animation: drip 2.4s ease-in-out infinite;
-}
-
-@keyframes drip {
-  0% { transform: scaleY(0); }
-  60%, 100% { transform: scaleY(1); opacity: 0; }
+:global(:root[data-gliding='run']) .slips {
+  transition-duration: 950ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wobble,
-  .cueLine {
+  .wobble {
     animation: none;
   }
 }

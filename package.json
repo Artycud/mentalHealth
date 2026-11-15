@@ -14,6 +14,7 @@
     "test:dates": "node --experimental-strip-types --no-warnings scripts/test-thai-date.mjs",
     "check:booth": "node --experimental-strip-types --no-warnings scripts/check-booth-scoring.mjs",
     "test:scoring": "node --experimental-strip-types --no-warnings scripts/test-scoring.mjs",
+    "test:mbti": "node --experimental-strip-types --no-warnings scripts/test-mbti.mjs",
     "test:look": "node scripts/e2e-look.mjs",
     "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e-phone.mjs",
     "test:admin": "node --experimental-strip-types --no-warnings scripts/test-admin.mjs",

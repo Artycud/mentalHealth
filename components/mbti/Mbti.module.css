@@ -1,0 +1,450 @@
+/* "รู้จักตัวเองอีกนิด" (components/mbti/Mbti.tsx). Colours from
+   components/heart/palette.module.css (set by components/heart/UserPage): the
+   words sit on the time-of-day sky in its ink; answers, cards and tiles are
+   paper and put navy back. Pink is only what is chosen and how far along. */
+
+.root {
+  --ink: var(--sky-ink);
+  --ink-soft: var(--sky-ink-soft);
+  --ink-line: var(--sky-line);
+  position: relative;
+  max-width: 460px;
+  min-height: 100svh;
+  margin-inline: auto;
+  padding: max(16px, env(safe-area-inset-top)) 20px max(32px, env(safe-area-inset-bottom));
+  color: var(--ink);
+  text-shadow: var(--sky-shadow);
+}
+
+/* Paper things: navy words again, no shadow behind them. */
+.option,
+.card,
+.letters span,
+.type span {
+  --ink: var(--paper-ink);
+  --ink-soft: var(--paper-ink-soft);
+  --ink-line: var(--paper-line);
+  color: var(--ink);
+  text-shadow: none;
+}
+
+/* ---- back, and how far along ---- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+}
+
+.progress {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+}
+
+.track {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--sky-line);
+}
+
+/* Grows by transform, so the GPU fills it. */
+.fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--riso-pink);
+  transform-origin: left center;
+  transition: transform 420ms var(--ease);
+}
+
+/* At night the moon sits in the top corner (components/heart/Sky): keep clear of it. */
+:global(:root[data-time='night']) .progress {
+  padding-right: 46px;
+}
+
+.count {
+  min-width: 3.4em;
+  text-align: right;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--sky-ink-soft);
+}
+
+/* ---- one screen at a time, sliding the way you went ---- */
+
+.screen {
+  padding-top: 22px;
+  animation: in-right 380ms var(--ease) both;
+}
+
+.root[data-dir='back'] .screen {
+  animation-name: in-left;
+}
+
+@keyframes in-right {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+@keyframes in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+}
+
+.note {
+  font-family: var(--font-note);
+  font-size: 18px;
+  color: var(--ink-soft);
+}
+
+.title {
+  margin-top: 2px;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.body {
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.start {
+  width: 100%;
+  margin-top: 28px;
+}
+
+/* ---- the intro's four tiles: each a flat print of one ink ---- */
+
+.letters {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0 26px;
+}
+
+.letters span,
+.type span {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  aspect-ratio: 1;
+  border-radius: 14px 14px 14px 4px;
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 600;
+  box-shadow: 0 2px 0 rgba(27, 43, 94, 0.18);
+}
+
+.letters span[data-i='0'],
+.type span[data-i='0'] { background: var(--sunflower); rotate: -3deg; }
+.letters span[data-i='1'],
+.type span[data-i='1'] { background: #fef9f5; border-radius: 14px 4px 14px 14px; rotate: 2deg; }
+.letters span[data-i='2'],
+.type span[data-i='2'] { background: var(--pink-tint); border-radius: 4px 14px 14px 14px; rotate: -1deg; }
+.letters span[data-i='3'],
+.type span[data-i='3'] { background: #8fc3e6; border-radius: 14px 14px 4px 14px; rotate: 3deg; }
+
+/* ---- a question ---- */
+
+.ask {
+  margin-top: 4px;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 26px;
+}
+
+/* An answer: a paper slip, the whole of it the button. */
+.option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 78px;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: var(--slip);
+  background: var(--card);
+  box-shadow: var(--edge), var(--lift-1);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.5;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 200ms var(--ease),
+    box-shadow 200ms var(--ease),
+    transform 180ms var(--ease);
+}
+
+.option[data-i='0'] { rotate: -0.4deg; }
+.option[data-i='1'] { rotate: 0.4deg; border-radius: 16px 4px 16px 16px; }
+
+@media (hover: hover) {
+  .option:hover {
+    transform: translateY(-1px);
+    background: #ffffff;
+  }
+}
+
+.option:active {
+  transform: translateY(1px);
+  transition-duration: var(--d-tap);
+}
+
+.option:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 3px;
+}
+
+.option[aria-pressed='true'] {
+  background: var(--pink-tint);
+  box-shadow: inset 0 0 0 2px var(--riso-pink), var(--lift-1);
+}
+
+/* The little circle that gets the tick. */
+.mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(27, 43, 94, 0.25);
+  color: #ffffff;
+  transition: background-color 200ms var(--ease);
+}
+
+.option[aria-pressed='true'] .mark {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.hint {
+  margin-top: 20px;
+  text-align: center;
+  font-family: var(--font-note);
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+/* ---- the result ---- */
+
+.type {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.type span {
+  /* Four always fit, however narrow the phone. */
+  width: min(64px, calc((100% - 30px) / 4));
+  font-size: 34px;
+  animation: pop 420ms var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 90ms + 80ms);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.85);
+  }
+}
+
+.typeName {
+  margin-top: 14px;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.card {
+  margin-top: 16px;
+  padding: 16px 18px 18px;
+  border-radius: var(--slip);
+  background: var(--card);
+  box-shadow: var(--edge), var(--lift-1);
+}
+
+.care {
+  background: var(--card-sun);
+  border-radius: 4px 16px 16px 16px;
+}
+
+.line {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.line + .cardNote {
+  margin-top: 12px;
+}
+
+.cardNote {
+  font-family: var(--font-note);
+  font-size: 16px;
+  color: var(--note-pink);
+}
+
+.care .cardNote {
+  color: var(--sun-ink);
+}
+
+.cardText {
+  margin-top: 2px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Each side: its two ends, where the answers sat between them, and how clearly. */
+.sidesTitle {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.side {
+  margin-top: 16px;
+}
+
+.sideName {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.ends span:last-child {
+  text-align: right;
+}
+
+.ends span[data-on='true'] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ends b {
+  font-family: var(--font-heading);
+  font-size: 15px;
+}
+
+.scale {
+  position: relative;
+  height: 6px;
+  margin: 8px 0 4px;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.scale i {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--riso-pink);
+  box-shadow: 0 0 0 3px #fef9f5;
+  translate: -50% -50%;
+}
+
+.how {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.honest {
+  margin-top: 18px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* "And today's heart?": set apart, between two fine rules. */
+.nextLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 26px;
+  font-family: var(--font-note);
+  font-size: 18px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.nextLabel::before,
+.nextLabel::after {
+  content: '';
+  flex: 1;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--ink-line);
+}
+
+.nextLabel + .start {
+  margin-top: 14px;
+}
+
+.end {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+
+.textBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textBtn:hover {
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .type span {
+    animation: none;
+  }
+
+  .fill {
+    transition: none;
+  }
+}

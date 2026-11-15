@@ -1,10 +1,9 @@
-import type { Viewport } from 'next';
 
 import { UserPage } from '@/components/heart/UserPage';
 import { Checkup } from '@/components/checkup/Checkup';
 import { placeholders } from '@/content/th/common';
 
-export const viewport: Viewport = { themeColor: '#FFF8FA', colorScheme: 'light' };
+// The status bar takes the sky's colour: components/heart/SkyClock.
 
 /**
  * The guided "ใจวันนี้" check-up. Nothing is stored. `?start=1` means the student
@@ -13,7 +12,7 @@ export const viewport: Viewport = { themeColor: '#FFF8FA', colorScheme: 'light' 
 export default async function CheckupPage({ searchParams }: { searchParams: Promise<{ start?: string }> }) {
   const { start } = await searchParams;
   return (
-    <UserPage>
+    <UserPage town={false}>
       <Checkup careHref={placeholders.cudCareHref} start={start === '1' ? 'energy' : 'meet'} />
     </UserPage>
   );

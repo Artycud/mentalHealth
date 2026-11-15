@@ -15,14 +15,13 @@ import type { FestivalId } from '@/lib/types';
 
 export const landing = {
   /**
-   * The one-page scroll intro (components/landing/IntroStory): one question the
-   * way a friend would ask it; scrolling brings the check-up into the middle of
-   * everyone's hearts. Shown one phrase to a row, so Thai never breaks mid-word.
+   * The home's opening (components/landing/IntroStory): one question the way a
+   * friend would ask it, alone for a moment, then the headline over the ways in.
+   * Shown one phrase to a row, so Thai never breaks mid-word.
    */
   intro: {
     kicker: 'CUD Mental Health Week',
     line: ['ช่วงนี้ได้ดูแล', 'ใจตัวเองบ้างไหม?'],
-    cue: 'เลื่อนลง',
   },
 
   hero: {
@@ -61,6 +60,9 @@ export const landing = {
   },
 
   /** Under the check-up: VENT, then a person (CUD Care), then MBTI. */
+  /** Between the check-up and VENT on the first screen: the check-up comes first,
+      VENT is there if what they need is to say it. */
+  or: 'หรือถ้ามีเรื่องอยากระบายก่อน',
   onward: 'อยากไปต่อ',
   more: {
     mbti: {
@@ -77,7 +79,7 @@ export const landing = {
   },
 
   care: {
-    title: 'บางเรื่อง คุยกับคนจริง ๆ ดีกว่า',
+    title: 'บางเรื่อง คุยกับคนจริง ๆ ดีกว่า',
     body: 'CUD Care พร้อมรับฟัง ไม่ต้องรอให้เรื่องใหญ่ก่อน',
     link: 'ดูช่องทางติดต่อ CUD Care',
   },

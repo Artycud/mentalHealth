@@ -247,30 +247,27 @@ svg {
   }
 }
 
-/* The light home and check-up paint their own sky; match the page behind it
-   so an overscroll never flashes paper. */
+/* The student pages paint their own time-of-day sky (components/heart/Sky,
+   lib/sky-time.ts); match the page behind it to the top of that sky, so an
+   overscroll never flashes another colour.
+
+   The "warm tone" (lib/tone.ts) used to lay an apricot wash over the old pastel
+   sky. The sky now carries its own warmth (a peach morning, a violet dusk), and
+   the wash only muddied the night, so it no longer paints anything. */
 body:has([data-home='heart']) {
-  background: #fff8fa;
+  background: #7fb8e2;
 }
 
-/* ---- Warm tone (lib/tone.ts) ----
-   A soft apricot light laid over the User Mode sky, and nothing else: text,
-   pinks and layout are untouched, so switching back to `normal` is exact.
-   Booth screens never carry data-home, so they are never warmed. */
-html[data-tone='warm'] body:has([data-home='heart']) {
-  background: #fff6f1;
+html[data-time='morning'] body:has([data-home='heart']) {
+  background: #f4b3a2;
 }
 
-html[data-tone='warm'] [data-home='heart']::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(85% 55% at 12% 0%, rgba(255, 186, 136, 0.24) 0%, transparent 70%),
-    radial-gradient(75% 50% at 100% 100%, rgba(255, 168, 120, 0.18) 0%, transparent 70%),
-    linear-gradient(rgba(255, 214, 180, 0.14), rgba(255, 196, 160, 0.12));
+html[data-time='dusk'] body:has([data-home='heart']) {
+  background: #2a2f6b;
+}
+
+html[data-time='night'] body:has([data-home='heart']) {
+  background: #0b1433;
 }
 
 /* ---- User Mode: touch, motion and page transitions ----

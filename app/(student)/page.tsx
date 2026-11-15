@@ -1,4 +1,3 @@
-import type { Viewport } from 'next';
 import { connection } from 'next/server';
 
 import { UserPage } from '@/components/heart/UserPage';
@@ -9,7 +8,7 @@ import { greetingFor } from '@/content/th/heart';
 import { getEvent } from '@/lib/events';
 import { formatDateRange } from '@/lib/thai-date';
 
-export const viewport: Viewport = { themeColor: '#FFF8FA', colorScheme: 'light' };
+// The status bar takes the sky's colour: components/heart/SkyClock.
 
 /** Today in Bangkok, as YYYY-MM-DD. */
 function bangkokToday(): string {

@@ -1,35 +1,49 @@
+/* A page still being made, laid on the sky as a sheet of paper (HeartTheme). */
+
 .root {
-  --c: rgb(126 224 194);
+  --a: var(--riso-blue);
+  --b: var(--sunflower);
   position: relative;
   display: flex;
   flex-direction: column;
   max-width: 460px;
-  min-height: 100dvh;
   margin-inline: auto;
   padding: 32px 24px max(32px, env(safe-area-inset-bottom));
-  color: #2a2140;
+  color: var(--ink);
 }
 
 .root[data-id='self'] {
-  --c: rgb(255 211 107);
+  --a: var(--sunflower);
+  --b: var(--riso-pink);
 }
 
-.sky {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(75% 45% at 50% 28%, color-mix(in oklab, var(--c) 45%, transparent) 0%, transparent 70%),
-    linear-gradient(#fffafb, #fff1f5);
+/* Two shapes cut from paper, overlapping where the inks print over each other. */
+.art {
+  position: relative;
+  width: 170px;
+  height: 150px;
+  margin: 28px auto 32px;
 }
 
-.orb {
-  width: 180px;
+.art span {
+  position: absolute;
+  width: 112px;
   aspect-ratio: 1;
-  margin: 48px auto 36px;
+  mix-blend-mode: multiply;
+}
+
+.art span:first-child {
+  left: 0;
+  top: 0;
+  background: var(--a);
   border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%;
-  background: radial-gradient(circle at 38% 32%, color-mix(in oklab, var(--c) 45%, #fff), var(--c) 55%, color-mix(in oklab, var(--c) 75%, #8a3d63));
-  box-shadow: 0 20px 50px -10px color-mix(in oklab, var(--c) 70%, transparent);
+}
+
+.art span:last-child {
+  right: 0;
+  bottom: 0;
+  background: var(--b);
+  border-radius: 54% 46% 40% 60% / 45% 55% 45% 55%;
 }
 
 .title {
@@ -45,8 +59,9 @@
 
 .note {
   margin-top: 12px;
-  font-size: 15px;
-  color: #5f566f;
+  font-family: var(--font-note);
+  font-size: 17px;
+  color: var(--note-pink);
 }
 
 .back {
@@ -54,10 +69,10 @@
   align-items: center;
   justify-content: center;
   height: 58px;
-  margin-top: auto;
-  border-radius: 20px 20px 6px 20px;
-  border: 2px solid #c8336a;
-  color: #c8336a;
+  margin-top: 40px;
+  border-radius: var(--r-secondary);
+  border: 2px solid var(--ink);
+  color: var(--ink);
   font-family: var(--font-heading);
   font-size: 19px;
   font-weight: 500;
@@ -65,5 +80,5 @@
 }
 
 .back:hover {
-  color: #c8336a;
+  color: var(--ink);
 }

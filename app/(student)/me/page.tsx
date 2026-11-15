@@ -1,7 +1,13 @@
-import { Soon } from '@/components/heart/Soon';
+import { UserPage } from '@/components/heart/UserPage';
+import { Mbti } from '@/components/mbti/Mbti';
 
-export const viewport = { themeColor: '#FFF8FA' };
+// The status bar takes the sky's colour: components/heart/SkyClock.
 
+/** "รู้จักตัวเองอีกนิด": twelve quick questions, then a type. Nothing is stored. */
 export default function SelfPage() {
-  return <Soon id="self" />;
+  return (
+    <UserPage town={false}>
+      <Mbti />
+    </UserPage>
+  );
 }

@@ -1,5 +1,5 @@
-/* The home's other cards: pastel paper (palette.module.css .card), each its own
-   soft colour, none of them rose. The whole card is the link. */
+/* "อยากไปต่อ": the MBTI slip (palette.module.css .card), paper tinted cobalt and
+   laid a little crooked on the sky. The whole slip is the link. */
 
 .panels {
   display: flex;
@@ -13,18 +13,14 @@
   flex-direction: column;
   gap: 14px;
   padding: 20px 20px 18px;
-  border-radius: 26px 26px 8px 26px;
-}
-
-.panel[data-panel='vent'] {
-  background: var(--card-blush);
-  border-radius: 26px 8px 26px 26px;
-  rotate: -0.5deg;
+  border-radius: 18px 18px 5px 18px;
 }
 
 .panel[data-panel='mbti'] {
-  background: var(--card-lilac);
-  rotate: 0.5deg;
+  background:
+    url('/textures/paper-grain.png') 0 0 / 192px 192px repeat,
+    var(--card-lilac);
+  rotate: 0.7deg;
 }
 
 .words {
@@ -59,21 +55,19 @@
   place-items: center;
   aspect-ratio: 1;
   max-height: 76px;
-  border-radius: 38% 62% 55% 45% / 50% 42% 58% 50%;
+  border-radius: 14px 14px 14px 4px;
   font-family: var(--font-heading);
   font-size: 28px;
   font-weight: 600;
   color: var(--ink);
-  box-shadow:
-    inset 0 -6px 10px -6px rgba(42, 33, 64, 0.22),
-    inset 0 3px 0 rgba(255, 255, 255, 0.55),
-    0 10px 16px -12px rgba(90, 50, 40, 0.55);
+  box-shadow: 0 2px 0 rgba(27, 43, 94, 0.16);
 }
 
-.tile[data-i='0'] { background: radial-gradient(circle at 35% 28%, #e4faf2, var(--mint)); border-radius: 50% 50% 42% 58% / 55% 45% 55% 45%; }
-.tile[data-i='1'] { background: radial-gradient(circle at 35% 28%, #fff4d6, var(--sun)); border-radius: 44% 56% 58% 42% / 48% 56% 44% 52%; }
-.tile[data-i='2'] { background: radial-gradient(circle at 35% 28%, #eef0ff, var(--lilac)); }
-.tile[data-i='3'] { background: radial-gradient(circle at 35% 28%, #ffe9e4, var(--coral)); border-radius: 56% 44% 50% 50% / 44% 54% 46% 56%; }
+/* Each tile a flat print of one ink, its sharp corner turning a different way. */
+.tile[data-i='0'] { background: var(--sunflower); }
+.tile[data-i='1'] { background: #fef9f5; border-radius: 14px 4px 14px 14px; }
+.tile[data-i='2'] { background: var(--pink-tint); border-radius: 4px 14px 14px 14px; }
+.tile[data-i='3'] { background: #8fc3e6; border-radius: 14px 14px 4px 14px; }
 
 .letter {
   display: block;
@@ -86,44 +80,6 @@
 @keyframes flip {
   from {
     transform: rotateX(90deg);
-    opacity: 0;
-  }
-}
-
-/* ---- VENT: a note that is being written ---- */
-
-.paper {
-  display: block;
-  min-height: 78px;
-  padding: 14px 16px;
-  border-radius: 16px 16px 16px 4px;
-  background: #ffffff;
-  /* ruled like a notebook page */
-  background-image: repeating-linear-gradient(transparent 0 26px, rgba(155, 170, 255, 0.28) 26px 27px);
-  background-position: 0 14px;
-  box-shadow: inset 0 0 0 1px rgba(42, 33, 64, 0.05), 0 8px 14px -12px rgba(90, 50, 40, 0.5);
-  font-family: var(--font-note);
-  font-size: 17px;
-  line-height: 27px;
-  color: var(--ink);
-}
-
-.caret {
-  display: inline-block;
-  width: 2px;
-  height: 1.1em;
-  margin-left: 2px;
-  vertical-align: -0.15em;
-  background: var(--ink-soft);
-  animation: blink 1s steps(1) infinite;
-}
-
-.paper[data-still='true'] .caret {
-  display: none;
-}
-
-@keyframes blink {
-  50% {
     opacity: 0;
   }
 }
@@ -143,8 +99,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .turn,
-  .caret {
+  .turn {
     animation: none;
   }
 }

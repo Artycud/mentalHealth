@@ -52,6 +52,8 @@ export function Checkup({ careHref, start = 'meet' }: { careHref: string; start?
   const [energy, setEnergy] = useState<number | null>(null);
   const [weight, setWeight] = useState<number | null>(null);
   const [topics, setTopics] = useState<string[]>([]);
+  /** The drag steps the heart has been touched on: their guide steps back. */
+  const [handled, setHandled] = useState<Partial<Record<Step, true>>>({});
 
   // Everything the loop reads, mirrored into refs.
   const live = useRef({
@@ -199,6 +201,7 @@ export function Checkup({ careHref, start = 'meet' }: { careHref: string; start?
     if (!draggable) return;
     stageRef.current?.setPointerCapture(e.pointerId);
     live.current.dragging = true;
+    if (!handled[step]) setHandled((h) => ({ ...h, [step]: true }));
     read(e);
   };
   const up = () => {
@@ -251,6 +254,7 @@ export function Checkup({ careHref, start = 'meet' }: { careHref: string; start?
     setEnergy(null);
     setWeight(null);
     setTopics([]);
+    setHandled({});
     live.current.energy = 0.3;
     live.current.weight = 0.4;
     setDir('back');
@@ -359,6 +363,8 @@ export function Checkup({ careHref, start = 'meet' }: { careHref: string; start?
               </div>
             )}
             {step === 'whole' && <div className={styles.rings} aria-hidden="true" />}
+
+            {draggable && <DragGuide axis={step === 'energy' ? 'h' : step === 'weight' ? 'v' : 'both'} fresh={!handled[step]} />}
 
             {/* The same heart as the home's card: it flies in from there. */}
             <ViewTransition name="checkup-heart" share="heart-morph" default="none">
@@ -565,6 +571,66 @@ export function Checkup({ careHref, start = 'meet' }: { careHref: string; start?
   );
 }
 
+const Chevron = ({ dir }: { dir: 'left' | 'right' | 'up' | 'down' }) => (
+  <svg className={styles.chev} data-dir={dir} width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/**
+ * Shows a drag step can be dragged, and which ways: chevrons beside the heart
+ * (sideways for the battery, up and down for the bag), and on the free step all
+ * four ways, each named, so a drag means something (sideways is charge, up and
+ * down is load). Until the heart is first touched, a ghost fingertip shows the
+ * gesture; after that only the faint chevrons stay. Transform and opacity only,
+ * and it never takes a touch (pointer-events: none).
+ */
+function DragGuide({ axis, fresh }: { axis: 'h' | 'v' | 'both'; fresh: boolean }) {
+  return (
+    <div className={styles.guide} data-axis={axis} data-fresh={fresh} aria-hidden="true">
+      {axis === 'both' ? (
+        <>
+          <span className={styles.dirTag} data-at="left">
+            <Chevron dir="left" />
+            {checkup.energy.ends.low}
+          </span>
+          <span className={styles.dirTag} data-at="right">
+            {checkup.energy.ends.high}
+            <Chevron dir="right" />
+          </span>
+          <span className={styles.dirTag} data-at="top">
+            <Chevron dir="up" />
+            {checkup.weight.ends.light}
+          </span>
+          <span className={styles.dirTag} data-at="bottom">
+            {checkup.weight.ends.heavy}
+            <Chevron dir="down" />
+          </span>
+        </>
+      ) : axis === 'h' ? (
+        <>
+          <span className={styles.side} data-at="left">
+            <Chevron dir="left" />
+          </span>
+          <span className={styles.side} data-at="right">
+            <Chevron dir="right" />
+          </span>
+        </>
+      ) : (
+        <>
+          <span className={styles.side} data-at="top">
+            <Chevron dir="up" />
+          </span>
+          <span className={styles.side} data-at="bottom">
+            <Chevron dir="down" />
+          </span>
+        </>
+      )}
+      <span className={styles.finger} />
+    </div>
+  );
+}
+
 /** Question 1, made visible: a phone battery filling with the answer. */
 function Battery({ level }: { level: number | null }) {
   const v = level ?? 0;
@@ -572,8 +638,8 @@ function Battery({ level }: { level: number | null }) {
   return (
     <span className={styles.gauge} data-empty={level === null}>
       <svg width="46" height="24" viewBox="0 0 46 24" aria-hidden="true">
-        <rect x="1.5" y="1.5" width="38" height="21" rx="5" fill="#FFFFFF" stroke="#2A2140" strokeWidth="2" />
-        <rect x="41" y="8" width="3.5" height="8" rx="1.5" fill="#2A2140" />
+        <rect x="1.5" y="1.5" width="38" height="21" rx="5" fill="#FFFFFF" stroke="#1B2B5E" strokeWidth="2" />
+        <rect x="41" y="8" width="3.5" height="8" rx="1.5" fill="#1B2B5E" />
         <rect x="4.5" y="4.5" width={Math.max(0, 32 * v)} height="15" rx="2.5" fill={fill} />
       </svg>
       <b className={palette.num}>{level === null ? '—' : `${Math.round(v * 100)}%`}</b>
@@ -587,8 +653,8 @@ function Bag({ level }: { level: number | null }) {
   return (
     <span className={styles.gauge} data-empty={level === null}>
       <svg width="34" height="36" viewBox="0 0 34 36" aria-hidden="true">
-        <path d="M11 7 C11 2 23 2 23 7" fill="none" stroke="#2A2140" strokeWidth="2" strokeLinecap="round" />
-        <rect x="2" y="7" width="30" height="27" rx="7" fill="#FFFFFF" stroke="#2A2140" strokeWidth="2" />
+        <path d="M11 7 C11 2 23 2 23 7" fill="none" stroke="#1B2B5E" strokeWidth="2" strokeLinecap="round" />
+        <rect x="2" y="7" width="30" height="27" rx="7" fill="#FFFFFF" stroke="#1B2B5E" strokeWidth="2" />
         {Array.from({ length: books }, (_, i) => (
           <rect key={i} x="7" y={28 - i * 4.4} width="20" height="3.4" rx="1.2" fill={['#9BAAFF', '#FF9A85', '#FFC94D', '#6FD7B8', '#F0588A'][i]} />
         ))}

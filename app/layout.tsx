@@ -5,6 +5,7 @@ import './globals.css';
 import './festivals/loykrathong.css';
 import { ToneFromUrl } from '@/components/heart/ToneFromUrl';
 import { common } from '@/content/th/common';
+import { SKY_TIME_SCRIPT } from '@/lib/sky-time';
 import { DEFAULT_TONE } from '@/lib/tone';
 
 export const metadata: Metadata = {
@@ -40,8 +41,11 @@ const PRELOAD_FONTS = [
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="th" data-tone={DEFAULT_TONE}>
+    // data-time is set by the script below before the first paint (lib/sky-time.ts),
+    // so the server's <html> never has it: that difference is expected.
+    <html lang="th" data-tone={DEFAULT_TONE} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: SKY_TIME_SCRIPT }} />
         {PRELOAD_FONTS.map((href) => (
           <link
             key={href}

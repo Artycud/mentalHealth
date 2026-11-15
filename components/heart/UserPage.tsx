@@ -13,10 +13,10 @@ import palette from './palette.module.css';
  * which they are with `transitionTypes`; a browser back/forward has no type and
  * simply swaps. See node_modules/next/dist/docs/01-app/02-guides/view-transitions.md.
  */
-export function UserPage({ children }: { children: ReactNode }) {
+export function UserPage({ children, town = true }: { children: ReactNode; town?: boolean }) {
   return (
     <main data-home="heart" className={palette.palette}>
-      <Sky />
+      <Sky town={town} />
       <Press />
       <ViewTransition
         enter={{ 'nav-forward': 'nav-forward', 'nav-back': 'nav-back', default: 'none' }}

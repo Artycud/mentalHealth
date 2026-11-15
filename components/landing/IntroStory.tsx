@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 
 import { HeartGlyph } from '@/components/heart/HeartGlyph';
 import { useInView } from '@/components/heart/useInView';
+import { prefersReducedMotion } from '@/lib/frame';
 import { blobPath, moodColour, rgb } from '@/lib/heart';
+import { INTRO_SEEN_KEY } from '@/lib/sky-time';
 
 import styles from './IntroStory.module.css';
 
@@ -29,12 +31,9 @@ const HEARTS = Array.from({ length: COUNT }, (_, i) => ({
 
 /** Scattered hearts are this much bigger than gathered ones. */
 const SPREAD = 1.35;
-
-const clamp = (v: number) => Math.min(1, Math.max(0, v));
-const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
-/** Visible between [a → b] fading in and [c → d] fading out. */
-const windowed = (p: number, a: number, b: number, c: number, d: number) =>
-  p <= a || p >= d ? 0 : p < b ? ease((p - a) / (b - a)) : p > c ? 1 - ease((p - c) / (d - c)) : 1;
+/** How long the question is shown on its own before the home comes in. */
+const HOLD = 900;
+const GAP = 10;
 
 /** How far a ray from the centre of a box, at `angle`, travels before it leaves the box. */
 function toEdge(angle: number, halfW: number, halfH: number) {
@@ -43,153 +42,163 @@ function toEdge(angle: number, halfW: number, halfH: number) {
   return Math.min(c > 1e-6 ? halfW / c : Infinity, s > 1e-6 ? halfH / s : Infinity);
 }
 
+/** The phase lives on <html> (see IntroStory.module.css): 'done' once the home is in. */
+const isDone = () => document.documentElement.dataset.intro === 'done';
+
 /**
- * The home's one-page way in. The first screen is a quiet scene: one question,
- * everyone's hearts out at the edges. Scrolling a single page lifts the question
- * into the top half and gathers the hearts around it, while the check-up (the
- * next thing on the page, at its full size) rises into the lower half.
+ * The top of the home. It opens as one quiet scene, the question alone in the
+ * middle of the sky with everyone's hearts out at the edges; a moment later it
+ * glides into the home by itself: the question rises to be the headline, the
+ * hearts gather around it, and the three ways in (`children`: the check-up, VENT,
+ * CUD Care) come up under it. No scrolling asked for, and none forced.
  *
- * Nothing ever overlaps, by construction rather than by tuning:
- *  - each heart only moves in or out along its own line from the question, and
- *    its closest point is a ring measured from the question's real size, so it
- *    can never cross the words;
- *  - the ring sits below the kicker and inside the top half, and the gathering
- *    is finished before the check-up rises into view;
- *  - no heart is ever over the kicker or the scroll cue.
+ * The two scenes are one layout in two states (`data-intro` on <html>), and the
+ * glide between them moves only transforms (a FLIP, below), so the GPU does it
+ * and the page does no work per frame. Any touch, scroll or key during the
+ * pause switches at once; with reduced motion it simply switches. It plays once
+ * a visit: the script in <head> (lib/sky-time.ts) starts a return visit on the
+ * home.
  *
- * Cheap on a phone: sizes are measured once (and again on resize), the scene
- * is redrawn only when the scroll moves it, hearts move by transform alone, and
- * their slow wobble is a CSS animation the compositor runs by itself.
+ * Nothing overlaps, by construction: each heart only moves in or out along its
+ * own line from the question, and its closest point is a ring measured from the
+ * question's real size; the space for that ring is kept above and below the
+ * question in the layout (IntroStory.module.css .question).
  */
-export function IntroStory({ kicker, line, cue }: { kicker: string; line: readonly string[]; cue: string }) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
+export function IntroStory({ kicker, line, children }: { kicker: string; line: readonly string[]; children: ReactNode }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const shapes = useMemo(
     () => HEARTS.map((h) => blobPath({ energy: 0.25 + h.e * 0.3, weight: 0.2 + h.w * 0.3, t: h.phase * 3, scale: 1, pullAngle: 0, pull: 0 })),
     [],
   );
-  // The hearts' sway pauses once the intro has scrolled away (data-live on the track).
-  useInView(trackRef, '0px');
+  // The hearts' sway pauses once the top has scrolled away (data-live).
+  useInView(rootRef, '0px');
 
+  // ---- where each heart is, scattered and gathered: measured, written once ----
   useEffect(() => {
-    const track = trackRef.current;
-    const stage = stageRef.current;
-    if (!track || !stage) return;
-    const hearts = [...stage.querySelectorAll<HTMLElement>('[data-heart]')];
-    const fades = [...stage.querySelectorAll<HTMLElement>('[data-at]')];
-    const question = stage.querySelector<HTMLElement>('[data-question]')!;
-    const kickerEl = stage.querySelector<HTMLElement>('[data-kicker]')!;
-    const cueEl = stage.querySelector<HTMLElement>('[data-cue]')!;
+    const root = rootRef.current;
+    if (!root) return;
+    const hearts = [...root.querySelectorAll<HTMLElement>('[data-heart]')];
+    const question = root.querySelector<HTMLElement>('[data-question]')!;
+    const kickerEl = root.querySelector<HTMLElement>('[data-kicker]')!;
 
-    // ---- measured once, and again whenever the screen changes size ----
-    const m = { W: 0, H: 0, r: 0, halfW: 0, halfH: 0, kickerBottom: 0, cueTop: 0, endY: 0, reach: 0, trackTop: 0, range: 1 };
-    const gap = 10;
-    const measure = () => {
-      m.W = stage.clientWidth;
-      m.H = stage.clientHeight;
-      m.r = Math.min(26, m.W * 0.066); // a gathered heart's radius, before its own size
-      const rMax = m.r * 1.2;
-      m.halfW = question.offsetWidth / 2 + gap + rMax;
-      m.halfH = question.offsetHeight / 2 + gap + rMax;
-      m.kickerBottom = kickerEl.offsetTop + kickerEl.offsetHeight;
-      m.cueTop = cueEl.offsetTop;
-      // Where the question ends up: in the top half, with the ring's top row
-      // clear of the kicker (and so its bottom row clear of the middle).
-      m.endY = Math.max(m.H * 0.27, m.kickerBottom + gap + rMax + m.halfH);
-      m.reach = Math.hypot(m.W, m.H) / 2;
-      m.trackTop = track.getBoundingClientRect().top + window.scrollY;
-      m.range = Math.max(1, track.offsetHeight - m.H);
-      // Each heart's box is set once at its largest; scrolling only scales it.
-      HEARTS.forEach((h, i) => {
-        if (hearts[i]) hearts[i].style.width = `${(2 * m.r * h.size * SPREAD).toFixed(1)}px`;
-      });
-      lastP = -1;
-      draw();
-    };
-
-    let lastP = -1;
-    const draw = () => {
-      const p = clamp((window.scrollY - m.trackTop) / m.range);
-      if (p === lastP) return;
-      lastP = p;
-      const { W, H, r, halfW, halfH, kickerBottom, cueTop, endY, reach } = m;
-
-      const rise = ease(clamp((p - 0.06) / 0.4));
-      const cy = H / 2 + (endY - H / 2) * rise;
-      question.style.transform = `translate3d(0, ${(cy - H / 2).toFixed(1)}px, 0)`;
-
-      const gather = ease(clamp((p - 0.04) / 0.42));
-      const shrink = (SPREAD - (SPREAD - 1) * gather) / SPREAD;
-
+    const place = () => {
+      const W = root.clientWidth;
+      const H = window.innerHeight;
+      const r = Math.min(26, W * 0.066); // a gathered heart's radius, before its own size
+      const rMax = r * 1.2;
+      const halfW = question.offsetWidth / 2 + GAP + rMax;
+      const halfH = question.offsetHeight / 2 + GAP + rMax;
+      // In the opening scene the question is in the middle of the screen: keep
+      // hearts below the kicker and on the screen.
+      const top = kickerEl.offsetTop + kickerEl.offsetHeight + GAP - H / 2;
+      const reach = Math.hypot(W, H) / 2;
       HEARTS.forEach((h, i) => {
         const el = hearts[i];
         if (!el) return;
         const full = 2 * r * h.size * SPREAD;
-        const size = full * shrink;
         const near = toEdge(h.angle, halfW, halfH);
-        const dist = Math.max(near, reach * h.far * (1 - gather) + near * gather);
-        const x = W / 2 + Math.cos(h.angle) * dist;
-        let y = cy + Math.sin(h.angle) * dist;
-        // Never over the kicker, nor over the cue while it is showing.
-        y = Math.max(y, kickerBottom + gap + size / 2);
-        if (p < 0.25) y = Math.min(y, cueTop - gap - size / 2);
-        el.style.transform = `translate3d(${(x - full / 2).toFixed(1)}px, ${(y - full / 2).toFixed(1)}px, 0) scale(${shrink.toFixed(3)})`;
+        const far = Math.max(near, reach * h.far);
+        let y0 = Math.sin(h.angle) * far;
+        y0 = Math.min(Math.max(y0, top + full / 2), H / 2 - 8 - full / 2);
+        const s = el.style;
+        s.width = `${full.toFixed(1)}px`;
+        s.setProperty('--x0', `${(Math.cos(h.angle) * far - full / 2).toFixed(1)}px`);
+        s.setProperty('--y0', `${(y0 - full / 2).toFixed(1)}px`);
+        s.setProperty('--x1', `${(Math.cos(h.angle) * near - full / 2).toFixed(1)}px`);
+        s.setProperty('--y1', `${(Math.sin(h.angle) * near - full / 2).toFixed(1)}px`);
       });
-
-      fades.forEach((el) => {
-        const [a, b, c, d] = el.dataset.at!.split(',').map(Number);
-        el.style.opacity = windowed(p, a, b, c, d).toFixed(3);
-      });
+      root.style.setProperty('--ring', `${(GAP + 2 * rMax).toFixed(1)}px`);
     };
 
-    let queued = 0;
-    const onScroll = () => {
-      if (queued) return;
-      queued = requestAnimationFrame(() => {
-        queued = 0;
-        draw();
-      });
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(stage);
+    place();
+    root.dataset.placed = 'true';
+    const ro = new ResizeObserver(place);
+    ro.observe(root);
     ro.observe(question);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => ro.disconnect();
+  }, []);
+
+  // ---- the glide into the home, once ----
+  useEffect(() => {
+    if (isDone()) return;
+    const html = document.documentElement;
+    const root = rootRef.current;
+    let gone = false;
+    let settle: ReturnType<typeof setTimeout>;
+
+    const finish = () => {
+      if (gone || isDone() || !root) return;
+      gone = true;
+      stopListening();
+      clearTimeout(timer);
+      try {
+        sessionStorage.setItem(INTRO_SEEN_KEY, '1');
+      } catch {
+        // Storage blocked: it simply plays again next time.
+      }
+      if (prefersReducedMotion()) {
+        html.dataset.intro = 'done';
+        return;
+      }
+      // FLIP: note where the question and the slips are, switch to the home,
+      // put them back where they were with a transform, then let them glide to
+      // their new places. Only transforms move, on the compositor; the hearts
+      // glide from scattered to gathered on their own transition, inside the
+      // moving question, so they arrive with it.
+      const moving = [...root.querySelectorAll<HTMLElement>('[data-glide]')];
+      const before = moving.map((el) => el.getBoundingClientRect().top);
+      html.dataset.gliding = 'prep';
+      html.dataset.intro = 'done';
+      moving.forEach((el, i) => {
+        el.style.transform = `translate3d(0, ${(before[i] - el.getBoundingClientRect().top).toFixed(1)}px, 0)`;
+      });
+      void root.offsetHeight; // the starting places, laid down before the glide
+      html.dataset.gliding = 'run';
+      moving.forEach((el) => (el.style.transform = ''));
+      settle = setTimeout(() => delete html.dataset.gliding, 1100);
+    };
+
+    // Anything the student does first takes them straight in.
+    const EVENTS = ['pointerdown', 'wheel', 'keydown', 'scroll', 'touchstart'] as const;
+    const stopListening = () => EVENTS.forEach((e) => window.removeEventListener(e, finish));
+    EVENTS.forEach((e) => window.addEventListener(e, finish, { passive: true }));
+    const timer = setTimeout(finish, prefersReducedMotion() ? 600 : HOLD);
+
     return () => {
-      ro.disconnect();
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(queued);
+      stopListening();
+      clearTimeout(timer);
+      clearTimeout(settle);
     };
   }, []);
 
   return (
-    <div ref={trackRef} className={styles.track}>
-      <div ref={stageRef} className={styles.stage}>
-        <div aria-hidden="true">
-          {HEARTS.map((h, i) => (
-            <div key={i} data-heart className={styles.heart}>
-              <span className={styles.wobble} style={{ animationDelay: `${(-h.phase * 1.7).toFixed(2)}s` }}>
-                <HeartGlyph d={shapes[i]} colour={rgb(moodColour(h.e, h.w))} className={styles.glyph} />
-              </span>
-            </div>
-          ))}
-        </div>
-
+    <div ref={rootRef} className={styles.top}>
+      <div className={styles.scene}>
         <p className={styles.kicker} data-kicker>
           {kicker}
         </p>
 
-        <h1 className={styles.line} data-question>
-          {line.map((phrase) => (
-            <span key={phrase}>{phrase}</span>
-          ))}
-        </h1>
+        <div className={styles.question} data-glide>
+          <div className={styles.hearts} aria-hidden="true">
+            {HEARTS.map((h, i) => (
+              <div key={i} data-heart className={styles.heart}>
+                <span className={styles.wobble} style={{ animationDelay: `${(-h.phase * 1.7).toFixed(2)}s` }}>
+                  <HeartGlyph d={shapes[i]} colour={rgb(moodColour(h.e, h.w))} className={styles.glyph} />
+                </span>
+              </div>
+            ))}
+          </div>
 
-        <p className={styles.cue} data-cue data-at="-1,-0.5,0.04,0.2" style={{ opacity: 1 }}>
-          {cue}
-          <span className={styles.cueLine} aria-hidden="true" />
-        </p>
+          <h1 className={styles.line} data-question>
+            {line.map((phrase) => (
+              <span key={phrase}>{phrase}</span>
+            ))}
+          </h1>
+        </div>
+      </div>
+
+      <div className={styles.slips} data-glide>
+        {children}
       </div>
     </div>
   );
