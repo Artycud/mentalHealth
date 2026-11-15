@@ -286,7 +286,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
   const lastIsStudent = messages.at(-1)?.sender === 'student';
 
   return (
-    <div className={styles.root} data-talking={talking}>
+    <div className={styles.root} data-talking={talking} data-replied={messages.some((m) => m.sender === 'sapa')}>
       <header className={styles.bar}>
         <BackButton href="/" />
         {chat &&
