@@ -1,0 +1,142 @@
+/* VENT on the home (VentStart.tsx): a paper slip where the heart asks, and the
+   answer goes on a strip of notebook paper. */
+
+.slip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  border-radius: 18px 5px 18px 18px;
+  background:
+    url('/textures/paper-grain.png') 0 0 / 192px 192px repeat,
+    var(--card);
+  box-shadow: var(--edge), var(--lift-1);
+  rotate: 0.5deg;
+}
+
+/* The heart, and what it asks, as if said out loud. */
+.asks {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: text;
+}
+
+.heart {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+}
+
+.ask {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+/* ---- the strip of notebook paper, and the airplane ---- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 12px 12px 12px 3px;
+  background-color: #ffffff;
+  /* ruled in the riso blue, with a pink margin line, like a school notebook */
+  background-image:
+    linear-gradient(90deg, transparent 6px, rgba(255, 72, 176, 0.35) 6px, rgba(255, 72, 176, 0.35) 7.5px, transparent 7.5px),
+    linear-gradient(transparent calc(100% - 11px), rgba(0, 120, 191, 0.22) calc(100% - 11px), rgba(0, 120, 191, 0.22) calc(100% - 10px), transparent calc(100% - 10px));
+  box-shadow: inset 0 0 0 1.5px rgba(27, 43, 94, 0.12);
+  transition: box-shadow 180ms var(--ease);
+}
+
+.bar:focus-within {
+  box-shadow: inset 0 0 0 2px var(--riso-pink);
+}
+
+.field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* What they write shows in the hand-written face, as on paper. */
+.input {
+  display: block;
+  width: 100%;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* 17px: at 16px or more iOS does not zoom the page in on focus. */
+  font: 400 17px/1.4 var(--font-note);
+  color: var(--ink);
+}
+
+.input:focus {
+  outline: none;
+}
+
+.send {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--button);
+  box-shadow: 0 2px 0 var(--button-lip);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 180ms var(--ease);
+}
+
+.send:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--button-lip);
+}
+
+.send:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+.plane {
+  display: grid;
+  place-items: center;
+}
+
+/* Sent: the airplane flies off up and to the right. */
+.slip[data-flying='true'] .plane {
+  animation: fly 260ms var(--ease) both;
+}
+
+@keyframes fly {
+  to {
+    opacity: 0;
+    transform: translate(26px, -22px) rotate(-12deg) scale(0.7);
+  }
+}
+
+/* ---- or one tap ---- */
+
+.orTap {
+  margin-top: 2px;
+  font-family: var(--font-note);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.safe {
+  margin-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slip[data-flying='true'] .plane {
+    animation: none;
+  }
+}

@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Live } from '@/components/heart/Live';
 import palette from '@/components/heart/palette.module.css';
 import { landing, roundDetail } from '@/content/th/landing';
-import { FORWARD } from '@/lib/nav';
 import type { FestivalId } from '@/lib/types';
 
 import { BoothArt, FoodArt, MusicArt } from './art';
@@ -11,6 +10,7 @@ import { HeartInvite } from './HeartInvite';
 import { IntroStory } from './IntroStory';
 import { MorePanels } from './MorePanels';
 import { RoundsCarousel } from './RoundsCarousel';
+import { VentStart } from './VentStart';
 import styles from './Landing.module.css';
 
 export interface Round {
@@ -80,16 +80,15 @@ export function Landing({
         {/* The check-up comes first; VENT is the other way in, said quietly. */}
         <p className={styles.or}>{landing.or}</p>
 
-        <Link href="/vent" transitionTypes={FORWARD} className={`${palette.card} ${styles.slip}`} data-slip="vent" data-press>
-          <span className={styles.slipWords}>
-            <span className={styles.slipNote}>{landing.more.vent.note}</span>
-            <span className={styles.slipTitle}>{landing.more.vent.title}</span>
-            <span className={styles.slipFoot}>{landing.more.vent.foot}</span>
-          </span>
-          <GoMark />
-        </Link>
+        {/* VENT: a bar to start writing in; Enter opens the chat with it sent. */}
+        <VentStart />
 
-        {/* A person, always one tap away and never pushed: a quieter, smaller slip. */}
+        <MorePanels mbti={landing.more.mbti} />
+      </IntroStory>
+
+      {/* ---------- อยากไปต่อ: a person, always one tap away and never pushed ---------- */}
+      <section className={styles.section}>
+        <p className={styles.note}>{landing.onward}</p>
         <Link href={careHref} className={`${palette.card} ${styles.slip}`} data-slip="care" data-press>
           <svg className={styles.careMark} width="34" height="22" viewBox="0 0 64 40" aria-hidden="true">
             <circle cx="22" cy="20" r="17" fill="#0078BF" />
@@ -101,12 +100,6 @@ export function Landing({
           </span>
           <GoMark small />
         </Link>
-      </IntroStory>
-
-      {/* ---------- อยากไปต่อ: MBTI ---------- */}
-      <section className={styles.section}>
-        <p className={styles.note}>{landing.onward}</p>
-        <MorePanels mbti={landing.more.mbti} />
       </section>
 
       {/* ---------- below the sky: the event, printed on one sheet of paper ---------- */}

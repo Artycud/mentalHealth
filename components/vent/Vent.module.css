@@ -61,6 +61,31 @@
   color: var(--ink);
 }
 
+/* "จบการคุย", asked once: the question, and the two answers beside it. */
+.confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  animation: rise 220ms var(--ease) both;
+}
+
+.confirmAsk {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.confirmNo {
+  min-height: 40px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .endBtn {
   min-height: 40px;
   padding: 0 16px;
@@ -305,6 +330,40 @@
   color: var(--ink-soft);
 }
 
+/* What to say next: small paper slips, one tap sends. */
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -4px;
+  animation: rise 500ms var(--ease) 0.9s both;
+}
+
+.quickBtn {
+  --ink: var(--paper-ink);
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px 14px 14px 4px;
+  background: var(--card);
+  box-shadow: var(--edge), 0 2px 0 rgba(27, 43, 94, 0.14);
+  font-size: 14px;
+  color: var(--paper-ink);
+  text-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 180ms var(--ease);
+}
+
+.quickBtn:active {
+  transform: translateY(1px);
+}
+
+.quickBtn:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
 .capped {
   font-size: 15px;
   color: var(--ink-soft);
@@ -397,6 +456,19 @@
   margin: 0 -8px;
   padding: 12px 8px max(14px, env(safe-area-inset-bottom));
   background: linear-gradient(transparent, var(--sky-foot) 30%);
+}
+
+/* The writing box, with starters drifting through it while it is empty. */
+.field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.field > span {
+  left: 18px;
+  right: 18px;
 }
 
 .input {
@@ -523,6 +595,11 @@
 @media (prefers-reduced-motion: reduce) {
   .heart {
     transition: none;
+  }
+
+  .quick,
+  .confirm {
+    animation: none;
   }
 
   .sample,

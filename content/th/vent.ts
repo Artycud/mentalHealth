@@ -12,6 +12,10 @@
 export const vent = {
   back: 'กลับ',
   end: 'จบการคุย',
+  /** "จบการคุย" wipes everything, so it asks once, in the page (never a pop-up). */
+  endConfirm: { ask: 'ลบข้อความทั้งหมดเลยไหม?', yes: 'ลบเลย', no: 'ยังก่อน' },
+  /** After each answer: a few things to say next, for when nothing comes to mind. Tapping one sends it. */
+  quick: ['เล่าต่ออีกนิด', 'อยากได้วิธีผ่อนคลาย', 'แค่อยากให้ฟังเฉย ๆ'],
 
   intro: {
     /** When they arrive from the check-up, the note names their heart today. */
@@ -21,6 +25,28 @@ export const vent = {
     body: 'พิมพ์ยาวหรือสั้นก็ได้ AI จะตอบจากสิ่งที่เธอเขียนจริง ๆ',
     privacy: 'ไม่ต้องใส่ชื่อใคร · ข้อความไม่ถูกเก็บไว้ ปิดหน้านี้แล้วหายหมด',
     samplesLabel: 'ไม่รู้จะเริ่มยังไง ลองจากนี่ก็ได้',
+  },
+
+  /**
+   * The way in, on the home and at the top of an empty chat: the heart asks
+   * first (a reply is easier to write than a blank box), a few starters can be
+   * sent with one tap, and the reassurance sits beside the button.
+   */
+  invite: {
+    /** What the heart asks, by the sky's mood (lib/sky-time). */
+    ask: {
+      morning: 'เมื่อคืนนอนพอไหม เช้านี้รู้สึกยังไงบ้าง',
+      day: 'เรียนมาทั้งวัน เหนื่อยไหม เล่าให้ฟังหน่อยสิ',
+      dusk: 'วันนี้เป็นไงบ้าง มีอะไรค้างอยู่ในใจไหม',
+      night: 'ดึกแล้วนะ มีอะไรคิดอยู่หรือเปล่า',
+    },
+    /** Drift through the empty bar, one after another. */
+    hints: ['เรื่องเรียน…', 'เพื่อน…', 'ที่บ้าน…', 'ไม่รู้สิ แค่เหนื่อย…'],
+    /** One tap: the chat opens with this already sent. */
+    starters: ['เครียดเรื่องเรียน', 'นอนไม่พอ', 'ทะเลาะกับเพื่อน', 'แค่เหนื่อย ๆ'],
+    /** Still says plainly that an AI answers. */
+    safe: 'AI ตอบให้ · ไม่มีใครเห็น · ไม่เก็บไว้',
+    orTap: 'หรือแตะอันนี้เลย',
   },
 
   composer: {

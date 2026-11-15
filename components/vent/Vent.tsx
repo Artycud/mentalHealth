@@ -6,13 +6,15 @@ import { useEffect, useRef, useState } from 'react';
 import { BackButton } from '@/components/heart/BackButton';
 import { LiveHeart } from '@/components/heart/LiveHeart';
 import palette from '@/components/heart/palette.module.css';
-import { feelings, heart } from '@/content/th/heart';
+import { feelings } from '@/content/th/heart';
 import { vent } from '@/content/th/vent';
 import { haptic } from '@/lib/haptics';
 import { moodColour, rgb } from '@/lib/heart';
 import { BACK } from '@/lib/nav';
+import { clearHandOff, peekHandOff } from '@/lib/vent/handoff';
 import type { VentMessage, VentResponse } from '@/lib/vent/types';
 
+import { DriftingHints, Plane, Starters, TimeAsk } from './Invite';
 import styles from './Vent.module.css';
 
 type Item =
@@ -36,13 +38,21 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
   const start = feel ? feelings[row][col] : undefined;
   const startAt: [number, number] = feel ? [(col + 0.5) / 3, (row + 0.5) / 3] : [0.45, 0.35];
 
-  const [items, setItems] = useState<Item[]>([]);
+  // Words already written on the home's VENT bar (lib/vent/handoff): the
+  // conversation opens with them, sent, and the heart already listening.
+  const [opening] = useState<Item | undefined>(() => {
+    const text = peekHandOff();
+    return text ? { id: nextId++, kind: 'me', text } : undefined;
+  });
+  const [items, setItems] = useState<Item[]>(() => (opening ? [opening] : []));
   const [draft, setDraft] = useState('');
-  const [waiting, setWaiting] = useState(false);
+  const [waiting, setWaiting] = useState(Boolean(opening));
   // One colour for the whole conversation, with a reason: the heart the check-up
   // gave them, or the week's pink. It never shifts on its own.
   const colour = feel ? rgb(moodColour(startAt[0], startAt[1])) : 'rgb(255 143 181)';
   const [ended, setEnded] = useState(false);
+  /** "จบการคุย" was tapped once: ask before wiping everything. */
+  const [confirming, setConfirming] = useState(false);
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -70,11 +80,10 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
       i.kind === 'me' ? [{ role: 'user', text: i.text }] : i.kind === 'ai' ? [{ role: 'ai', text: i.lines.join(' ') }] : [],
     );
 
-  const ask = async (list: Item[]) => {
-    setWaiting(true);
+  /** Ask the server about the conversation so far. Never throws. */
+  const fetchAnswer = async (list: Item[]): Promise<VentResponse> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20_000);
-    let answer: VentResponse = { kind: 'unavailable' };
     try {
       const res = await fetch('/api/vent', {
         method: 'POST',
@@ -82,14 +91,18 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
         body: JSON.stringify({ messages: history(list).slice(-20), feel }),
         signal: controller.signal,
       });
-      if (res.ok) answer = (await res.json()) as VentResponse;
+      if (res.ok) return (await res.json()) as VentResponse;
     } catch {
       // Offline, or too slow: said plainly below, and the words stay on screen.
     } finally {
       clearTimeout(timer);
-      setWaiting(false);
     }
+    return { kind: 'unavailable' };
+  };
 
+  /** Put the answer on the page. */
+  const show = (answer: VentResponse) => {
+    setWaiting(false);
     if (answer.kind === 'reply') {
       setItems((l) => [...l, { id: nextId++, kind: 'ai', heard: answer.heard, lines: answer.lines, concern: answer.concern, mock: answer.mock }]);
     } else if (answer.kind === 'care') {
@@ -99,23 +112,42 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
     }
   };
 
-  const send = () => {
-    const text = draft.trim();
+  const ask = (list: Item[]) => {
+    setWaiting(true);
+    void fetchAnswer(list).then(show);
+  };
+
+  // The words from the home go out as soon as the page opens, once.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!opening || opened.current) return;
+    opened.current = true;
+    clearHandOff();
+    void fetchAnswer([opening]).then(show);
+    // fetchAnswer and show only read state through setters; run once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opening]);
+
+  const sendText = (raw: string) => {
+    const text = raw.trim();
     if (!text || waiting || capped) return;
     const list: Item[] = [...items.filter((i) => i.kind !== 'problem'), { id: nextId++, kind: 'me', text }];
     setItems(list);
     setDraft('');
+    setConfirming(false);
     haptic('done');
-    void ask(list);
+    ask(list);
   };
+  const send = () => sendText(draft);
 
   const retry = () => {
     const list = items.filter((i) => i.kind !== 'problem');
     setItems(list);
-    void ask(list);
+    ask(list);
   };
 
   const finish = () => {
+    setConfirming(false);
     setItems([]);
     setDraft('');
     setEnded(true);
@@ -153,51 +185,42 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
 
       <header className={styles.bar}>
         <BackButton href="/" />
-        {talking && (
-          <button type="button" className={styles.endBtn} data-press onClick={finish}>
-            {vent.end}
-          </button>
-        )}
+        {talking &&
+          (confirming ? (
+            <span className={styles.confirm} role="group" aria-label={vent.endConfirm.ask}>
+              <span className={styles.confirmAsk}>{vent.endConfirm.ask}</span>
+              <button type="button" className={styles.confirmNo} data-press onClick={() => setConfirming(false)}>
+                {vent.endConfirm.no}
+              </button>
+              <button type="button" className={styles.endBtn} data-press onClick={finish}>
+                {vent.endConfirm.yes}
+              </button>
+            </span>
+          ) : (
+            <button type="button" className={styles.endBtn} data-press onClick={() => setConfirming(true)}>
+              {vent.end}
+            </button>
+          ))}
       </header>
 
       <div className={styles.heartWrap}>
         <LiveHeart energy={startAt[0]} weight={startAt[1]} colour={colour} listening={waiting} className={styles.heart} />
-        {waiting && (
-          <p className={styles.listening} role="status">
-            {vent.listening}
-            <span className={styles.dots} aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-          </p>
-        )}
       </div>
 
       <div className={styles.thread} aria-live="polite">
         {!talking && (
           <section className={styles.intro}>
             <p className={styles.note}>{start ? vent.intro.noteFromCheckup(start.word) : vent.intro.note}</p>
-            <h1 className={styles.title}>{vent.intro.title}</h1>
+            {/* The heart asks first, something that fits the hour. */}
+            <h1 className={styles.title}>
+              <TimeAsk />
+            </h1>
             <p className={styles.body}>{vent.intro.body}</p>
             <p className={styles.privacy}>{vent.intro.privacy}</p>
 
-            <p className={styles.samplesLabel}>{vent.intro.samplesLabel}</p>
+            <p className={styles.samplesLabel}>{vent.invite.orTap}</p>
             <div className={styles.samples}>
-              {heart.ways.vent.samples.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={styles.sample}
-                  data-press
-                  onClick={() => {
-                    setDraft(s.replace(/…$/, ''));
-                    inputRef.current?.focus();
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+              <Starters onPick={sendText} disabled={waiting} />
             </div>
           </section>
         )}
@@ -258,6 +281,29 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
           ),
         )}
 
+        {/* Where the answer is about to land: the heart is thinking. */}
+        {waiting && (
+          <p className={styles.listening} role="status">
+            {vent.listening}
+            <span className={styles.dots} aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+          </p>
+        )}
+
+        {/* After an answer: a few things to say next, one tap to send. */}
+        {!waiting && !capped && items.at(-1)?.kind === 'ai' && (
+          <div className={styles.quick}>
+            {vent.quick.map((q) => (
+              <button key={q} type="button" className={styles.quickBtn} data-press onClick={() => sendText(q)}>
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+
         {capped && <p className={styles.capped}>{vent.capped}</p>}
         <div ref={endRef} />
       </div>
@@ -269,24 +315,30 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
           send();
         }}
       >
-        <textarea
-          ref={inputRef}
-          className={styles.input}
-          value={draft}
-          rows={1}
-          maxLength={vent.composer.max}
-          placeholder={vent.composer.placeholder}
-          aria-label={vent.intro.title}
-          disabled={capped}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            // Enter is a new line on a phone; Ctrl/⌘+Enter sends on a keyboard.
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-              e.preventDefault();
-              send();
-            }
-          }}
-        />
+        <span className={styles.field}>
+          <textarea
+            ref={inputRef}
+            className={styles.input}
+            value={draft}
+            rows={1}
+            maxLength={vent.composer.max}
+            placeholder=" "
+            aria-label={vent.intro.title}
+            disabled={capped}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // On a computer Enter sends and Shift+Enter is a new line; on a phone
+              // Enter is a new line and the round button sends, as in phone chats.
+              if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+              const computer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+              if (computer || e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+          />
+          <DriftingHints />
+        </span>
         <button
           type="submit"
           className={styles.send}
@@ -294,9 +346,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
           disabled={!draft.trim() || waiting || capped}
           aria-label={vent.composer.send}
         >
-          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-            <path d="M11 18 L11 5 M5 10 L11 4 L17 10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Plane />
         </button>
       </form>
     </div>

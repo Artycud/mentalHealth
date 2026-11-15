@@ -1,0 +1,130 @@
+/* The pieces that invite a student to write (Invite.tsx). */
+
+/* ---- the heart's question: the sky's mood shows one (day when there is none) ---- */
+
+.ask {
+  display: none;
+}
+
+.ask[data-for='day'] {
+  display: inline;
+}
+
+:global(:root[data-time]) .ask[data-for='day'] {
+  display: none;
+}
+
+:global(:root[data-time='morning']) .ask[data-for='morning'],
+:global(:root[data-time='day']) .ask[data-for='day'],
+:global(:root[data-time='dusk']) .ask[data-for='dusk'],
+:global(:root[data-time='night']) .ask[data-for='night'] {
+  display: inline;
+}
+
+/* ---- starters drifting through an empty bar ---- */
+
+.hints {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hints span {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  translate: 0 -50%;
+  white-space: nowrap;
+  opacity: 0;
+  font-family: var(--font-note);
+  font-size: 17px;
+  color: #7a7f9e;
+  animation: drift 10.4s var(--ease) infinite;
+}
+
+/* Each shows for a quarter of the loop: in, a while, out. */
+@keyframes drift {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  4%,
+  21% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  25%,
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Gone as soon as anything is written (the input sits just before them). */
+:global(input:not(:placeholder-shown)) + .hints,
+:global(textarea:not(:placeholder-shown)) + .hints {
+  display: none;
+}
+
+/* ---- one-tap starters ---- */
+
+.starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.starter {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 13px 13px 13px 4px;
+  background: var(--pink-tint);
+  box-shadow: 0 2px 0 rgba(27, 43, 94, 0.12);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--paper-ink);
+  text-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 180ms var(--ease);
+}
+
+.starter:nth-child(2n) {
+  background: var(--sun-tint);
+  border-radius: 13px 4px 13px 13px;
+}
+
+.starter:active {
+  transform: translateY(1px);
+}
+
+.starter:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+.starter:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- the reassurance ---- */
+
+.safe {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hints span {
+    animation: none;
+  }
+
+  .hints span:first-child {
+    opacity: 1;
+  }
+}
