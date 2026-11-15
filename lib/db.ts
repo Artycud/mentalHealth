@@ -162,6 +162,26 @@ export function db(): Promise<Client> {
   return ready;
 }
 
+/**
+ * Which setting chose the database, and what kind it is: never the address or the
+ * token. For /api/health, so "the data keeps disappearing" can be told apart from
+ * the outside: a `file:` or `:memory:` database on Vercel is wiped by every deploy.
+ */
+export function databaseInfo(): { from: 'DATABASE_URL' | 'TURSO_DATABASE_URL' | 'default'; kind: 'turso' | 'hosted' | 'file' | 'memory' | 'none' } {
+  const from = process.env.DATABASE_URL ? 'DATABASE_URL' : process.env.TURSO_DATABASE_URL ? 'TURSO_DATABASE_URL' : 'default';
+  const url = (process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || (process.env.VERCEL ? '' : 'file:./data/app.db')).trim();
+  const kind = !url
+    ? 'none'
+    : url.includes(':memory:')
+      ? 'memory'
+      : url.startsWith('file:')
+        ? 'file'
+        : /\.turso\.io/.test(url)
+          ? 'turso'
+          : 'hosted';
+  return { from, kind };
+}
+
 /** The database file on this machine, or null for a hosted database. */
 export function databaseFile(): string | null {
   const url = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || (process.env.VERCEL ? '' : 'file:./data/app.db');
