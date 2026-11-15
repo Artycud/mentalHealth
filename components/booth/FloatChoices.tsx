@@ -13,8 +13,13 @@ interface Choice {
 
 /**
  * The kiosk's answers: six slips of paper. Tap one, or flick it upward, and it
- * lights up and floats away like a lantern before the next question comes in,
- * the booth's own idea of letting go. The other slips step back while it goes.
+ * lights up and leaves the way its question goes (FloatChoices.module.css):
+ *   krathong  floats away like a lantern, the booth's own idea of letting go;
+ *   candle    the others go out first, then the wish swells a little and fades;
+ *   drift     drifts off sideways on the water, rocking;
+ *   sunrise   the others go, and it rises into a warm glow, like a new day;
+ *   river     settles, and a ripple spreads out from it.
+ * Each one is quiet and over well inside the kiosk's FLOAT_MS.
  *
  * A flick only ever moves a slip up, and a short or sideways one springs back, so
  * a hand resting on the screen never answers by accident. A plain tap answers
@@ -45,7 +50,13 @@ export function FloatChoices({
   };
 
   return (
-    <div className={styles.slips} role="group" aria-label={label} data-picking={picked ? 'true' : undefined}>
+    <div
+      className={styles.slips}
+      role="group"
+      aria-label={label}
+      data-scene={scene}
+      data-picking={picked ? 'true' : undefined}
+    >
       {choices.map((choice, i) => (
         <button
           key={choice.id}

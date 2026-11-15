@@ -346,7 +346,7 @@ export const loykrathongQuiz: BoothQuestion[] = [
     id: 'q3',
     scene: 'drift',
     note: 'ข้อ 3 จาก 5',
-    headline: 'มองกระทงลอยห่างออกไป ใจรู้สึกยังไง?',
+    headline: 'มองกระทง ลอยห่างออกไป ใจรู้สึกยังไง?',
     choices: choices([
       ['happy', 'โล่ง ใจเบา ยิ้มออก'],
       ['angry', 'ยังขุ่น อยากให้ลอยพ้นตาไปสักที'],

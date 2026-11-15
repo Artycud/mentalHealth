@@ -86,14 +86,25 @@
 .stroke { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
 .strokeSoft { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; opacity: 0.5; }
 
-/* ---- chosen: it lights up, then floats away ---- */
+/* ---- chosen: it lights up, then leaves the way its question goes ----
+   One quiet move per question, all transform and opacity, all over by about
+   800 ms (the kiosk's FLOAT_MS). The halo (::after) is its own layer, so a glow
+   only ever changes opacity and scale, never repaints a shadow. */
+
+.slip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
 
 .slip[data-picked='true'] {
   background: var(--sunflower);
   box-shadow:
     0 0.5vh 0 rgba(0, 0, 0, 0.18),
     0 0 6vh 1vh rgba(255, 181, 17, 0.45);
-  animation: float-away 720ms var(--ease) 140ms forwards;
 }
 
 .slip[data-picked='true'] .icon {
@@ -110,6 +121,11 @@
   cursor: default;
 }
 
+/* Q1 ลอยกระทง: it floats away, up, like a lantern. */
+.slips[data-scene='krathong'] .slip[data-picked='true'] {
+  animation: float-away 720ms var(--ease) 140ms forwards;
+}
+
 @keyframes float-away {
   to {
     opacity: 0;
@@ -117,8 +133,144 @@
   }
 }
 
+/* Q2 the wish: the other candles go out first; the wish swells a little, holds
+   its light, and only then fades. */
+.slips[data-scene='candle'][data-picking='true'] .slip:not([data-picked='true']),
+.slips[data-scene='sunrise'][data-picking='true'] .slip:not([data-picked='true']) {
+  opacity: 0;
+  transform: scale(0.95);
+  transition-duration: 220ms;
+}
+
+.slips[data-scene='candle'] .slip[data-picked='true'] {
+  z-index: 1;
+  animation: wish 760ms forwards;
+}
+
+.slips[data-scene='candle'] .slip[data-picked='true']::after {
+  box-shadow: 0 0 5vh 1.5vh rgba(255, 214, 120, 0.7);
+  animation: wish-glow 760ms forwards;
+}
+
+@keyframes wish {
+  0% {
+    transform: scale(1);
+    animation-timing-function: cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  32% {
+    transform: scale(1.07);
+    opacity: 1;
+    animation-timing-function: ease-in-out;
+  }
+  62% {
+    transform: scale(1.07);
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+
+@keyframes wish-glow {
+  35%,
+  60% {
+    opacity: 1;
+  }
+}
+
+/* Q3 the krathong drifting off: it is carried away sideways on the water,
+   rocking gently, and grows faint. */
+.slips[data-scene='drift'] .slip[data-picked='true'] {
+  animation: drift-off 760ms ease-in-out 80ms forwards;
+}
+
+@keyframes drift-off {
+  30% {
+    transform: translate3d(2vw, 0.6vh, 0) rotate(1.5deg);
+  }
+  60% {
+    transform: translate3d(6vw, -0.2vh, 0) rotate(-1deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(12vw, 0.8vh, 0) rotate(1deg) scale(0.94);
+    opacity: 0;
+  }
+}
+
+/* Q4 tomorrow: the others go, and it rises a little into a warm glow, like the
+   sun coming up. */
+.slips[data-scene='sunrise'] .slip[data-picked='true'] {
+  z-index: 1;
+  animation: sunrise 760ms var(--ease) 60ms forwards;
+}
+
+.slips[data-scene='sunrise'] .slip[data-picked='true']::after {
+  background: radial-gradient(closest-side, rgba(255, 200, 90, 0.55), transparent);
+  animation: sun-glow 760ms var(--ease) 60ms forwards;
+}
+
+@keyframes sunrise {
+  45% {
+    transform: translate3d(0, -2.5vh, 0) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -7vh, 0) scale(1.03);
+    opacity: 0;
+  }
+}
+
+@keyframes sun-glow {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6, 2.2);
+  }
+}
+
+/* Q5 by the river: it settles where it is, and a ripple spreads out from it. */
+.slips[data-scene='river'] .slip[data-picked='true'] {
+  animation: settle 760ms var(--ease) 100ms forwards;
+}
+
+.slips[data-scene='river'] .slip[data-picked='true']::after {
+  border: 0.4vh solid rgba(255, 214, 120, 0.9);
+  animation: ripple 720ms ease-out 60ms forwards;
+}
+
+@keyframes settle {
+  40% {
+    transform: translate3d(0, 0.8vh, 0) scale(0.98);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 1.6vh, 0) scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12, 1.35);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .slip[data-picked='true'] {
+  .slips[data-scene] .slip[data-picked='true'],
+  .slips[data-scene] .slip[data-picked='true']::after {
     animation: none;
   }
 
