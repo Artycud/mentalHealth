@@ -6,7 +6,8 @@
  *  - runs only while something is subscribed (components subscribe while visible),
  *  - stops while the tab is hidden,
  *  - on a phone that cannot keep up (average frame over ~24ms), asks morphing
- *    shapes to update every other frame, so scrolling and dragging stay smooth.
+ *    shapes to update every other frame, so scrolling and dragging stay smooth —
+ *    but only while that actually wins frames back (see `paced`).
  *
  * Browser only; import from client components.
  */
@@ -27,6 +28,16 @@ let avg = 16;
 let n = 0;
 let slow = false;
 
+/* Slow frames are not always a slow phone. Safari holds a page to 30 frames a
+   second on its own in Low Power Mode, and an iPad is often in it. Skipping then
+   wins nothing back: the frames come no sooner, and the hearts just move at 15 a
+   second instead of 30. So skipping is watched: if a couple of seconds of it let
+   no frame in on time, the frames are being paced for us, and it stops until
+   frames come quickly again. */
+let paced = false;
+let tried = 0;
+let onTime = 0;
+
 function tick(now: number) {
   raf = 0;
   if (document.hidden || subs.size === 0) return;
@@ -34,12 +45,28 @@ function tick(now: number) {
   last = now;
   // Smoothed frame time; a long pause (tab switch) is not a slow phone.
   if (raw < 200) avg += (raw - avg) * 0.06;
-  slow = avg > 24;
+  if (avg < 20) paced = false;
+  slow = avg > 24 && !paced;
+  if (slow) {
+    tried += 1;
+    if (raw < 22) onTime += 1;
+    if (tried >= 60) {
+      paced = onTime === 0;
+      tried = onTime = 0;
+    }
+  } else tried = onTime = 0;
   n += 1;
   const info: FrameInfo = { dt: Math.min(0.05, raw / 1000), skip: slow && n % 2 === 1 };
-  subs.forEach((fn) => fn(now, info));
+  if (!held) subs.forEach((fn) => fn(now, info));
   raf = requestAnimationFrame(tick);
 }
+
+/* The booth's performance probe (?perf) can hold every heart still, to see what
+   their drawing costs on a real iPad. */
+let held = false;
+export const holdFrames = (hold: boolean) => {
+  held = hold;
+};
 
 function start() {
   if (!raf && !document.hidden && subs.size) {

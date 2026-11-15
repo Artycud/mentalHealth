@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 
 import { SpeckleDefs } from '@/components/illustrations/paper';
@@ -14,6 +16,9 @@ import styles from './river.module.css';
  * Each layer is drawn two periods wide and slid by exactly one, so it loops without
  * a seam. A period is 1920 units and holds a whole number of cycles of each sine
  * below, which is what makes it repeat.
+ *
+ * A client component, like the sky, so its long water paths stay out of the TV's
+ * refresh payload. (Not memo(): see Sky.tsx.)
  */
 
 const PERIOD = 1920;

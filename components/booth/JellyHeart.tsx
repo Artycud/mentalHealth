@@ -161,6 +161,20 @@ export function JellyHeart({
     const m = shown.current;
     if (!m.t0) m.t0 = performance.now() - Math.random() * 3000;
 
+    // Writes an attribute only when its text changes. Most of the heart (its
+    // colours, its shadow, a settled face) holds still between frames, and on an
+    // old iPad every write, even of the same value, can make Safari repaint the
+    // whole drawing, gradients and all.
+    const written = new WeakMap<Element, Record<string, string>>();
+    const put = (el: Element | null | undefined, name: string, value: string) => {
+      if (!el) return;
+      let attrs = written.get(el);
+      if (!attrs) written.set(el, (attrs = {}));
+      if (attrs[name] === value) return;
+      attrs[name] = value;
+      el.setAttribute(name, value);
+    };
+
     const frame = (now: number, dt: number, skip: boolean) => {
       const tg = target.current;
       const hand = poke?.current;
@@ -197,13 +211,13 @@ export function JellyHeart({
         pullAngle: hand?.angle ?? 0,
         pull: m.pull,
       });
-      bodyRef.current?.setAttribute('d', d);
-      clipRef.current?.setAttribute('d', d);
-      rimRef.current?.setAttribute('d', d);
+      put(bodyRef.current, 'd', d);
+      put(clipRef.current, 'd', d);
+      put(rimRef.current, 'd', d);
       // A heavy heart dims, and presses a wider, darker shadow into the ground.
-      shadeRef.current?.setAttribute('opacity', (w * 0.4).toFixed(3));
-      shadowRef.current?.setAttribute('rx', (110 + w * 60).toFixed(1));
-      shadowRef.current?.setAttribute('opacity', (0.55 + w * 0.45).toFixed(3));
+      put(shadeRef.current, 'opacity', (w * 0.4).toFixed(3));
+      put(shadowRef.current, 'rx', (110 + w * 60).toFixed(1));
+      put(shadowRef.current, 'opacity', (0.55 + w * 0.45).toFixed(3));
 
       // The charge: a liquid surface whose height is energy, sloshing as it moves.
       const level = bottom - (0.06 + e * 0.9) * (bottom - top);
@@ -214,7 +228,7 @@ export function JellyHeart({
         p += ` L${x} ${y.toFixed(1)}`;
       }
       p += ` L240 ${bottom + 60} Z`;
-      liquidRef.current?.setAttribute('d', p);
+      put(liquidRef.current, 'd', p);
 
       // A little fizz rising in a lively heart.
       const bubbles = bubblesRef.current?.children;
@@ -223,44 +237,45 @@ export function JellyHeart({
           const phase = (t * (0.25 + i * 0.07) + i * 0.37) % 1;
           const y = bottom - phase * (bottom - level);
           const x = -70 + i * 34 + Math.sin(t * 2 + i) * 8;
-          const c = bubbles[i] as SVGCircleElement;
-          c.setAttribute('cx', x.toFixed(1));
-          c.setAttribute('cy', y.toFixed(1));
-          c.setAttribute('opacity', reduce ? '0' : String(Math.max(0, e - 0.35) * 0.9 * (1 - phase)));
+          const c = bubbles[i];
+          put(c, 'cx', x.toFixed(1));
+          put(c, 'cy', y.toFixed(1));
+          put(c, 'opacity', reduce ? '0' : (Math.max(0, e - 0.35) * 0.9 * (1 - phase)).toFixed(3));
         }
       }
 
       const c = charge(e, w);
-      stopTop.current?.setAttribute('stop-color', rgb(mix(c, [255, 255, 255], 0.3)));
-      stopBottom.current?.setAttribute('stop-color', rgb(c));
-      glowRef.current?.setAttribute('stop-color', rgb(c));
+      put(stopTop.current, 'stop-color', rgb(mix(c, [255, 255, 255], 0.3)));
+      put(stopBottom.current, 'stop-color', rgb(c));
+      put(glowRef.current, 'stop-color', rgb(c));
 
       // ---- the face: how the heart feels, at a glance ----
       const cy = top + (bottom - top) * 0.42;
-      faceRef.current?.setAttribute('transform', `translate(0 ${cy.toFixed(1)})`);
+      put(faceRef.current, 'transform', `translate(0 ${cy.toFixed(1)})`);
       // Eyes: sleepy slits on an empty battery, round and wide on a full one; a
       // blink every few seconds.
       const blink = reduce ? 1 : (t % 3.7) < 0.14 ? 0.12 : 1;
       const ry = (3.5 + e * 9) * blink;
-      for (const eye of [eyeL.current, eyeR.current]) eye?.setAttribute('ry', ry.toFixed(1));
+      put(eyeL.current, 'ry', ry.toFixed(1));
+      put(eyeR.current, 'ry', ry.toFixed(1));
       // Mouth: a smile when light, flat in between, a wobbly frown when heavy;
       // a full battery smiles a little wider, an empty one a little less.
       const curve = 15 - w * 34 + (e - 0.5) * 12;
       const width = 20 + e * 8;
       const jitter = reduce ? 0 : Math.sin(t * 9) * Math.max(0, w - 0.6) * 3;
       const mouth = `M${-width} 30 Q0 ${(30 + curve + jitter).toFixed(1)} ${width} 30`;
-      mouthRef.current?.setAttribute('d', mouth);
-      mouthUnder.current?.setAttribute('d', mouth);
+      put(mouthRef.current, 'd', mouth);
+      put(mouthUnder.current, 'd', mouth);
       // Worried brows, only once it is really heavy.
       const lift = Math.max(0, w - 0.45) * 22;
       const brows = `M-50 ${(-24 + lift * 0.2).toFixed(1)} L-22 ${(-24 - lift).toFixed(1)} M50 ${(-24 + lift * 0.2).toFixed(1)} L22 ${(-24 - lift).toFixed(1)}`;
-      browsRef.current?.setAttribute('d', brows);
-      browsUnder.current?.setAttribute('d', brows);
+      put(browsRef.current, 'd', brows);
+      put(browsUnder.current, 'd', brows);
       const browOpacity = clamp((w - 0.45) * 3).toFixed(2);
-      browsRef.current?.setAttribute('opacity', browOpacity);
-      browsUnder.current?.setAttribute('opacity', browOpacity);
+      put(browsRef.current, 'opacity', browOpacity);
+      put(browsUnder.current, 'opacity', browOpacity);
       // Rosy cheeks on a light heart.
-      cheeksRef.current?.setAttribute('opacity', ((1 - w) * 0.55).toFixed(2));
+      put(cheeksRef.current, 'opacity', ((1 - w) * 0.55).toFixed(2));
     };
 
     if (reduce) {

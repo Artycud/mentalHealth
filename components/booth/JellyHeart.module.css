@@ -7,6 +7,9 @@
   width: auto;
   max-width: 100%;
   overflow: visible;
+  /* Its own layer. The heart is redrawn on every frame; on its own layer that
+     redraws only the heart, not the night sky and the words painted under it. */
+  will-change: transform;
 }
 
 /* The heart's edge: a cream line, as the poster outlines its lotus petals. */

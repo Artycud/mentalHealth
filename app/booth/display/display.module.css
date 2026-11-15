@@ -516,7 +516,8 @@
   --lanterns-top: 12%;
   --lanterns-h: 0.35;
   --lanterns-clip: 9vh;
-  --lanterns-clip-bottom: 69%;
+  /* A share of the sky's height (69%), not a percentage: see sky.module.css. */
+  --lanterns-clip-bottom: 0.69;
 }
 
 /* Before the first result of the day the river is just water; this says why, and

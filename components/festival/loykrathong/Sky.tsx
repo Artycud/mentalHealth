@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import type { CSSProperties } from 'react';
 
@@ -16,6 +18,16 @@ import styles from './sky.module.css';
  *
  * The scatter is drawn from a fixed seed, so the server and the browser draw the
  * same sky and every screen of the booth shares it.
+ *
+ * It is a client component, and everything in it that never changes (about 900
+ * dots) is built once, at module load, so the booth screens never pay for it again:
+ * the kiosk re-renders on every move of a drag and the TV refreshes every few
+ * seconds, and React skips an element it has already seen. Being a client
+ * component also keeps those dots out of the TV's refresh payload.
+ *
+ * Not wrapped in memo(), on purpose: rendered from a server page, a memo() client
+ * component is thrown away and built again on every refresh, which repaints the
+ * whole TV. It has no need of it anyway, for the reason above.
  */
 
 const W = 1600;
@@ -94,71 +106,88 @@ const LANTERNS = [
 const dots = (list: Dot[]) =>
   list.map((d, i) => <circle key={i} cx={d.x.toFixed(1)} cy={d.y.toFixed(1)} r={d.r.toFixed(2)} opacity={d.o.toFixed(2)} />);
 
+// ---- Built once (see above) ----
+
+const RIBBONS_SVG = (
+  <svg className={`${styles.layer} ${styles.ribbons}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="lk-ribbon" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#9fb6e6" stopOpacity="0" />
+        <stop offset="0.5" stopColor="#9fb6e6" stopOpacity="0.13" />
+        <stop offset="1" stopColor="#9fb6e6" stopOpacity="0" />
+      </linearGradient>
+      <linearGradient id="lk-lantern" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#fffbe4" />
+        <stop offset="0.55" stopColor="#fbe2a0" />
+        <stop offset="1" stopColor="#f0a04a" />
+      </linearGradient>
+    </defs>
+    {SKY.bands.map((d) => (
+      <path key={d} d={d} fill="url(#lk-ribbon)" />
+    ))}
+    <g fill="#fff6dc">{dots(SKY.dust)}</g>
+  </svg>
+);
+
+const STAR_SVGS = SKY.stars.map((group, i) => (
+  <svg
+    key={i}
+    className={`${styles.layer} ${styles.stars}`}
+    style={{ '--twinkle': `${4.5 + i * 1.7}s`, '--twinkle-delay': `${-i * 1.9}s` } as CSSProperties}
+    viewBox={`0 0 ${W} ${H}`}
+    preserveAspectRatio="xMidYMid slice"
+  >
+    <g fill="#fff6dc">{dots(group)}</g>
+  </svg>
+));
+
+/* Three nested boxes, one job each, so every moving part stays a plain transform
+   the GPU can move without repainting anything: the lantern rises and fades, the
+   bob rocks, and only the drawing itself, which never moves on its own, carries
+   the glow (a filter is painted once there, not on every frame). */
+const LANTERN_SPANS = (
+  <div className={styles.lanterns}>
+    <div className={styles.lanternField}>
+      {LANTERNS.map((l) => (
+        <span
+          key={`${l.x}-${l.y}`}
+          className={styles.lantern}
+          style={
+            {
+              '--x': l.x,
+              '--y': `${l.y * 100}%`,
+              '--s': `${l.s}vh`,
+              '--t': `${l.t}s`,
+              '--d': `${l.d}s`,
+            } as CSSProperties
+          }
+        >
+          <span className={styles.bob}>
+            <svg viewBox="-12 -16 24 32" className={styles.lanternArt}>
+              <path d="M-9 -13 Q0 -16.5 9 -13 Q11.5 0 7 12.5 Q0 14.5 -7 12.5 Q-11.5 0 -9 -13Z" fill="url(#lk-lantern)" />
+              <ellipse cx="0" cy="12.6" rx="6" ry="1.6" fill="#d9772c" />
+            </svg>
+          </span>
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
+const MOON = (
+  <div className={styles.moon}>
+    <span className={styles.moonGlow} />
+    <Image src={moonArt} alt="" sizes="30vh" loading="eager" className={styles.moonArt} />
+  </div>
+);
+
 export function LoyKrathongSky({ moon = false, lanterns = false }: { moon?: boolean; lanterns?: boolean }) {
   return (
     <div className={styles.sky} aria-hidden="true">
-      <svg className={`${styles.layer} ${styles.ribbons}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="lk-ribbon" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#9fb6e6" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#9fb6e6" stopOpacity="0.13" />
-            <stop offset="1" stopColor="#9fb6e6" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="lk-lantern" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#fffbe4" />
-            <stop offset="0.55" stopColor="#fbe2a0" />
-            <stop offset="1" stopColor="#f0a04a" />
-          </linearGradient>
-        </defs>
-        {SKY.bands.map((d) => (
-          <path key={d} d={d} fill="url(#lk-ribbon)" />
-        ))}
-        <g fill="#fff6dc">{dots(SKY.dust)}</g>
-      </svg>
-
-      {SKY.stars.map((group, i) => (
-        <svg
-          key={i}
-          className={`${styles.layer} ${styles.stars}`}
-          style={{ '--twinkle': `${4.5 + i * 1.7}s`, '--twinkle-delay': `${-i * 1.9}s` } as CSSProperties}
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="xMidYMid slice"
-        >
-          <g fill="#fff6dc">{dots(group)}</g>
-        </svg>
-      ))}
-
-      {moon && (
-        <div className={styles.moon}>
-          <span className={styles.moonGlow} />
-          <Image src={moonArt} alt="" sizes="30vh" loading="eager" className={styles.moonArt} />
-        </div>
-      )}
-
-      {lanterns && (
-        <div className={styles.lanterns}>
-          {LANTERNS.map((l) => (
-            <span
-              key={`${l.x}-${l.y}`}
-              className={styles.lantern}
-              style={
-                {
-                  '--x': l.x,
-                  '--y': `${l.y * 100}%`,
-                  '--s': `${l.s}vh`,
-                  '--t': `${l.t}s`,
-                  '--d': `${l.d}s`,
-                } as CSSProperties
-              }
-            >
-              <svg viewBox="-12 -16 24 32">
-                <path d="M-9 -13 Q0 -16.5 9 -13 Q11.5 0 7 12.5 Q0 14.5 -7 12.5 Q-11.5 0 -9 -13Z" fill="url(#lk-lantern)" />
-                <ellipse cx="0" cy="12.6" rx="6" ry="1.6" fill="#d9772c" />
-              </svg>
-            </span>
-          ))}
-        </div>
-      )}
+      {RIBBONS_SVG}
+      {STAR_SVGS}
+      {moon && MOON}
+      {lanterns && LANTERN_SPANS}
     </div>
   );
 }

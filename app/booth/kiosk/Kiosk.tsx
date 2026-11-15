@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import { IdleBackdrop } from '@/components/booth/art';
 import { ChoiceMark } from '@/components/booth/ChoiceMark';
@@ -169,6 +169,9 @@ export function Kiosk({
     }, 1000);
     return () => clearInterval(tick);
   }, [stage.kind, reset]);
+
+  // The result counts down every second; the QR code is encoded once, not on each tick.
+  const qr = useMemo(() => <QrCode value={qrUrl} label={qrInvite.title} />, [qrUrl]);
 
   // Focus follows the question, so a keyboard or screen reader keeps up (§9).
   const step = stage.kind === 'quiz' ? stage.step : -1;
@@ -576,9 +579,7 @@ export function Kiosk({
         </div>
         {/* The bridge to the main site, for later: white only behind the code. */}
         <div className={styles.qrMini}>
-          <div className={styles.qrBox}>
-            <QrCode value={qrUrl} label={qrInvite.title} />
-          </div>
+          <div className={styles.qrBox}>{qr}</div>
           <div className={styles.qrText}>
             <span className={styles.qrTitle}>{qrInvite.title}</span>
             <span className={styles.qrBody}>{qrInvite.body}</span>

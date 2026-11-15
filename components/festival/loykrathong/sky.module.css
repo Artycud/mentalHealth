@@ -7,11 +7,16 @@
      --lanterns-w         how wide the zone is (default 46%)
      --lanterns-top       how far down their band starts (default 0%)
      --lanterns-h         how much of the sky their band takes, as a share (default 1)
-     --lanterns-clip      above this line (from the top) they are not drawn (default 0)
-     --lanterns-clip-bottom  nor below this far up from the bottom (default 0)
+     --lanterns-clip      above this line (a length from the top) they are not drawn (default 0px)
+     --lanterns-clip-bottom  nor below this far up from the bottom, as a share of the
+                          sky's height: 0.69 is 69% (default 0)
 
    Everything that moves is a transform or an opacity, on its own layer, and all of
-   it stops under prefers-reduced-motion, where each thing rests where it is drawn. */
+   it stops under prefers-reduced-motion, where each thing rests where it is drawn.
+
+   Built for an old iPad (an iPad 7 to 9), which runs this for hours: nothing that
+   moves carries a filter, a mask or a blend, because on Safari any of those makes
+   the GPU repaint it on every frame instead of just moving it. */
 
 .sky {
   position: absolute;
@@ -78,10 +83,27 @@
 
 /* ---- Lanterns ---- */
 
+/* Clipped to the band the screen allows. A plain rectangle of overflow, not a
+   clip-path: Safari clips that for free, where a clip-path over moving lanterns
+   becomes a mask it redraws on every frame. */
 .lanterns {
   position: absolute;
-  inset: 0;
-  clip-path: inset(var(--lanterns-clip, 0) 0 var(--lanterns-clip-bottom, 0) 0);
+  left: 0;
+  right: 0;
+  top: var(--lanterns-clip, 0px);
+  bottom: calc(var(--lanterns-clip-bottom, 0) * 100%);
+  overflow: hidden;
+}
+
+/* The whole sky again, inside the clip, so a lantern's place is still a share of
+   the sky: it starts back up by the top clip and is as tall as the sky (the
+   clipped band, plus the top clip, over the share left after the bottom one). */
+.lanternField {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--lanterns-clip, 0px));
+  height: calc((100% + var(--lanterns-clip, 0px)) / (1 - var(--lanterns-clip-bottom, 0)));
 }
 
 /* Each one rises through where it is drawn and fades out above it, then starts
@@ -92,16 +114,27 @@
   top: calc(var(--lanterns-top, 0%) + var(--y) * var(--lanterns-h, 1));
   height: var(--s);
   aspect-ratio: 3 / 4;
-  filter: drop-shadow(0 0 var(--s) rgba(255, 184, 80, 0.45)) drop-shadow(0 0 0.4vh rgba(255, 214, 140, 0.9));
   will-change: transform, opacity;
   animation: rise var(--t) linear var(--d) infinite;
 }
 
-.lantern svg {
+/* It rocks a little as it goes. */
+.bob {
   display: block;
   width: 100%;
   height: 100%;
+  will-change: transform;
   animation: bob-lantern 6s ease-in-out var(--d) infinite;
+}
+
+/* Its glow. The lantern is symmetrical and the glow has no offset, so glowing the
+   still drawing and then rocking it looks exactly like rocking it and then
+   glowing it, and the glow is painted once. */
+.lanternArt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 var(--s) rgba(255, 184, 80, 0.45)) drop-shadow(0 0 0.4vh rgba(255, 214, 140, 0.9));
 }
 
 @keyframes twinkle {
@@ -165,7 +198,7 @@
   .stars,
   .moonGlow,
   .lantern,
-  .lantern svg {
+  .bob {
     animation: none;
   }
 }

@@ -656,6 +656,12 @@
   transform: scale(0.97);
 }
 
+/* The tapped tile turns marigold too. It needs both classes: .picked comes
+   earlier in this file, so on its own .topic's paper would win. */
+.topic.picked {
+  background: var(--sunflower);
+}
+
 .topic svg {
   width: clamp(28px, 8vh, 80px);
   height: clamp(28px, 8vh, 80px);
@@ -892,6 +898,9 @@
   width: 100%;
   height: auto;
   overflow: visible;
+  /* Its own layer: the flowing dots repaint it on every frame, and alone they
+     repaint only this small arc, not the sky and the words behind it. */
+  will-change: transform;
 }
 
 .bridgeTrail {

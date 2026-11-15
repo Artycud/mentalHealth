@@ -107,6 +107,9 @@ const INNER_PETALS: [number, number][] = [
   [198.7, 98.5],
 ];
 
+/** Where the booth marigold's dotted ring sits, in the drawing's own units. */
+export const BOOTH_MARIGOLD_RING = { cx: 176, cy: 106, r: 86 } as const;
+
 /**
  * Booth (342×240): a marigold — ดาวเรือง.
  *
@@ -114,8 +117,11 @@ const INNER_PETALS: [number, number][] = [
  * drawing with its margins; the kiosk result sets the flower on a disc and crops
  * to the flower head, stem and leaf so it fills the disc instead of floating in
  * it.
+ *
+ * `ring={false}` leaves out the dotted ring, for a screen that draws it on its own
+ * so it can turn (components/booth/FlowerArt).
  */
-export function BoothMarigold({ viewBox = '0 0 342 240' }: { viewBox?: string }) {
+export function BoothMarigold({ viewBox = '0 0 342 240', ring = true }: { viewBox?: string; ring?: boolean }) {
   return (
     <svg viewBox={viewBox} aria-hidden="true" style={fluid}>
       {/* Leaf and stem sit behind the flower head. */}
@@ -141,7 +147,9 @@ export function BoothMarigold({ viewBox = '0 0 342 240' }: { viewBox?: string })
         />
       ))}
 
-      <circle cx="176" cy="106" r="86" className="ln-dot" />
+      {ring && (
+        <circle cx={BOOTH_MARIGOLD_RING.cx} cy={BOOTH_MARIGOLD_RING.cy} r={BOOTH_MARIGOLD_RING.r} className="ln-dot" />
+      )}
       <path d="M166 104 L166.1 104 M176 112 L176.1 112 M180 100 L180.1 100" className="ln" />
     </svg>
   );

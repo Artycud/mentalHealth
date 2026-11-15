@@ -1,4 +1,8 @@
+'use client';
+
 import type { Tint } from '@/lib/types';
+
+import { TINTS, WALL_FLOWER_RING } from './flower-marks';
 
 /**
  * A compact flower mark for the TV wall and the distribution bars.
@@ -6,24 +10,12 @@ import type { Tint } from '@/lib/types';
  * Same construction as the full marigold — overlapping petals, multiplied, a
  * dotted ring, three ink dots — reduced to a mark that stays legible at 60px
  * across a room. Tints are palette pairings only; no new colours (BRIEF §4).
+ *
+ * A client component: the TV draws a couple of dozen of these and refreshes every
+ * few seconds, and as a client component each one travels in that refresh as just
+ * its tint, not as its sixteen circles. (Not memo(): see festival/loykrathong/Sky.tsx.)
+ * Its tints live in ./flower-marks, where server code can read them too.
  */
-
-/* Six pairings for six flowers. Only pink, blue and the festival accent exist in
-   the palette, so the pairings are every ordered combination of two distinct
-   inks — three outer inks × two inners. Swapping outer and inner changes which
-   ink dominates and what colour the multiply blend makes, so they read as
-   different flowers across a room even though nothing new is added. */
-const TINTS: { outer: string; inner: string }[] = [
-  { outer: 'var(--accent)', inner: 'var(--riso-pink)' }, // yellow with pink centre
-  { outer: 'var(--riso-pink)', inner: 'var(--riso-blue)' }, // pink with blue centre
-  { outer: 'var(--riso-blue)', inner: 'var(--accent)' }, // blue with yellow centre
-  { outer: 'var(--riso-pink)', inner: 'var(--accent)' }, // pink with yellow centre
-  { outer: 'var(--accent)', inner: 'var(--riso-blue)' }, // yellow with blue centre
-  { outer: 'var(--riso-blue)', inner: 'var(--riso-pink)' }, // blue with pink centre
-];
-
-/** The flower's main ink, for anything that should match it (e.g. a TV bar). */
-export const tintInk = (tint: Tint) => TINTS[tint].outer;
 
 /** 8 outer petals and 6 inner, on the same geometry as the full illustration. */
 const OUTER = Array.from({ length: 8 }, (_, i) => {
@@ -40,15 +32,20 @@ const INNER = Array.from({ length: 6 }, (_, i) => {
  * `plate` sets the flower on a small disc of cream paper, like a krathong: the
  * petals still multiply, but onto the plate, so the flower keeps its own colours on
  * any water and reads as a lit thing floating, however dark the scene behind it.
+ *
+ * `ring={false}` leaves out the dotted ring, for a screen that draws it on its own
+ * so it can turn (components/booth/FlowerArt).
  */
 export function WallFlower({
   tint,
   size = 72,
   plate = false,
+  ring = true,
 }: {
   tint: Tint;
   size?: number;
   plate?: boolean;
+  ring?: boolean;
 }) {
   const { outer, inner } = TINTS[tint];
   return (
@@ -74,7 +71,15 @@ export function WallFlower({
           className="mul"
         />
       ))}
-      <circle cx="50" cy="50" r="44" className="ln-dot" opacity={plate ? 0.5 : 1} />
+      {ring && (
+        <circle
+          cx={WALL_FLOWER_RING.cx}
+          cy={WALL_FLOWER_RING.cy}
+          r={WALL_FLOWER_RING.r}
+          className="ln-dot"
+          opacity={plate ? 0.5 : 1}
+        />
+      )}
       <path d="M46 48 L46.1 48 M52 53 L52.1 53 M54 45 L54.1 45" className="ln" />
     </svg>
   );
