@@ -1,3 +1,5 @@
+import { Fragment } from 'react';
+
 import { vent } from '@/content/th/vent';
 import { SKY_TIMES } from '@/lib/sky-time';
 
@@ -17,7 +19,15 @@ export function TimeAsk({ className }: { className?: string }) {
     <span className={className}>
       {SKY_TIMES.map((t) => (
         <span key={t} className={styles.ask} data-for={t}>
-          {vent.invite.ask[t]}
+          {/* Thai has no spaces between words, only between phrases, and a browser
+              may break a line inside a phrase (หรือ / เปล่า). Keep each phrase whole. */}
+          {vent.invite.ask[t].split(' ').map((phrase, i) => (
+            <Fragment key={i}>
+              {/* the space stays outside, where the line may break */}
+              {i > 0 && ' '}
+              <span className={styles.phrase}>{phrase}</span>
+            </Fragment>
+          ))}
         </span>
       ))}
     </span>
@@ -43,14 +53,16 @@ export function Starters({
   onPick,
   disabled = false,
   row = false,
+  className = '',
 }: {
   onPick: (text: string) => void;
   disabled?: boolean;
   /** One line that scrolls sideways, where height is precious (the home). */
   row?: boolean;
+  className?: string;
 }) {
   return (
-    <div className={row ? `${styles.starters} ${styles.row}` : styles.starters}>
+    <div className={`${styles.starters} ${row ? styles.row : ''} ${className}`}>
       {vent.invite.starters.map((s) => (
         <button key={s} type="button" className={styles.starter} data-press disabled={disabled} onClick={() => onPick(s)}>
           {s}

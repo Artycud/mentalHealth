@@ -21,6 +21,11 @@
   display: inline;
 }
 
+/* A phrase of the question never breaks across lines; only the spaces may. */
+.phrase {
+  white-space: nowrap;
+}
+
 /* ---- starters drifting through an empty bar ---- */
 
 .hints {

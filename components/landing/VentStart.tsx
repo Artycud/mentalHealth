@@ -17,10 +17,11 @@ import styles from './VentStart.module.css';
 const FLIGHT = 240;
 
 /**
- * VENT on the home, made to be answered rather than filled in: the little heart
- * asks something that fits the hour, the answer goes on a strip of notebook
- * paper (starters drift through it while it is empty), and a few starters can be
- * sent with one tap. Sending folds the words into a paper airplane and opens the
+ * VENT on the home, made to be answered rather than filled in, and drawn as a
+ * little of the chat it opens: the heart's question comes in as a message, a few
+ * quick replies wait on the student's side to be sent with one tap, and the
+ * answer goes on a strip of notebook paper (starters drift through it while it
+ * is empty). Sending folds the words into a paper airplane and opens the
  * chat with them already on their way (lib/vent/handoff carries them, in memory
  * only). Sending with nothing written just puts the cursor on the paper.
  */
@@ -50,13 +51,22 @@ export function VentStart() {
 
   return (
     <form className={`${palette.paper} ${styles.slip}`} onSubmit={submit} data-flying={flying}>
-      {/* The heart asks, in a speech bubble: a reply is easier to write than a blank box. */}
+      {/* A little of the chat itself: the heart's question comes in as a message
+          (a moment of "typing" first), the starters wait on the student's side as
+          quick replies, and the writing bar sits at the foot, as in the chat. */}
       <label htmlFor="vent-start" className={styles.asks}>
         <LiveHeart energy={0.45} weight={0.35} colour="rgb(255 143 181)" className={styles.heart} />
         <span className={styles.bubble}>
+          <span className={styles.typing} aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
           <TimeAsk className={styles.ask} />
         </span>
       </label>
+
+      <Starters onPick={go} disabled={flying} row className={styles.replies} />
 
       <div className={styles.bar}>
         <span className={styles.field}>
@@ -81,8 +91,6 @@ export function VentStart() {
         </button>
       </div>
 
-      <p className={styles.orTap}>{vent.invite.orTap}</p>
-      <Starters onPick={go} disabled={flying} row />
       <SafeLine className={styles.safe} />
     </form>
   );

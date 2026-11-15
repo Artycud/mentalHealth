@@ -33,17 +33,18 @@ export const vent = {
    * sent with one tap, and the reassurance sits beside the button.
    */
   invite: {
-    /** What the heart asks, by the sky's mood (lib/sky-time). */
+    /** What the heart asks, by the sky's mood (lib/sky-time). Each space-separated
+        phrase stays on one line (components/vent/Invite TimeAsk). */
     ask: {
       morning: 'เมื่อคืนนอนพอไหม เช้านี้รู้สึกยังไงบ้าง',
       day: 'เรียนมาทั้งวัน เหนื่อยไหม เล่าให้ฟังหน่อยสิ',
       dusk: 'วันนี้เป็นไงบ้าง มีอะไรค้างอยู่ในใจไหม',
-      // A word joiner (U+2060) keeps หรือเปล่า on one line.
-      night: 'ดึกแล้วนะ มีอะไรคิดอยู่หรือ⁠เปล่า',
+      night: 'ดึกแล้วนะ มีอะไรคิดอยู่หรือเปล่า',
     },
     /** Drift through the empty bar, one after another. */
     hints: ['เรื่องเรียน…', 'เพื่อน…', 'ที่บ้าน…', 'ไม่รู้สิ แค่เหนื่อย…'],
-    /** One tap: the chat opens with this already sent. */
+    /** One tap: the chat opens with this already sent. On the home they sit
+        on the student's side, as quick replies to the heart's question. */
     starters: ['เครียดเรื่องเรียน', 'นอนไม่พอ', 'ทะเลาะกับเพื่อน', 'แค่เหนื่อย ๆ'],
     /** Says plainly who reads it, and what happens to it. */
     safe: 'พี่ๆ สภาอ่านเอง · ไม่ต้องใส่ชื่อ · กดจบแล้วลบหมด',

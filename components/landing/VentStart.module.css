@@ -1,11 +1,12 @@
-/* VENT on the home (VentStart.tsx): a paper slip where the heart asks, and the
-   answer goes on a strip of notebook paper. */
+/* VENT on the home (VentStart.tsx): a little of the chat it opens, on a paper
+   slip. The heart's question comes in as a message, quick replies wait on the
+   student's side, and the answer goes on a strip of notebook paper at the foot. */
 
 .slip {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 16px 16px 14px;
+  padding: 14px 16px 12px;
   border-radius: 18px 5px 18px 18px;
   background:
     url('/textures/paper-grain.png') 0 0 / 192px 192px repeat,
@@ -30,6 +31,7 @@
 
 .bubble {
   position: relative;
+  display: grid;
   flex: 1;
   min-width: 0;
   padding: 10px 14px 11px;
@@ -49,6 +51,13 @@
   clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 
+/* The dots and the question share one place in the bubble, so the bubble is
+   its full size from the start and nothing below it moves. */
+.typing,
+.ask {
+  grid-area: 1 / 1;
+}
+
 .ask {
   font-family: var(--font-heading);
   font-size: 18px;
@@ -56,6 +65,91 @@
   line-height: 1.35;
   color: var(--paper-ink);
   text-wrap: balance;
+}
+
+/* ---- a moment of typing, then the question ----
+   Only once the home is showing (the intro has moved on, html[data-intro]), so
+   it plays where it can be seen. Opacity and transform only. */
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0;
+}
+
+.typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--paper-ink);
+  opacity: 0.45;
+}
+
+:global(:root[data-intro='done']) .typing {
+  animation: typing-out 220ms var(--ease) 1.1s both;
+}
+
+:global(:root[data-intro='done']) .typing i {
+  animation: dot 600ms ease-in-out 2;
+}
+
+:global(:root[data-intro='done']) .typing i:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+:global(:root[data-intro='done']) .typing i:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+:global(:root[data-intro='done']) .ask {
+  animation: ask-in 360ms var(--ease) 1.3s both;
+}
+
+@keyframes typing-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dot {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes ask-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ---- quick replies, on the student's side ---- */
+
+.replies {
+  /* fade out at the slip's edge: there is more to swipe to */
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+
+/* Right-aligned like the student's messages when they fit; from the left, to be
+   swiped, when they do not. */
+.replies > button:first-child {
+  margin-left: auto;
+}
+
+.replies > button:nth-child(n) {
+  min-height: 36px;
+  border-radius: 14px 14px 4px 14px;
+  background: #ffffff;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 72, 176, 0.55),
+    0 2px 0 rgba(27, 43, 94, 0.08);
+  font-weight: 500;
+  color: var(--paper-ink);
 }
 
 /* ---- the strip of notebook paper, and the airplane ---- */
@@ -85,9 +179,9 @@
 .bar::after {
   content: '';
   position: absolute;
-  inset: -4px;
-  border-radius: 15px 15px 15px 6px;
-  box-shadow: 0 0 0 3px rgba(255, 72, 176, 0.35), 0 0 18px rgba(255, 72, 176, 0.35);
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 16px 2px rgba(255, 72, 176, 0.4);
   opacity: 0;
   pointer-events: none;
   animation: invite 2.8s ease-in-out 1.2s infinite;
@@ -170,22 +264,20 @@
   }
 }
 
-/* ---- or one tap ---- */
-
-.orTap {
-  margin-top: 2px;
-  font-family: var(--font-note);
-  font-size: 15px;
-  color: var(--ink-soft);
-}
-
 .safe {
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .slip[data-flying='true'] .plane,
-  .bar::after {
+  .bar::after,
+  :global(:root[data-intro='done']) .typing,
+  :global(:root[data-intro='done']) .typing i,
+  :global(:root[data-intro='done']) .ask {
     animation: none;
+  }
+
+  .typing {
+    opacity: 0;
   }
 }
