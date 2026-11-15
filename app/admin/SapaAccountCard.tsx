@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 
 import { sapa } from '@/content/th/sapa';
 
@@ -26,19 +26,41 @@ export function SapaAccountCard({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  async function choose(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const password = String(new FormData(form).get('password') ?? '');
+    if (hasPassword && !window.confirm(sapa.admin.confirmGenerate)) return;
+    setBusy(true);
+    setFailed(null);
+    setSaved(false);
+    setFresh(null);
+    const r = await send('/api/admin/sapa-account', 'POST', { password });
+    setBusy(false);
+    if (r.ok) {
+      form.reset();
+      setSaved(true);
+      router.refresh();
+    } else {
+      setFailed(r.status === 400 ? sapa.admin.badPassword : 'ทำไม่สำเร็จ ลองใหม่อีกที');
+    }
+  }
 
   async function generate() {
     if (hasPassword && !window.confirm(sapa.admin.confirmGenerate)) return;
     setBusy(true);
-    setFailed(false);
+    setFailed(null);
+    setSaved(false);
     const r = await send('/api/admin/sapa-account', 'POST', {});
     setBusy(false);
     if (r.ok && typeof r.data?.password === 'string') {
       setFresh(r.data.password);
       router.refresh();
     } else {
-      setFailed(true);
+      setFailed('ทำไม่สำเร็จ ลองใหม่อีกที');
     }
   }
 
@@ -59,6 +81,27 @@ export function SapaAccountCard({
         </span>
       </div>
 
+      <form className={styles.row} style={{ marginTop: 10 }} onSubmit={choose}>
+        <label className={styles.field} style={{ flex: '1 1 200px' }}>
+          {sapa.admin.choose}
+          <input
+            className={styles.input}
+            name="password"
+            type="text"
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            minLength={8}
+            maxLength={100}
+            required
+            placeholder={sapa.admin.chooseHint}
+          />
+        </label>
+        <button className={`${styles.button} ${styles.buttonQuiet}`} type="submit" disabled={busy}>
+          {sapa.admin.save}
+        </button>
+      </form>
+
       <p className={styles.hint} style={{ marginTop: 10 }}>
         {discord ? sapa.admin.discord[discord] : sapa.admin.discord.none}
       </p>
@@ -72,7 +115,8 @@ export function SapaAccountCard({
           </span>
         </div>
       )}
-      {failed && <p className={`${styles.msg} ${styles.bad}`}>ทำไม่สำเร็จ ลองใหม่อีกที</p>}
+      {saved && <p className={`${styles.msg} ${styles.ok}`}>{sapa.admin.saved}</p>}
+      {failed && <p className={`${styles.msg} ${styles.bad}`}>{failed}</p>}
     </section>
   );
 }

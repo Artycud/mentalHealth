@@ -246,6 +246,15 @@ export async function getSapaAccount(): Promise<SapaAccount> {
   return { hash: row ? String(row.value) : null, changedAt: row ? String(row.updated_at) : null };
 }
 
+/** A team password the admin chose: long enough that guessing it (5 tries per 10 minutes) is hopeless. */
+export const validSapaPassword = (s: string) => s.length >= 8 && s.length <= 100 && s.trim() === s;
+
+/** Sets the team password the admin chose. Only its hash is kept; the whole team is signed out. */
+export async function setSapaPassword(password: string): Promise<void> {
+  if (!validSapaPassword(password)) throw new Error('bad sapa password');
+  await writeSetting('sapa_password_hash', await hashPassword(password));
+}
+
 /** Like the booth's: only the hash is kept, the password is shown to the admin once. */
 export async function regenerateSapaPassword(): Promise<string> {
   const password = generateBoothPassword();
