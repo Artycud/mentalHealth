@@ -48,7 +48,6 @@ export const vent = {
     starters: ['เครียดเรื่องเรียน', 'นอนไม่พอ', 'ทะเลาะกับเพื่อน', 'แค่เหนื่อย ๆ'],
     /** Says plainly who reads it, and what happens to it. */
     safe: 'พี่ๆ สภาอ่านเอง · ไม่ต้องใส่ชื่อ · กดจบแล้วลบหมด',
-    orTap: 'หรือแตะอันนี้เลย',
   },
 
   composer: {

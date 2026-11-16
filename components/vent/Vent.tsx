@@ -322,10 +322,9 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
             <p className={styles.body}>{vent.intro.body}</p>
             <p className={styles.privacy}>{vent.intro.privacy}</p>
 
-            <p className={styles.samplesLabel}>{vent.invite.orTap}</p>
-            <div className={styles.samples}>
-              <Starters onPick={(s) => void sendText(s)} disabled={sending} />
-            </div>
+            {/* Quick replies, on the student's side where their own words will
+                sit: one tap sends it. */}
+            <Starters onPick={(s) => void sendText(s)} disabled={sending} className={styles.replies} />
 
             {askingCode ? (
               <form className={styles.codeForm} onSubmit={(e) => void openCode(e)}>

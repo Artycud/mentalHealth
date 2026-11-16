@@ -202,38 +202,24 @@
   color: var(--ink-soft);
 }
 
-.samplesLabel {
+.replies {
+  justify-content: flex-end;
   margin-top: 22px;
-  font-size: 14px;
-  color: var(--ink-soft);
 }
 
-.samples {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.sample {
-  padding: 10px 16px 11px;
-  border: 0;
-  border-radius: 14px 14px 14px 4px;
-  background: var(--card);
-  box-shadow: var(--edge), var(--lift-1);
+/* Like the student's own messages (.me), so it reads as something to send, with
+   the pink edge the home's quick replies have (components/landing/VentStart). */
+.replies > button:nth-child(n) {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 16px 16px 4px 16px;
+  background: #ffffff;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 72, 176, 0.55),
+    0 2px 0 rgba(27, 43, 94, 0.12);
   font-size: 15px;
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    transform 180ms var(--ease),
-    box-shadow 180ms var(--ease);
-}
-
-.sample:active {
-  transform: translateY(1px);
-  transition-duration: var(--d-tap);
+  font-weight: 500;
+  color: var(--paper-ink);
 }
 
 /* What the student wrote: kept as a quoted note on the page, not a chat bubble. */
