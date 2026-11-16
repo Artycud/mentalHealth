@@ -143,6 +143,20 @@
   color: var(--ink-soft);
 }
 
+/* ---- how fast: a small marigold chip ---- */
+
+.speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px 5px 9px;
+  border-radius: 999px;
+  background: var(--sun-tint);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #6e4600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hints span {
     animation: none;

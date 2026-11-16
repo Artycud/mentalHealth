@@ -53,7 +53,11 @@ export function VentStart() {
     <form className={`${palette.paper} ${styles.slip}`} onSubmit={submit} data-flying={flying}>
       <label htmlFor="vent-start" className={styles.head}>
         <span className={styles.words}>
-          <span className={styles.title}>{vent.invite.title}</span>
+          <span className={styles.title}>
+            <span className={styles.phrase}>{vent.invite.title[0]}</span>
+            <wbr />
+            <span className={styles.phrase}>{vent.invite.title[1]}</span>
+          </span>
           <span className={styles.sub}>
             {/* each phrase whole; the line breaks only at the space between them */}
             {vent.invite.sub.split(' ').map((phrase, i) => (
@@ -64,9 +68,13 @@ export function VentStart() {
             ))}
           </span>
         </span>
-        {/* The heart in a speech bubble, listening. */}
-        <span className={styles.listen} aria-hidden="true">
+        {/* The heart in a speech bubble, listening, with LIVE on it. */}
+        <span className={styles.listen}>
           <LiveHeart energy={0.5} weight={0.3} colour="rgb(255 143 181)" listening className={styles.heart} />
+          <span className={styles.live}>
+            <span className={styles.liveDot} aria-hidden="true" />
+            {vent.invite.live}
+          </span>
         </span>
       </label>
 

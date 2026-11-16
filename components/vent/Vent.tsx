@@ -13,7 +13,7 @@ import { moodColour, rgb } from '@/lib/heart';
 import { BACK } from '@/lib/nav';
 import { clearHandOff, peekHandOff } from '@/lib/vent/handoff';
 
-import { DriftingHints, Plane, Starters, TimeAsk } from './Invite';
+import { DriftingHints, Plane, SpeedLine, Starters, TimeAsk } from './Invite';
 import styles from './Vent.module.css';
 
 type Msg = { id: number; sender: 'student' | 'sapa'; body: string; pending?: boolean };
@@ -320,6 +320,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
               <TimeAsk />
             </h1>
             <p className={styles.body}>{vent.intro.body}</p>
+            <SpeedLine className={styles.speed} />
             <p className={styles.privacy}>{vent.intro.privacy}</p>
 
             {/* Quick replies, on the student's side where their own words will
@@ -383,6 +384,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
         {chat && waiting && lastIsStudent && !sending && (
           <div className={styles.waiting} role="status">
             <p className={styles.listening}>✓ {vent.sent}</p>
+            <SpeedLine className={styles.speed} />
             <p className={styles.waitingNote}>{vent.waitingNote}</p>
           </div>
         )}

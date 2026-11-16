@@ -72,15 +72,30 @@ export function Starters({
   );
 }
 
-/** The reassurance, beside the button where the doubt is. */
+/** Who answers, beside the button where the doubt is. A speech bubble, not a
+    lock: a lock reads as something you are not allowed into yet. */
 export function SafeLine({ className }: { className?: string }) {
   return (
     <p className={`${styles.safe} ${className ?? ''}`}>
-      <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true">
-        <rect x="2" y="6" width="10" height="7" rx="2" fill="currentColor" />
-        <path d="M4.5 6 V4.5 a2.5 2.5 0 0 1 5 0 V6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+        <path d="M2 2.5 h10 a1.5 1.5 0 0 1 1.5 1.5 v5 a1.5 1.5 0 0 1 -1.5 1.5 H6 l-3 2.5 v-2.5 H2 a1.5 1.5 0 0 1 -1.5 -1.5 V4 A1.5 1.5 0 0 1 2 2.5 Z" fill="currentColor" />
+        <circle cx="4.5" cy="6.5" r="0.9" fill="var(--card, #fff)" />
+        <circle cx="7" cy="6.5" r="0.9" fill="var(--card, #fff)" />
+        <circle cx="9.5" cy="6.5" r="0.9" fill="var(--card, #fff)" />
       </svg>
       {vent.invite.safe}
+    </p>
+  );
+}
+
+/** How fast a พี่ answers at best, in the chat. */
+export function SpeedLine({ className }: { className?: string }) {
+  return (
+    <p className={`${styles.speed} ${className ?? ''}`}>
+      <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true">
+        <path d="M8.5 1 L3 8 H6.5 L5.5 13 L11 6 H7.5 Z" fill="currentColor" />
+      </svg>
+      {vent.intro.speed}
     </p>
   );
 }

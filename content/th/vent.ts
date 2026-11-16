@@ -21,7 +21,9 @@ export const vent = {
     /** When they arrive from the check-up, the note names their heart today. */
     noteFromCheckup: (word: string) => `ใจที่ "${word}" วันนี้`,
     note: 'ระบายให้พี่ๆ สภาฟัง',
-    body: 'พิมพ์มาได้เลย พี่ๆ สภานักเรียนจะอ่านและตอบเอง ไม่ใช่ AI อาจไม่ทันที แต่พี่ๆ ตอบแน่นอน',
+    body: 'พิมพ์มาได้เลย พี่ๆ สภานักเรียนจะอ่านและตอบเอง ไม่ใช่ AI',
+    /** How fast a พี่ answers at best: in the chat, beside the words and while waiting. */
+    speed: 'ตอบไวสุด ทันที – 3 นาที',
     privacy: 'ไม่ต้องใส่ชื่อ · พี่ๆ ไม่รู้ว่าเป็นใคร · กดจบการคุยแล้วข้อความถูกลบหมด',
     /** Coming back from another phone. */
     haveCode: 'มีโค้ดแชทอยู่แล้ว?',
@@ -35,7 +37,10 @@ export const vent = {
   invite: {
     /** The home's first slip (components/landing/VentStart): ระบาย is the home's
         main way in, so it says plainly what it is and who answers. */
-    title: 'ระบายให้พี่สภาฟัง',
+    /** Two phrases: on a narrow phone the line breaks only between them. */
+    title: ['ระบาย', 'ให้พี่สภาฟัง'],
+    /** The tag on the listening heart, beside the title: a person is there, now. */
+    live: 'LIVE',
     sub: 'มีอะไรกวนใจอยู่ไหม พิมพ์มาได้เลย',
     /** What the heart asks at the top of an empty chat, by the sky's mood
         (lib/sky-time). Each space-separated phrase stays on one line
@@ -66,7 +71,8 @@ export const vent = {
   sapa: 'พี่สภา',
   /** After the student's message, until a พี่ answers. */
   sent: 'ส่งถึงพี่ๆ แล้ว',
-  waitingNote: 'พี่ๆ จะตอบเร็วที่สุด ถ้าดึกแล้วอาจเป็นพรุ่งนี้ ปิดหน้านี้ได้เลย กลับมาเปิดระบายอีกทีก็เห็นคำตอบ',
+  /** Under the speed line (intro.speed) while waiting. */
+  waitingNote: 'ถ้าดึกแล้วอาจเป็นพรุ่งนี้ ปิดหน้านี้ได้เลย กลับมาเปิดระบายอีกทีก็เห็นคำตอบ',
 
   /** The chat code: the way back in from another phone. */
   code: {

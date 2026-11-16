@@ -1,5 +1,6 @@
 import { ViewTransition, type ReactNode } from 'react';
 
+import { OpenInBrowser } from './OpenInBrowser';
 import { Press } from './Press';
 import { Sky } from './Sky';
 import palette from './palette.module.css';
@@ -18,6 +19,8 @@ export function UserPage({ children, town = true }: { children: ReactNode; town?
     <main data-home="heart" className={palette.palette}>
       <Sky town={town} />
       <Press />
+      {/* Inside Instagram's (or another app's) browser: move to the real one. */}
+      <OpenInBrowser />
       <ViewTransition
         enter={{ 'nav-forward': 'nav-forward', 'nav-back': 'nav-back', default: 'none' }}
         exit={{ 'nav-forward': 'nav-forward', 'nav-back': 'nav-back', default: 'none' }}

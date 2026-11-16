@@ -202,6 +202,15 @@
   color: var(--ink-soft);
 }
 
+/* "ตอบไวสุด ทันที – 3 นาที" (Invite SpeedLine): its own line, under the words. */
+.speed {
+  margin-top: 10px;
+}
+
+.waiting .speed {
+  margin: 6px 0 2px;
+}
+
 .replies {
   justify-content: flex-end;
   margin-top: 22px;
