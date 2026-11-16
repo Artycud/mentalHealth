@@ -39,8 +39,9 @@ export const vent = {
         main way in, so it says plainly what it is and who answers. */
     /** Two phrases: on a narrow phone the line breaks only between them. */
     title: ['ระบาย', 'ให้พี่สภาฟัง'],
-    /** The tag on the listening heart, beside the title: a person is there, now. */
-    live: 'LIVE',
+    /** Under the title, quietly: real people answer, and fast. Two phrases, so a
+        narrow phone breaks the line between them. */
+    who: ['พี่ๆ สภาตอบเอง', 'ไวสุด 3 นาที'],
     sub: 'มีอะไรกวนใจอยู่ไหม พิมพ์มาได้เลย',
     /** What the heart asks at the top of an empty chat, by the sky's mood
         (lib/sky-time). Each space-separated phrase stays on one line
@@ -56,8 +57,6 @@ export const vent = {
     /** One tap: the chat opens with this already sent. On the home they sit
         on the student's side, as quick replies to the heart's question. */
     starters: ['เครียดเรื่องเรียน', 'นอนไม่พอ', 'ทะเลาะกับเพื่อน', 'แค่เหนื่อย ๆ'],
-    /** Under the bar: who reads it, and nothing more (the chat page says the rest). */
-    safe: 'พี่ๆ สภาตอบเอง',
   },
 
   composer: {

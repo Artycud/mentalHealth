@@ -133,16 +133,6 @@
   cursor: default;
 }
 
-/* ---- the reassurance ---- */
-
-.safe {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--ink-soft);
-}
-
 /* ---- how fast: a small marigold chip ---- */
 
 .speed {

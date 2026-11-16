@@ -52,40 +52,23 @@
   white-space: nowrap;
 }
 
-/* LIVE, on the listening heart beside the title, like the tag on a live
-   stream: a person is there. A pink tag with a dot that breathes (opacity only). */
-.live {
-  position: absolute;
-  top: -4px;
-  right: -6px;
+/* Real people answer, and fast: a quiet line under the title, a little speech
+   bubble in the slip's pink and the words in its soft ink. No badge. */
+.who {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
-  padding: 2px 8px 3px 7px;
-  border-radius: 6px;
-  background: var(--riso-pink);
-  box-shadow: 0 0 0 2px #ffffff;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.3;
-  color: #ffffff;
-  white-space: nowrap;
+  column-gap: 5px;
+  margin: 2px 0 2px;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #6b2a4a;
 }
 
-.liveDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #ffffff;
-  animation: live 1.6s ease-in-out infinite;
-}
-
-@keyframes live {
-  50% {
-    opacity: 0.25;
-  }
+.who svg {
+  flex-shrink: 0;
+  color: var(--riso-pink);
 }
 
 /* The heart in a white speech bubble, its tail toward the words: listening. */
@@ -254,14 +237,9 @@
   }
 }
 
-.safe {
-  margin-top: 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .slip[data-flying='true'] .plane,
-  .bar::after,
-  .liveDot {
+  .bar::after {
     animation: none;
   }
 }

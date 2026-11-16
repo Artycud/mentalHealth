@@ -72,22 +72,6 @@ export function Starters({
   );
 }
 
-/** Who answers, beside the button where the doubt is. A speech bubble, not a
-    lock: a lock reads as something you are not allowed into yet. */
-export function SafeLine({ className }: { className?: string }) {
-  return (
-    <p className={`${styles.safe} ${className ?? ''}`}>
-      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-        <path d="M2 2.5 h10 a1.5 1.5 0 0 1 1.5 1.5 v5 a1.5 1.5 0 0 1 -1.5 1.5 H6 l-3 2.5 v-2.5 H2 a1.5 1.5 0 0 1 -1.5 -1.5 V4 A1.5 1.5 0 0 1 2 2.5 Z" fill="currentColor" />
-        <circle cx="4.5" cy="6.5" r="0.9" fill="var(--card, #fff)" />
-        <circle cx="7" cy="6.5" r="0.9" fill="var(--card, #fff)" />
-        <circle cx="9.5" cy="6.5" r="0.9" fill="var(--card, #fff)" />
-      </svg>
-      {vent.invite.safe}
-    </p>
-  );
-}
-
 /** How fast a พี่ answers at best, in the chat. */
 export function SpeedLine({ className }: { className?: string }) {
   return (
