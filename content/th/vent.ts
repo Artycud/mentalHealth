@@ -39,10 +39,11 @@ export const vent = {
         main way in, so it says plainly what it is and who answers. */
     /** Two phrases: on a narrow phone the line breaks only between them. */
     title: ['ระบาย', 'ให้พี่สภาฟัง'],
-    /** Under the title, quietly: real people answer, and fast. Two phrases, so a
-        narrow phone breaks the line between them. */
-    who: ['พี่ๆ สภาตอบเอง', 'ไวสุด 3 นาที'],
-    sub: 'มีอะไรกวนใจอยู่ไหม พิมพ์มาได้เลย',
+    /** Under the title, in phrases (a line breaks only between them); the last
+        says who answers. */
+    sub: ['มีอะไรกวนใจอยู่ไหม', 'พิมพ์มาได้เลย', 'พี่ๆ สภาตอบเอง'],
+    /** Under the bar, beside a small pulsing "online" circle. */
+    fast: 'ตอบไวสุด 3 นาที',
     /** What the heart asks at the top of an empty chat, by the sky's mood
         (lib/sky-time). Each space-separated phrase stays on one line
         (components/vent/Invite TimeAsk). */

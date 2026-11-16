@@ -4,6 +4,7 @@ import Image from 'next/image';
 import type { CSSProperties } from 'react';
 
 import moonArt from './art/moon.webp';
+import { MoonRays } from './Rays';
 import styles from './sky.module.css';
 
 /**
@@ -176,6 +177,7 @@ const LANTERN_SPANS = (
 
 const MOON = (
   <div className={styles.moon}>
+    <MoonRays id="lk-rays-sky" />
     <span className={styles.moonGlow} />
     <Image src={moonArt} alt="" sizes="30vh" loading="eager" className={styles.moonArt} />
   </div>

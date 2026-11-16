@@ -52,23 +52,53 @@
   white-space: nowrap;
 }
 
-/* Real people answer, and fast: a quiet line under the title, a little speech
-   bubble in the slip's pink and the words in its soft ink. No badge. */
+/* Who answers, at the end of the sub-line: a touch stronger. */
 .who {
+  font-weight: 600;
+  color: var(--paper-ink);
+}
+
+/* ---- how fast, under the bar, beside an "online" light ---- */
+
+.fast {
   display: inline-flex;
-  flex-wrap: wrap;
   align-items: center;
-  column-gap: 5px;
-  margin: 2px 0 2px;
+  gap: 8px;
+  margin: -2px 0 0 2px;
   font-size: 13.5px;
   font-weight: 500;
-  line-height: 1.45;
   color: #6b2a4a;
 }
 
-.who svg {
+/* A small green circle with a ring that grows and fades from it, over and
+   over: someone is there. Transform and opacity only. */
+.pulse {
+  position: relative;
   flex-shrink: 0;
-  color: var(--riso-pink);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #1fae6a;
+}
+
+.pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #1fae6a;
+  animation: pulse 1.8s ease-out infinite;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
 }
 
 /* The heart in a white speech bubble, its tail toward the words: listening. */
@@ -239,7 +269,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .slip[data-flying='true'] .plane,
-  .bar::after {
+  .bar::after,
+  .pulse::after {
     animation: none;
   }
 }

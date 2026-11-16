@@ -12,16 +12,16 @@
 [data-festival='loykrathong'] {
   --accent: var(--sunflower);          /* the ink this festival leads with */
   --fest-far: #7f97cf;                 /* the far water: the poster's moonlit periwinkle */
-  --fest-near: #113a6c;                /* the near water: river blue (paper on it 10:1) */
+  --fest-near: #0e335f;                /* the near water: river blue (paper on it 11:1) */
   --fest-light: var(--sunflower);      /* the moon, and its reflection */
   --fest-glow: rgba(255, 181, 17, 0.6); /* the pool of light under a floating flower */
   --fest-on-water: var(--paper);       /* text that sits on the near layer */
-  /* The booth screens' sky: a moonlit blue, still night (stars, moon, lanterns)
-     but lifted clear of near-black, because the booth runs at noon in a bright
-     canteen and a dark screen turns into a mirror. A little lighter at the top and
-     the foot; where the words are, paper text is 8.7:1 or more, marigold 5.5:1
-     and the pink notes 6:1 (7.7:1, 4.8:1 and 5.4:1 at the lightest edge). No
-     sunset: the warm light comes from the moon, the lanterns and the krathong
+  /* The booth screens' sky: a deep moonlit blue, lifted a little off the first
+     near-black night for a bright canteen at noon (a dark screen turns into a
+     mirror), with the moon's rays for light. A little lighter at the top and the
+     foot; paper text is 10:1 or more everywhere. The kiosk lays a thin veil over
+     it, one step darker (app/booth/kiosk/kiosk.module.css .stage). No sunset: the
+     warm light comes from the moon, the lanterns and the krathong
      (components/festival/loykrathong/). The TV is read in a glance from across a
      room, so it is a night scene with paper-coloured text (BRIEF, decisions:
      "Booth TV at a glance", "The poster's night").
@@ -32,6 +32,9 @@
          --fest-near: #0c305c;
        the brightest tried (a little too light in the end):
          --fest-sky: linear-gradient(180deg, #2a5d9e 0%, #22558f 20%, #1e508c 50%, #1f5290 80%, #2a5d9e 100%);
-         --fest-near: #15427a; */
-  --fest-sky: linear-gradient(180deg, #1f4c88 0%, #174480 20%, #143f78 50%, #16427c 80%, #1f4c88 100%);
+         --fest-near: #15427a;
+       the step between (still a little light):
+         --fest-sky: linear-gradient(180deg, #1f4c88 0%, #174480 20%, #143f78 50%, #16427c 80%, #1f4c88 100%);
+         --fest-near: #113a6c; */
+  --fest-sky: linear-gradient(180deg, #163e74 0%, #10366a 20%, #0d3162 50%, #0f3466 80%, #163e74 100%);
 }

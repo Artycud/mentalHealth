@@ -58,25 +58,15 @@ export function VentStart() {
             <wbr />
             <span className={styles.phrase}>{vent.invite.title[1]}</span>
           </span>
-          {/* Real people answer, and fast: said quietly, right under the title. */}
-          <span className={styles.who}>
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-              <path
-                d="M2 2.5 h10 a1.5 1.5 0 0 1 1.5 1.5 v5 a1.5 1.5 0 0 1 -1.5 1.5 H6 l-3 2.5 v-2.5 H2 a1.5 1.5 0 0 1 -1.5 -1.5 V4 A1.5 1.5 0 0 1 2 2.5 Z"
-                fill="currentColor"
-              />
-            </svg>
-            <span className={styles.phrase}>{vent.invite.who[0]}</span>
-            <span aria-hidden="true">·</span>
-            <wbr />
-            <span className={styles.phrase}>{vent.invite.who[1]}</span>
-          </span>
           <span className={styles.sub}>
-            {/* each phrase whole; the line breaks only at the space between them */}
-            {vent.invite.sub.split(' ').map((phrase, i) => (
+            {/* each phrase whole; the line breaks only between them. The last,
+                who answers, a touch stronger. */}
+            {vent.invite.sub.map((phrase, i) => (
               <Fragment key={i}>
                 {i > 0 && ' '}
-                <span className={styles.phrase}>{phrase}</span>
+                <span className={i === vent.invite.sub.length - 1 ? `${styles.phrase} ${styles.who}` : styles.phrase}>
+                  {phrase}
+                </span>
               </Fragment>
             ))}
           </span>
@@ -111,6 +101,12 @@ export function VentStart() {
           </span>
         </button>
       </div>
+
+      {/* How fast, beside a small circle that pulses like an "online" light. */}
+      <p className={styles.fast}>
+        <span className={styles.pulse} aria-hidden="true" />
+        {vent.invite.fast}
+      </p>
     </form>
   );
 }

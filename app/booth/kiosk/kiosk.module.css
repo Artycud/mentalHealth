@@ -27,13 +27,16 @@
   height: 100dvh;
   padding: 3.5vh max(4vw, env(safe-area-inset-left)) max(3.5vh, env(safe-area-inset-bottom))
     max(4vw, env(safe-area-inset-right));
-  /* A few still stars over the festival's sky; plain night where there is none. */
+  /* A few still stars over the festival's sky; plain night where there is none.
+     A thin veil just above the sky keeps the kiosk one step darker than the TV:
+     it is held close, in the hand, where a bright screen glares. */
   background:
     radial-gradient(circle at 58% 5%, rgba(255, 255, 255, 0.8) 0 0.16vh, transparent 0.26vh),
     radial-gradient(circle at 76% 12%, rgba(255, 255, 255, 0.6) 0 0.12vh, transparent 0.22vh),
     radial-gradient(circle at 91% 4%, rgba(255, 255, 255, 0.85) 0 0.16vh, transparent 0.26vh),
     radial-gradient(circle at 38% 9%, rgba(255, 255, 255, 0.5) 0 0.12vh, transparent 0.22vh),
     radial-gradient(circle at 18% 4%, rgba(255, 255, 255, 0.6) 0 0.14vh, transparent 0.24vh),
+    linear-gradient(rgba(2, 12, 34, 0.24), rgba(2, 12, 34, 0.24)),
     var(--fest-sky, linear-gradient(180deg, #1d4a96, #262f78));
   color: var(--paper);
   overflow: hidden;
