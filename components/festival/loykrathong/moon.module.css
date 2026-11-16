@@ -1,14 +1,14 @@
-/* The disc is 79% of the art (the rest is its soft edge), so the art is drawn at
-   126% of the parent, centred, to lay the disc exactly over the parent's circle. */
-/* The rays sit behind the disc, filling the parent's circle (Rays.tsx reaches
+/* The halo sits behind the disc, filling the parent's circle (Halo.tsx reaches
    out from there). */
-.rays {
+.halo {
   position: absolute;
   inset: 0;
-  --rays-scale: 3.2;
+  --halo-scale: 3.4;
   pointer-events: none;
 }
 
+/* The disc is 79% of the art (the rest is its soft edge), so the art is drawn at
+   126% of the parent, centred, to lay the disc exactly over the parent's circle. */
 .moon {
   position: absolute;
   left: -13%;
