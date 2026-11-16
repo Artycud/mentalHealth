@@ -148,6 +148,35 @@ CREATE INDEX IF NOT EXISTS idx_session_booth ON session (mode, festival, complet
  * waits on the same promise. A failed start is forgotten so the next request
  * tries again, instead of the whole app staying broken until a restart.
  */
+/**
+ * Columns added after a table first shipped, added in place to a database that
+ * already has the table (CREATE TABLE IF NOT EXISTS never changes one). For ระบาย's
+ * staff side: who on the team claimed a chat, who wrote each answer (their own
+ * chosen nickname, never the student's), and when each side was last typing.
+ */
+const ADDED: [table: string, column: string][] = [
+  ['vent_thread', 'claimed_by'],
+  ['vent_thread', 'typing_at'],
+  ['vent_thread', 'sapa_typing_at'],
+  ['vent_thread', 'sapa_typing_by'],
+  ['vent_message', 'staff'],
+];
+
+async function addColumns(c: Client): Promise<void> {
+  for (const table of new Set(ADDED.map(([t]) => t))) {
+    const have = new Set((await c.execute(`PRAGMA table_info(${table})`)).rows.map((r) => String(r.name)));
+    for (const [t, column] of ADDED) {
+      if (t !== table || have.has(column)) continue;
+      try {
+        await c.execute(`ALTER TABLE ${table} ADD COLUMN ${column} TEXT`);
+      } catch (error) {
+        // Another server instance added it a moment ago.
+        if (!String(error).includes('duplicate column')) throw error;
+      }
+    }
+  }
+}
+
 export function db(): Promise<Client> {
   if (!ready) {
     ready = (async () => {
@@ -158,6 +187,7 @@ export function db(): Promise<Client> {
       const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
       const c = createClient({ url, authToken });
       await c.executeMultiple(SCHEMA);
+      await addColumns(c);
       // The festival that is live before anyone has touched the admin panel (§3).
       await c.execute({
         sql: "INSERT OR IGNORE INTO setting (key, value, updated_at) VALUES ('active_festival', 'loykrathong', ?)",

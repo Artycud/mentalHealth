@@ -28,6 +28,8 @@ export interface VentMessageRow {
   sender: Sender;
   body: string;
   at: string;
+  /** For an answer: the nickname of the พี่ who wrote it (null from before names, or Discord without one). */
+  by: string | null;
 }
 
 export interface ThreadView {
@@ -35,6 +37,10 @@ export interface ThreadView {
   /** The student wrote last: a พี่ has not answered yet. */
   waiting: boolean;
   messages: VentMessageRow[];
+  /** The พี่ looking after this chat, by nickname. */
+  claimedBy: string | null;
+  /** A พี่ typing right now, by nickname. */
+  typing: string | null;
 }
 
 export interface InboxItem {
@@ -44,7 +50,25 @@ export interface InboxItem {
   feel: string | null;
   updatedAt: string;
   count: number;
-  last: { sender: Sender; body: string } | null;
+  last: { sender: Sender; body: string; by: string | null } | null;
+  claimedBy: string | null;
+  /** When the student's unanswered turn began, if it is waiting. */
+  waitingSince: string | null;
+  /** The student is typing right now. */
+  studentTyping: boolean;
+  /** A พี่ typing in it right now. */
+  sapaTyping: string | null;
+}
+
+/** A typing mark counts for this long after its last ping (the pages ping every 3 s while typing). */
+export const TYPING_MS = 6000;
+const typingNow = (at: unknown, now = Date.now()) => !!at && now - Date.parse(String(at)) < TYPING_MS;
+
+/** A พี่'s nickname as typed: one line, trimmed, at most 24 characters. Null when empty. */
+export function cleanName(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const name = raw.replace(/[\r\n\t<>@]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 24);
+  return name || null;
 }
 
 /** A conversation left quiet this long is deleted. */
@@ -122,12 +146,21 @@ export async function startThread(body: string, opts: { feel?: string; urgent: b
 /**
  * Adds a message. `wasWaiting` says whether the student had already written last
  * (so a new message from them needs no fresh notification).
+ * An answer carries `by`, the พี่'s nickname: it is shown to the student, the first
+ * พี่ to answer an unclaimed chat claims it, and the reply is counted for them in
+ * the team's daily tally (which outlives the chat).
  * Returns null when the conversation no longer exists.
  */
-export async function addMessage(where: { id: string } | { ref: string }, sender: Sender, body: string, urgent = false) {
+export async function addMessage(
+  where: { id: string } | { ref: string },
+  sender: Sender,
+  body: string,
+  urgent = false,
+  by: string | null = null,
+) {
   const c = await db();
   const found = await c.execute({
-    sql: `SELECT id, ref, waiting, urgent, discord_id, created_at,
+    sql: `SELECT id, ref, waiting, urgent, discord_id, created_at, claimed_by,
                  (SELECT COUNT(*) FROM vent_message m WHERE m.thread_id = t.id) AS n,
                  (SELECT COUNT(*) FROM vent_message m WHERE m.thread_id = t.id AND m.sender = 'sapa') AS answered
           FROM vent_thread t WHERE ${'id' in where ? 'id' : 'ref'} = ?`,
@@ -139,14 +172,22 @@ export async function addMessage(where: { id: string } | { ref: string }, sender
   const at = now();
   await c.batch(
     [
-      { sql: 'INSERT INTO vent_message (thread_id, sender, body, created_at) VALUES (?, ?, ?, ?)', args: [String(t.id), sender, body, at] },
       {
-        sql: 'UPDATE vent_thread SET waiting = ?, urgent = MAX(urgent, ?), updated_at = ? WHERE id = ?',
-        args: [sender === 'student' ? 1 : 0, urgent ? 1 : 0, at, String(t.id)],
+        sql: 'INSERT INTO vent_message (thread_id, sender, body, created_at, staff) VALUES (?, ?, ?, ?, ?)',
+        args: [String(t.id), sender, body, at, sender === 'sapa' ? by : null],
       },
+      // Sending ends that side's typing; the first พี่ to answer claims it.
+      sender === 'student'
+        ? { sql: 'UPDATE vent_thread SET waiting = 1, urgent = MAX(urgent, ?), updated_at = ?, typing_at = NULL WHERE id = ?', args: [urgent ? 1 : 0, at, String(t.id)] }
+        : {
+            sql: `UPDATE vent_thread SET waiting = 0, updated_at = ?, sapa_typing_at = NULL,
+                    claimed_by = COALESCE(claimed_by, ?) WHERE id = ?`,
+            args: [at, by, String(t.id)],
+          },
     ],
     'write',
   );
+  if (sender === 'sapa' && by) await bump([`staff:${by}`, ...(t.claimed_by ? [] : [`claim:${by}`])], at);
   // The first answer to a conversation, counted on the day it started (lib/tally.ts).
   if (sender === 'sapa' && Number(t.answered) === 0) {
     const started = String(t.created_at);
@@ -163,18 +204,59 @@ export async function addMessage(where: { id: string } | { ref: string }, sender
 }
 
 const toMessages = (rows: Record<string, unknown>[]): VentMessageRow[] =>
-  rows.map((r) => ({ id: Number(r.id), sender: String(r.sender) as Sender, body: String(r.body), at: String(r.created_at) }));
+  rows.map((r) => ({
+    id: Number(r.id),
+    sender: String(r.sender) as Sender,
+    body: String(r.body),
+    at: String(r.created_at),
+    by: r.staff ? String(r.staff) : null,
+  }));
 
 /** The conversation as the student sees it (by their key). Null when it is gone. */
 export async function readThread(id: string, afterId = 0): Promise<ThreadView | null> {
   const c = await db();
-  const t = await c.execute({ sql: 'SELECT code, waiting FROM vent_thread WHERE id = ?', args: [id] });
-  if (!t.rows[0]) return null;
+  const t = await c.execute({ sql: 'SELECT code, waiting, claimed_by, sapa_typing_at, sapa_typing_by FROM vent_thread WHERE id = ?', args: [id] });
+  const row = t.rows[0];
+  if (!row) return null;
   const m = await c.execute({
-    sql: 'SELECT id, sender, body, created_at FROM vent_message WHERE thread_id = ? AND id > ? ORDER BY id',
+    sql: 'SELECT id, sender, body, created_at, staff FROM vent_message WHERE thread_id = ? AND id > ? ORDER BY id',
     args: [id, afterId],
   });
-  return { code: String(t.rows[0].code), waiting: Number(t.rows[0].waiting) === 1, messages: toMessages(m.rows) };
+  return {
+    code: String(row.code),
+    waiting: Number(row.waiting) === 1,
+    messages: toMessages(m.rows),
+    claimedBy: row.claimed_by ? String(row.claimed_by) : null,
+    typing: typingNow(row.sapa_typing_at) ? String(row.sapa_typing_by ?? '') || 'พี่สภา' : null,
+  };
+}
+
+/**
+ * Someone is typing in a chat: the student (by key) or a พี่ (by ref, with their
+ * nickname). One small write, and at most one every 2 seconds per side however
+ * often it is called; the other side sees it on its next look (TYPING_MS).
+ */
+export async function setTyping(where: { id: string } | { ref: string; by: string }): Promise<void> {
+  const c = await db();
+  const at = now();
+  const recent = new Date(Date.now() - 2000).toISOString();
+  if ('id' in where) {
+    await c.execute({ sql: 'UPDATE vent_thread SET typing_at = ? WHERE id = ? AND (typing_at IS NULL OR typing_at < ?)', args: [at, where.id, recent] });
+  } else {
+    await c.execute({
+      sql: `UPDATE vent_thread SET sapa_typing_at = ?, sapa_typing_by = ?
+            WHERE ref = ? AND (sapa_typing_at IS NULL OR sapa_typing_at < ? OR sapa_typing_by IS NOT ?)`,
+      args: [at, where.by, where.ref, recent, where.by],
+    });
+  }
+}
+
+/** A พี่ takes a chat on (by nickname), or lets it go (null). False when the chat is gone. */
+export async function claimThread(ref: string, by: string | null): Promise<boolean> {
+  const c = await db();
+  const r = await c.execute({ sql: 'UPDATE vent_thread SET claimed_by = ? WHERE ref = ?', args: [by, ref] });
+  if (r.rowsAffected && by) await bump([`claim:${by}`]);
+  return r.rowsAffected > 0;
 }
 
 /** The student's key for a chat code, or null. (The caller rate-limits this.) */
@@ -204,12 +286,17 @@ export async function setDiscordId(ref: string, discordId: string): Promise<void
 export async function inbox(): Promise<InboxItem[]> {
   const c = await db();
   const r = await c.execute(`
-    SELECT t.ref, t.urgent, t.waiting, t.feel, t.updated_at,
+    SELECT t.ref, t.urgent, t.waiting, t.feel, t.updated_at, t.claimed_by, t.typing_at, t.sapa_typing_at, t.sapa_typing_by,
            (SELECT COUNT(*) FROM vent_message m WHERE m.thread_id = t.id) AS n,
            (SELECT sender FROM vent_message m WHERE m.thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender,
-           (SELECT body FROM vent_message m WHERE m.thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_body
+           (SELECT body FROM vent_message m WHERE m.thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_body,
+           (SELECT staff FROM vent_message m WHERE m.thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_by,
+           (SELECT MIN(m.created_at) FROM vent_message m
+             WHERE m.thread_id = t.id AND m.sender = 'student'
+               AND m.id > COALESCE((SELECT MAX(s.id) FROM vent_message s WHERE s.thread_id = t.id AND s.sender = 'sapa'), 0)) AS since
     FROM vent_thread t
     ORDER BY t.urgent DESC, t.waiting DESC, t.updated_at DESC`);
+  const at = Date.now();
   return r.rows.map((row) => ({
     ref: String(row.ref),
     urgent: Number(row.urgent) === 1,
@@ -217,18 +304,27 @@ export async function inbox(): Promise<InboxItem[]> {
     feel: row.feel ? String(row.feel) : null,
     updatedAt: String(row.updated_at),
     count: Number(row.n),
-    last: row.last_sender ? { sender: String(row.last_sender) as Sender, body: String(row.last_body) } : null,
+    last: row.last_sender
+      ? { sender: String(row.last_sender) as Sender, body: String(row.last_body), by: row.last_by ? String(row.last_by) : null }
+      : null,
+    claimedBy: row.claimed_by ? String(row.claimed_by) : null,
+    waitingSince: Number(row.waiting) === 1 && row.since ? String(row.since) : null,
+    studentTyping: typingNow(row.typing_at, at),
+    sapaTyping: typingNow(row.sapa_typing_at, at) ? String(row.sapa_typing_by ?? '') || null : null,
   }));
 }
 
 /** One conversation for the พี่สภา team (by its staff ref). Null when it is gone. */
 export async function readForStaff(ref: string) {
   const c = await db();
-  const t = await c.execute({ sql: 'SELECT id, urgent, waiting, feel, updated_at FROM vent_thread WHERE ref = ?', args: [ref] });
+  const t = await c.execute({
+    sql: 'SELECT id, urgent, waiting, feel, updated_at, claimed_by, typing_at, sapa_typing_at, sapa_typing_by FROM vent_thread WHERE ref = ?',
+    args: [ref],
+  });
   const row = t.rows[0];
   if (!row) return null;
   const m = await c.execute({
-    sql: 'SELECT id, sender, body, created_at FROM vent_message WHERE thread_id = ? ORDER BY id',
+    sql: 'SELECT id, sender, body, created_at, staff FROM vent_message WHERE thread_id = ? ORDER BY id',
     args: [String(row.id)],
   });
   return {
@@ -238,5 +334,25 @@ export async function readForStaff(ref: string) {
     feel: row.feel ? String(row.feel) : null,
     updatedAt: String(row.updated_at),
     messages: toMessages(m.rows),
+    claimedBy: row.claimed_by ? String(row.claimed_by) : null,
+    studentTyping: typingNow(row.typing_at),
+    sapaTyping: typingNow(row.sapa_typing_at) ? String(row.sapa_typing_by ?? '') || null : null,
   };
+}
+
+/** Today's team, from the daily tally (it outlives the chats): replies and chats taken on, per nickname. */
+export async function teamToday(): Promise<{ name: string; replies: number; claims: number }[]> {
+  const c = await db();
+  const day = new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 10);
+  const r = await c.execute({ sql: "SELECT key, count FROM tally WHERE day = ? AND (key LIKE 'staff:%' OR key LIKE 'claim:%')", args: [day] });
+  const team = new Map<string, { name: string; replies: number; claims: number }>();
+  for (const row of r.rows) {
+    const key = String(row.key);
+    const name = key.slice(key.indexOf(':') + 1);
+    const e = team.get(name) ?? { name, replies: 0, claims: 0 };
+    if (key.startsWith('staff:')) e.replies += Number(row.count);
+    else e.claims += Number(row.count);
+    team.set(name, e);
+  }
+  return [...team.values()].sort((a, b) => b.replies - a.replies);
 }

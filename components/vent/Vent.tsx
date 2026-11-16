@@ -7,6 +7,7 @@ import { BackButton } from '@/components/heart/BackButton';
 import { LiveHeart } from '@/components/heart/LiveHeart';
 import palette from '@/components/heart/palette.module.css';
 import { feelings } from '@/content/th/heart';
+import { phi } from '@/content/th/sapa';
 import { vent } from '@/content/th/vent';
 import { haptic } from '@/lib/haptics';
 import { moodColour, rgb } from '@/lib/heart';
@@ -16,8 +17,25 @@ import { clearHandOff, peekHandOff } from '@/lib/vent/handoff';
 import { DriftingHints, Plane, SpeedLine, Starters, TimeAsk } from './Invite';
 import styles from './Vent.module.css';
 
-type Msg = { id: number; sender: 'student' | 'sapa'; body: string; pending?: boolean };
+type Msg = { id: number; sender: 'student' | 'sapa'; body: string; at?: string; by?: string | null; pending?: boolean };
 type Chat = { key: string; code: string };
+
+/** While the student types, the team sees "น้องกำลังพิมพ์…": a mark at most this often. */
+const TYPING_EVERY = 3000;
+const clock = (iso?: string) =>
+  iso ? new Date(iso).toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) : '';
+/** A soft colour per พี่ (the same as the team's inbox), so each one is someone. */
+const INKS = ['#FF8FB5', '#FFB511', '#7FB7E6', '#8ED1B5', '#C9A7EB', '#F59E7A'];
+const inkFor = (name: string) => INKS[[...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % INKS.length];
+const initialOf = (name: string) => [...name.replace(/^พี่/, '')][0] ?? 'พ';
+
+function Face({ name }: { name: string | null }) {
+  return (
+    <span className={styles.face} style={{ background: name ? inkFor(name) : 'var(--riso-pink)' }} aria-hidden="true">
+      {name ? initialOf(name) : 'พ'}
+    </span>
+  );
+}
 
 /* ---- the student's chat, remembered on this phone (localStorage) ----
    Only their own key and code: the words live on the server until they end it.
@@ -58,7 +76,7 @@ const parseChat = (raw: string | null): Chat | null => {
 };
 
 /** How often an open chat looks for a พี่'s answer. */
-const POLL_MS = 5000;
+const POLL_MS = 4000;
 
 /**
  * ระบายให้พี่ๆ สภาฟัง. The student writes; a พี่ from the council answers when they
@@ -79,6 +97,10 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
   const chat = parseChat(useSyncExternalStore(subscribe, readRaw, () => null));
   const [messages, setMessages] = useState<Msg[]>([]);
   const [waiting, setWaiting] = useState(false);
+  /** The พี่ looking after this chat, and a พี่ typing right now (nicknames). */
+  const [claimedBy, setClaimedBy] = useState<string | null>(null);
+  const [typing, setTyping] = useState<string | null>(null);
+  const lastTyping = useRef(0);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -97,7 +119,7 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     endRef.current?.scrollIntoView({ block: 'end', behavior: reduce ? 'auto' : 'smooth' });
-  }, [messages.length, waiting]);
+  }, [messages.length, waiting, typing]);
 
   // The box grows with what is written, up to a few lines.
   useEffect(() => {
@@ -120,8 +142,10 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
         return;
       }
       if (!res.ok) return;
-      const data = (await res.json()) as { waiting: boolean; messages: Msg[] };
+      const data = (await res.json()) as { waiting: boolean; messages: Msg[]; claimedBy?: string | null; typing?: string | null };
       setWaiting(data.waiting);
+      setClaimedBy(data.claimedBy ?? null);
+      setTyping(data.typing ?? null);
       if (fresh) {
         setMessages(data.messages);
       } else if (data.messages.length) {
@@ -373,18 +397,41 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
               <blockquote className={styles.meText}>{m.body}</blockquote>
             </figure>
           ) : (
-            <div key={m.id} className={styles.ai}>
-              <p className={styles.heardNote}>{vent.sapa}</p>
-              <p className={styles.line}>{m.body}</p>
+            <div key={m.id} className={styles.them}>
+              <Face name={m.by ?? null} />
+              <div className={styles.themBody}>
+                <p className={styles.themName}>
+                  {m.by ? phi(m.by) : vent.sapa}
+                  <span>{clock(m.at)}</span>
+                </p>
+                <p className={styles.themText}>{m.body}</p>
+              </div>
             </div>
           ),
         )}
 
+        {/* A พี่ is typing: a person, right now. */}
+        {chat && typing && (
+          <div className={styles.them} role="status">
+            <Face name={typing} />
+            <div className={styles.themBody}>
+              <p className={styles.themName}>{vent.typing(phi(typing))}</p>
+              <p className={`${styles.themText} ${styles.typingBubble}`}>
+                <span className={styles.dots} aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Sent, and waiting for a พี่. */}
-        {chat && waiting && lastIsStudent && !sending && (
+        {chat && waiting && lastIsStudent && !sending && !typing && (
           <div className={styles.waiting} role="status">
-            <p className={styles.listening}>✓ {vent.sent}</p>
-            <SpeedLine className={styles.speed} />
+            <p className={styles.listening}>✓ {claimedBy ? vent.claimed(phi(claimedBy)) : vent.sent}</p>
+            {!claimedBy && <SpeedLine className={styles.speed} />}
             <p className={styles.waitingNote}>{vent.waitingNote}</p>
           </div>
         )}
@@ -431,7 +478,15 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
             maxLength={vent.composer.max}
             placeholder=" "
             aria-label={vent.intro.note}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              // Only that they are typing goes out, never what: at most every 3 s.
+              const t = Date.now();
+              if (chat && e.target.value.trim() && t - lastTyping.current > TYPING_EVERY) {
+                lastTyping.current = t;
+                void fetch(`/api/vent/${chat.key}/typing`, { method: 'POST' }).catch(() => {});
+              }
+            }}
             onKeyDown={(e) => {
               // On a computer Enter sends and Shift+Enter is a new line; on a phone
               // Enter is a new line and the round button sends, as in phone chats.

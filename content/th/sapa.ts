@@ -7,6 +7,9 @@
  * and who they tell.
  */
 
+/** A พี่'s nickname as the student and the team see it: "พี่อาร์ตี้" (no double พี่). */
+export const phi = (name: string) => (name.startsWith('พี่') ? name : `พี่${name}`);
+
 export const sapa = {
   title: 'กล่องระบาย · พี่สภา',
 
@@ -22,27 +25,62 @@ export const sapa = {
     network: 'เชื่อมต่อไม่ได้ ลองใหม่อีกที',
   },
 
+  /** Asked once per device, before the inbox: who is answering. */
+  name: {
+    title: 'ก่อนเริ่ม พี่ชื่ออะไร?',
+    body: 'น้องจะเห็นชื่อนี้ในข้อความที่พี่ตอบ เช่น "พี่อาร์ตี้" และทีมจะเห็นว่าใครรับเรื่องไหน ใครช่วยตอบไปเท่าไหร่',
+    placeholder: 'ชื่อเล่น เช่น อาร์ตี้',
+    save: 'เริ่มตอบ',
+    you: (name: string) => `คุณคือ ${phi(name)}`,
+    change: 'เปลี่ยนชื่อ',
+  },
+
   inbox: {
     empty: 'ยังไม่มีใครระบายมา',
+    emptyTab: 'ไม่มีแชทในแท็บนี้',
+    tabs: { waiting: 'รอตอบ', answered: 'ตอบแล้ว', mine: 'ของฉัน' },
     waiting: 'รอพี่ตอบ',
     answered: 'ตอบแล้ว',
     urgent: 'ด่วน',
+    waited: (min: number) => (min < 1 ? 'เพิ่งส่งมา' : min < 60 ? `รอ ${min} นาที` : `รอ ${Math.floor(min / 60)} ชม. ${min % 60} นาที`),
     open: 'เลือกแชทเพื่ออ่านและตอบ',
     gone: 'แชทนี้จบไปแล้ว น้องลบข้อความหมดแล้ว',
     placeholder: 'ตอบแบบพี่คุยกับน้อง ฟังก่อน ไม่ตัดสิน ไม่ต้องรีบสอน',
     send: 'ส่งถึงน้อง',
     sending: 'กำลังส่ง…',
     failed: 'ส่งไม่สำเร็จ ลองใหม่อีกที',
-    notify: 'เปิดแจ้งเตือนในเครื่องนี้',
-    notifyOn: 'แจ้งเตือนในเครื่องนี้เปิดอยู่',
+    notify: 'เปิดแจ้งเตือน',
+    notifyOn: 'แจ้งเตือนเปิดอยู่',
     logout: 'ออกจากระบบ',
     back: 'กลับไปรายการ',
     student: 'น้อง',
-    you: 'พี่สภา',
+    you: 'คุณ',
+    team: 'พี่สภา',
     feel: (word: string) => `มาจากเช็กใจ: ${word}`,
     count: (n: number) => `${n} ข้อความ`,
     newMessage: 'มีน้องระบายมาใหม่',
+    // Who is looking after a chat: one พี่ takes it on, anyone can still answer.
+    claim: 'รับเรื่องนี้',
+    release: 'ปล่อยเรื่องนี้',
+    takeOver: (name: string) => `รับต่อจาก${phi(name)}`,
+    takeOverAsk: (name: string) => `${phi(name)} ดูแลแชทนี้อยู่ รับต่อเลยไหม?`,
+    claimedBy: (name: string) => `${phi(name)} ดูแลอยู่`,
+    mine: 'คุณดูแลแชทนี้อยู่',
+    unclaimed: 'ยังไม่มีใครรับ',
+    typingStudent: 'น้องกำลังพิมพ์',
+    typingSapa: (name: string) => `${phi(name)} กำลังพิมพ์`,
+    stats: (waiting: number, answered: number) => `รอตอบ ${waiting} · ตอบแล้ว ${answered}`,
+    today: 'วันนี้ช่วยกันตอบ',
+    replies: (n: number) => `${n} ข้อความ`,
+    guideTitle: 'แนวทางการตอบ',
   },
+
+  /** One tap fills the reply box, to send as it is or to make your own. */
+  quick: [
+    'พี่เข้าใจเลยว่ามันหนัก ไม่แปลกเลยที่จะรู้สึกแบบนี้',
+    'เหนื่อยก็พักก่อนได้นะ ไม่ต้องฝืนตลอดเวลาก็ได้',
+    'มีตรงไหนที่ไม่สบายใจแล้วอยากระบายให้พี่ฟังได้เลยนะ',
+  ],
 
   /** Always beside the reply box. DRAFT: needs CUD Care's approval. */
   guide: [

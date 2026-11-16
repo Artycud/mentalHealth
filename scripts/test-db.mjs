@@ -60,7 +60,11 @@ const one = async (sql, args = []) => (await c.execute({ sql, args })).rows[0];
   eq('ระบาย keeps exactly these columns, and only vent_message.body holds words', [...ventColumns].sort(), [
     'vent_thread.id', 'vent_thread.code', 'vent_thread.ref', 'vent_thread.feel', 'vent_thread.urgent', 'vent_thread.waiting',
     'vent_thread.discord_id', 'vent_thread.created_at', 'vent_thread.updated_at',
+    // The team's side: who claimed it, and when each side last typed (never what).
+    'vent_thread.claimed_by', 'vent_thread.typing_at', 'vent_thread.sapa_typing_at', 'vent_thread.sapa_typing_by',
     'vent_message.id', 'vent_message.thread_id', 'vent_message.sender', 'vent_message.body', 'vent_message.created_at',
+    // The พี่'s own nickname on an answer; nothing about the student.
+    'vent_message.staff',
   ].sort());
   // The recap's daily counts: a day, a key and a number, nothing that could point at anyone.
   eq('tally keeps only a day, a key and a count', columns.filter((x) => x.startsWith('tally.')).sort(), ['tally.count', 'tally.day', 'tally.key']);

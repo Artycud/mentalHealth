@@ -1,4 +1,4 @@
-import { addMessage, MAX_CHARS, readForStaff } from '@/lib/vent/threads';
+import { addMessage, cleanName, MAX_CHARS, readForStaff } from '@/lib/vent/threads';
 
 /**
  * POST /api/discord — Discord's "Interactions Endpoint URL" for the พี่สภา bot
@@ -33,8 +33,8 @@ async function verified(request: Request, body: string): Promise<boolean> {
 const reply = (data: object) => Response.json({ type: 4, data: { flags: EPHEMERAL, allowed_mentions: { parse: [] }, ...data } });
 
 /** The conversation as one private Discord message (they are capped at 2,000 characters). */
-function transcript(messages: { sender: string; body: string }[]): string {
-  const lines = messages.map((m) => `**${m.sender === 'student' ? 'น้อง' : 'พี่สภา'}:** ${m.body}`);
+function transcript(messages: { sender: string; body: string; by?: string | null }[]): string {
+  const lines = messages.map((m) => `**${m.sender === 'student' ? 'น้อง' : m.by ? `พี่${m.by}` : 'พี่สภา'}:** ${m.body}`);
   let text = lines.join('\n\n');
   while (text.length > 1900 && lines.length > 1) {
     lines.shift();
@@ -47,8 +47,11 @@ export async function POST(request: Request) {
   const body = await request.text();
   if (!(await verified(request, body))) return new Response('invalid request signature', { status: 401 });
 
+  type DiscordUser = { username?: string; global_name?: string | null };
   let i: {
     type: number;
+    member?: { nick?: string | null; user?: DiscordUser };
+    user?: DiscordUser;
     data?: { custom_id?: string; components?: { components?: { custom_id?: string; value?: string }[] }[] };
   };
   try {
@@ -105,7 +108,9 @@ export async function POST(request: Request) {
     if (i.type === 5 && action === 'send') {
       const text = String(i.data?.components?.[0]?.components?.[0]?.value ?? '').trim();
       if (!text) return reply({ content: 'ยังไม่ได้พิมพ์อะไรเลย' });
-      const saved = await addMessage({ ref }, 'sapa', text.slice(0, MAX_CHARS));
+      // Signed with the พี่'s name in the server (or their Discord name), as in the web inbox.
+      const who = i.member?.nick || i.member?.user?.global_name || i.member?.user?.username || i.user?.global_name || i.user?.username;
+      const saved = await addMessage({ ref }, 'sapa', text.slice(0, MAX_CHARS), false, cleanName(who));
       if (!saved) return reply({ content: 'แชทนี้จบไปแล้ว ข้อความไม่ได้ส่ง' });
       if (saved.full) return reply({ content: 'แชทนี้ยาวถึงขีดสุดแล้ว ชวนน้องเริ่มแชทใหม่หรือแนะนำ CUD Care นะ' });
       return reply({ content: '✓ ส่งถึงน้องแล้ว น้องจะเห็นในหน้าระบายของตัวเอง' });

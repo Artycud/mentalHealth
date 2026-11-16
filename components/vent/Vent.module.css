@@ -740,3 +740,79 @@
     animation-delay: 0s;
   }
 }
+
+/* A พี่'s answer: a person writing, so it looks like one. Their face (an initial
+   in their own colour), their name and the time, and the words on a paper bubble
+   that reads the same on every sky. (Before this it sat bare on the sky, which
+   read like a machine's answer.) */
+.them {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  align-self: flex-start;
+  max-width: 88%;
+  animation: rise 360ms var(--ease) both;
+}
+
+.face {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  color: #1b2b5e;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+}
+
+.themBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.themName {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-left: 4px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.themName span {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.themText {
+  margin: 0;
+  padding: 11px 15px;
+  border-radius: 18px 18px 18px 5px;
+  background: #fcf1e6;
+  box-shadow: 0 6px 18px -10px rgba(10, 20, 50, 0.45);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #1b2b5e;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.typingBubble {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 44px;
+  color: #46507a;
+}
