@@ -125,27 +125,27 @@ try {
     const th = await threads.startThread('ข้อความลับห้า', { urgent: false });
     let v = await threads.readThread(th.id);
     check('a new chat is claimed by nobody and nobody is typing', v.claimedBy === null && v.typing === null);
-    await threads.setTyping({ ref: th.ref, by: 'อาร์ตี้' });
+    await threads.setTyping({ ref: th.ref, by: 'มายด์' });
     v = await threads.readThread(th.id);
-    check('the student sees "อาร์ตี้" typing', v.typing === 'อาร์ตี้');
+    check('the student sees "มายด์" typing', v.typing === 'มายด์');
     await threads.setTyping({ id: th.id });
     let staff = await threads.readForStaff(th.ref);
     check('the team sees the student typing (only that, never what)', staff.studentTyping === true && !JSON.stringify(staff).includes('typing_text'));
-    check('and sees which พี่ is typing', staff.sapaTyping === 'อาร์ตี้');
-    await threads.addMessage({ ref: th.ref }, 'sapa', 'พี่อยู่ตรงนี้นะ', false, 'อาร์ตี้');
+    check('and sees which พี่ is typing', staff.sapaTyping === 'มายด์');
+    await threads.addMessage({ ref: th.ref }, 'sapa', 'พี่อยู่ตรงนี้นะ', false, 'มายด์');
     v = await threads.readThread(th.id);
-    check('an answer carries the พี่ nickname, and its sending ends their typing', v.messages.at(-1).by === 'อาร์ตี้' && v.typing === null);
-    check('the first พี่ to answer claims the chat', v.claimedBy === 'อาร์ตี้');
+    check('an answer carries the พี่ nickname, and its sending ends their typing', v.messages.at(-1).by === 'มายด์' && v.typing === null);
+    check('the first พี่ to answer claims the chat', v.claimedBy === 'มายด์');
     await threads.addMessage({ ref: th.ref }, 'sapa', 'อีกคนมาช่วยนะ', false, 'บุ๋น');
     v = await threads.readThread(th.id);
-    check('another พี่ can still answer; the claim stays', v.messages.at(-1).by === 'บุ๋น' && v.claimedBy === 'อาร์ตี้');
+    check('another พี่ can still answer; the claim stays', v.messages.at(-1).by === 'บุ๋น' && v.claimedBy === 'มายด์');
     check('claiming over and letting go', (await threads.claimThread(th.ref, 'บุ๋น')) && (await threads.readThread(th.id)).claimedBy === 'บุ๋น' && (await threads.claimThread(th.ref, null)) && (await threads.readThread(th.id)).claimedBy === null);
-    check('a gone chat cannot be claimed', (await threads.claimThread('nope', 'อาร์ตี้')) === false);
+    check('a gone chat cannot be claimed', (await threads.claimThread('nope', 'มายด์')) === false);
     const team = await threads.teamToday();
-    check('the team of the day counts answers per name, which outlive the chat', team.find((m) => m.name === 'อาร์ตี้')?.replies === 1 && team.find((m) => m.name === 'บุ๋น')?.replies === 1, JSON.stringify(team));
-    check('a nickname is one clean line', threads.cleanName(`  อาร์ตี้${String.fromCharCode(10)}<@123> `) === 'อาร์ตี้ 123' && threads.cleanName('   ') === null);
+    check('the team of the day counts answers per name, which outlive the chat', team.find((m) => m.name === 'มายด์')?.replies === 1 && team.find((m) => m.name === 'บุ๋น')?.replies === 1, JSON.stringify(team));
+    check('a nickname is one clean line', threads.cleanName(`  มายด์${String.fromCharCode(10)}<@123> `) === 'มายด์ 123' && threads.cleanName('   ') === null);
     await threads.endThread(th.id);
-    check('  and the team tally stays after the chat is deleted', (await threads.teamToday()).some((m) => m.name === 'อาร์ตี้'));
+    check('  and the team tally stays after the chat is deleted', (await threads.teamToday()).some((m) => m.name === 'มายด์'));
   }
 
   // ---- Pings: every message, a burst merged into one, the queue in each

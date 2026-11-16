@@ -7,7 +7,7 @@
  * and who they tell.
  */
 
-/** A พี่'s nickname as the student and the team see it: "พี่อาร์ตี้" (no double พี่). */
+/** A พี่'s nickname as the student and the team see it: "พี่" + the name, never "พี่พี่". */
 export const phi = (name: string) => (name.startsWith('พี่') ? name : `พี่${name}`);
 
 export const sapa = {
@@ -25,11 +25,11 @@ export const sapa = {
     network: 'เชื่อมต่อไม่ได้ ลองใหม่อีกที',
   },
 
-  /** Asked once per device, before the inbox: who is answering. */
+  /** Asked once per device (kept in a cookie for a year), before the inbox: who is answering. */
   name: {
     title: 'ก่อนเริ่ม พี่ชื่ออะไร?',
-    body: 'น้องจะเห็นชื่อนี้ในข้อความที่พี่ตอบ เช่น "พี่อาร์ตี้" และทีมจะเห็นว่าใครรับเรื่องไหน ใครช่วยตอบไปเท่าไหร่',
-    placeholder: 'ชื่อเล่น เช่น อาร์ตี้',
+    body: 'น้องจะเห็นชื่อนี้ในข้อความที่พี่ตอบ และทีมจะเห็นว่าใครรับเรื่องไหน ใครช่วยตอบไปเท่าไหร่',
+    placeholder: 'ชื่อเล่น',
     save: 'เริ่มตอบ',
     you: (name: string) => `คุณคือ ${phi(name)}`,
     change: 'เปลี่ยนชื่อ',

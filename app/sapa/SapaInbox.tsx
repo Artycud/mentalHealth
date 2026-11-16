@@ -51,8 +51,12 @@ const INKS = ['#FF8FB5', '#FFB511', '#7FB7E6', '#8ED1B5', '#C9A7EB', '#F59E7A'];
 const inkFor = (name: string) => INKS[[...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % INKS.length];
 const initial = (name: string) => [...name.replace(/^พี่/, '')][0] ?? 'พ';
 
-/* ---- this device's nickname (localStorage), read without a flash ---- */
+/* ---- this device's nickname: a year-long cookie (read by the server, so the
+   prompt never flashes) mirrored in localStorage (instant after a change) ---- */
 const NAME_KEY = 'cud-sapa-name';
+/** Keep the name in the server's cookie. Fails quietly: localStorage still has it. */
+const remember = (name: string) =>
+  fetch('/api/sapa/name', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }).catch(() => {});
 const nameListeners = new Set<() => void>();
 const subscribeName = (fn: () => void) => {
   nameListeners.add(fn);
@@ -74,8 +78,9 @@ function saveName(name: string) {
     if (name) localStorage.setItem(NAME_KEY, name);
     else localStorage.removeItem(NAME_KEY);
   } catch {
-    // Storage blocked: asked again next visit.
+    // Storage blocked: the cookie still remembers it.
   }
+  if (name) void remember(name);
   nameListeners.forEach((fn) => fn());
 }
 
@@ -163,9 +168,14 @@ function NameGate({ current, onDone }: { current: string; onDone: () => void }) 
  * Something new waiting plays a chime and, if allowed, a browser notification
  * (without the student's words). On a phone the list and the chat take turns.
  */
-export function SapaInbox({ initial: firstRef }: { initial: string | null }) {
+export function SapaInbox({ initial: firstRef, name: saved }: { initial: string | null; name: string }) {
   const router = useRouter();
-  const me = useSyncExternalStore(subscribeName, readName, () => '');
+  const me = useSyncExternalStore(subscribeName, () => readName() || saved, () => saved);
+  // Named before the cookie existed (localStorage only): copy it over, so it isn't asked again.
+  useEffect(() => {
+    const local = readName();
+    if (local && local !== saved) void remember(local);
+  }, [saved]);
   const [naming, setNaming] = useState(false);
   const [items, setItems] = useState<Item[] | null>(null);
   const [team, setTeam] = useState<Member[]>([]);

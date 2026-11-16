@@ -64,7 +64,7 @@ average. A burst is merged: messages within a minute of a ping edit that ping
 its own ping. When anyone has waited 30 minutes, the ping tags the people in
 `DISCORD_OVERDUE_USER_IDS` (at most once every 30 minutes; never @everyone). Set it in
 Vercel to their Discord user IDs, comma separated: with Developer Mode on (step 5),
-right-click the person → **Copy User ID**. A typed name like "@arty" would not notify
+right-click the person → **Copy User ID**. A typed name like "@name" would not notify
 anyone; Discord needs the ID. Unset, it mentions `DISCORD_ROLE_ID` instead.
 
 **The 30-minute check when the site is quiet.** The check also runs while a waiting
