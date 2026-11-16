@@ -7,7 +7,6 @@ import { BackButton } from '@/components/heart/BackButton';
 import { LiveHeart } from '@/components/heart/LiveHeart';
 import palette from '@/components/heart/palette.module.css';
 import { feelings } from '@/content/th/heart';
-import { phi } from '@/content/th/sapa';
 import { vent } from '@/content/th/vent';
 import { haptic } from '@/lib/haptics';
 import { moodColour, rgb } from '@/lib/heart';
@@ -17,7 +16,7 @@ import { clearHandOff, peekHandOff } from '@/lib/vent/handoff';
 import { DriftingHints, Plane, SpeedLine, Starters, TimeAsk } from './Invite';
 import styles from './Vent.module.css';
 
-type Msg = { id: number; sender: 'student' | 'sapa'; body: string; at?: string; by?: string | null; pending?: boolean };
+type Msg = { id: number; sender: 'student' | 'sapa'; body: string; at?: string; pending?: boolean };
 type Chat = { key: string; code: string };
 
 /** While the student types, the team sees "น้องกำลังพิมพ์…": a mark at most this often. */
@@ -25,14 +24,11 @@ const TYPING_EVERY = 3000;
 const clock = (iso?: string) =>
   iso ? new Date(iso).toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) : '';
 /** A soft colour per พี่ (the same as the team's inbox), so each one is someone. */
-const INKS = ['#FF8FB5', '#FFB511', '#7FB7E6', '#8ED1B5', '#C9A7EB', '#F59E7A'];
-const inkFor = (name: string) => INKS[[...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % INKS.length];
-const initialOf = (name: string) => [...name.replace(/^พี่/, '')][0] ?? 'พ';
 
-function Face({ name }: { name: string | null }) {
+function Face() {
   return (
-    <span className={styles.face} style={{ background: name ? inkFor(name) : 'var(--riso-pink)' }} aria-hidden="true">
-      {name ? initialOf(name) : 'พ'}
+    <span className={styles.face} style={{ background: 'var(--riso-pink)' }} aria-hidden="true">
+      พ
     </span>
   );
 }
@@ -97,9 +93,9 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
   const chat = parseChat(useSyncExternalStore(subscribe, readRaw, () => null));
   const [messages, setMessages] = useState<Msg[]>([]);
   const [waiting, setWaiting] = useState(false);
-  /** The พี่ looking after this chat, and a พี่ typing right now (nicknames). */
-  const [claimedBy, setClaimedBy] = useState<string | null>(null);
-  const [typing, setTyping] = useState<string | null>(null);
+  /** A พี่ has taken this chat on, and a พี่ is typing right now (never who: the team is "พี่สภา"). */
+  const [claimed, setClaimed] = useState(false);
+  const [typing, setTyping] = useState(false);
   const lastTyping = useRef(0);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -142,10 +138,10 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
         return;
       }
       if (!res.ok) return;
-      const data = (await res.json()) as { waiting: boolean; messages: Msg[]; claimedBy?: string | null; typing?: string | null };
+      const data = (await res.json()) as { waiting: boolean; messages: Msg[]; claimed?: boolean; typing?: boolean };
       setWaiting(data.waiting);
-      setClaimedBy(data.claimedBy ?? null);
-      setTyping(data.typing ?? null);
+      setClaimed(!!data.claimed);
+      setTyping(!!data.typing);
       if (fresh) {
         setMessages(data.messages);
       } else if (data.messages.length) {
@@ -398,10 +394,10 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
             </figure>
           ) : (
             <div key={m.id} className={styles.them}>
-              <Face name={m.by ?? null} />
+              <Face />
               <div className={styles.themBody}>
                 <p className={styles.themName}>
-                  {m.by ? phi(m.by) : vent.sapa}
+                  {vent.sapa}
                   <span>{clock(m.at)}</span>
                 </p>
                 <p className={styles.themText}>{m.body}</p>
@@ -413,9 +409,9 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
         {/* A พี่ is typing: a person, right now. */}
         {chat && typing && (
           <div className={styles.them} role="status">
-            <Face name={typing} />
+            <Face />
             <div className={styles.themBody}>
-              <p className={styles.themName}>{vent.typing(phi(typing))}</p>
+              <p className={styles.themName}>{vent.typing}</p>
               <p className={`${styles.themText} ${styles.typingBubble}`}>
                 <span className={styles.dots} aria-hidden="true">
                   <i />
@@ -430,8 +426,8 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
         {/* Sent, and waiting for a พี่. */}
         {chat && waiting && lastIsStudent && !sending && !typing && (
           <div className={styles.waiting} role="status">
-            <p className={styles.listening}>✓ {claimedBy ? vent.claimed(phi(claimedBy)) : vent.sent}</p>
-            {!claimedBy && <SpeedLine className={styles.speed} />}
+            <p className={styles.listening}>✓ {claimed ? vent.claimed : vent.sent}</p>
+            {!claimed && <SpeedLine className={styles.speed} />}
             <p className={styles.waitingNote}>{vent.waitingNote}</p>
           </div>
         )}

@@ -69,10 +69,10 @@ export const vent = {
   /** Above each message. */
   me: 'เธอเขียนว่า',
   sapa: 'พี่สภา',
-  /** A พี่ is typing an answer (their nickname, already "พี่…"). */
-  typing: (name: string) => `${name} กำลังพิมพ์`,
+  /** A พี่ is typing an answer. Students never see which พี่: the team is one "พี่สภา". */
+  typing: 'พี่สภา กำลังพิมพ์',
   /** Under the student's message once a พี่ has taken the chat on. */
-  claimed: (name: string) => `${name} รับเรื่องนี้แล้วนะ`,
+  claimed: 'พี่สภารับเรื่องนี้แล้วนะ',
   /** After the student's message, until a พี่ answers. */
   sent: 'ส่งถึงพี่ๆ แล้ว',
   /** Under the speed line (intro.speed) while waiting. */

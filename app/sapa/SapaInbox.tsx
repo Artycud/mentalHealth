@@ -122,7 +122,7 @@ function Dots() {
   );
 }
 
-/** Asked once on this device: the nickname the student and the team will see. */
+/** Asked once on this device: the nickname the team will see (students only see "พี่สภา"). */
 function NameGate({ current, onDone }: { current: string; onDone: () => void }) {
   const [value, setValue] = useState(current);
   return (
@@ -158,8 +158,8 @@ function NameGate({ current, onDone }: { current: string; onDone: () => void }) 
 }
 
 /**
- * The พี่สภา dashboard. Each device names its พี่ once (a nickname the student sees
- * on answers, and the team sees on claims and today's tally). The list is in tabs:
+ * The พี่สภา dashboard. Each device names its พี่ once (a nickname only the team sees
+ * on answers, claims and today's tally; students only ever see "พี่สภา"). The list is in tabs:
  * waiting for an answer, answered, and the chats you look after. A chat can be
  * claimed by one พี่, who is responsible for it; anyone can still answer.
  *

@@ -36,11 +36,12 @@ export interface ThreadView {
   code: string;
   /** The student wrote last: a พี่ has not answered yet. */
   waiting: boolean;
+  /** Never carries a พี่'s nickname (`by` is always null): the team is "พี่สภา" to students. */
   messages: VentMessageRow[];
-  /** The พี่ looking after this chat, by nickname. */
-  claimedBy: string | null;
-  /** A พี่ typing right now, by nickname. */
-  typing: string | null;
+  /** A พี่ has taken this chat on (who, the student never learns). */
+  claimed: boolean;
+  /** A พี่ is typing right now. */
+  typing: boolean;
 }
 
 export interface InboxItem {
@@ -212,22 +213,26 @@ const toMessages = (rows: Record<string, unknown>[]): VentMessageRow[] =>
     by: r.staff ? String(r.staff) : null,
   }));
 
-/** The conversation as the student sees it (by their key). Null when it is gone. */
+/**
+ * The conversation as the student sees it (by their key). Null when it is gone.
+ * Anonymous both ways: the nicknames stay with the team (readForStaff), and the
+ * student only ever sees "พี่สภา".
+ */
 export async function readThread(id: string, afterId = 0): Promise<ThreadView | null> {
   const c = await db();
-  const t = await c.execute({ sql: 'SELECT code, waiting, claimed_by, sapa_typing_at, sapa_typing_by FROM vent_thread WHERE id = ?', args: [id] });
+  const t = await c.execute({ sql: 'SELECT code, waiting, claimed_by, sapa_typing_at FROM vent_thread WHERE id = ?', args: [id] });
   const row = t.rows[0];
   if (!row) return null;
   const m = await c.execute({
-    sql: 'SELECT id, sender, body, created_at, staff FROM vent_message WHERE thread_id = ? AND id > ? ORDER BY id',
+    sql: 'SELECT id, sender, body, created_at FROM vent_message WHERE thread_id = ? AND id > ? ORDER BY id',
     args: [id, afterId],
   });
   return {
     code: String(row.code),
     waiting: Number(row.waiting) === 1,
     messages: toMessages(m.rows),
-    claimedBy: row.claimed_by ? String(row.claimed_by) : null,
-    typing: typingNow(row.sapa_typing_at) ? String(row.sapa_typing_by ?? '') || 'พี่สภา' : null,
+    claimed: !!row.claimed_by,
+    typing: typingNow(row.sapa_typing_at),
   };
 }
 
