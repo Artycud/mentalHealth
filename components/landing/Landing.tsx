@@ -47,9 +47,9 @@ function GoMark({ small = false }: { small?: boolean }) {
 
 /**
  * The User Mode home: a moment of one question on the sky, then (by itself) the
- * first screen: the question as the headline, and under it the three ways in,
- * as slips: the check-up (one living heart to touch), VENT, and CUD Care as the
- * human option. Then "อยากไปต่อ": MBTI; then the event itself: what the week is, what
+ * first screen: the question as the headline, and under it the ways in, as
+ * slips: ระบายให้พี่สภาฟัง first (the home's main way in: a person answers),
+ * then the check-up (one living heart to touch), and CUD Care as the human option. Then "อยากไปต่อ": MBTI; then the event itself: what the week is, what
  * every round has, and when the rounds are (only what each is about: what
  * happens at them stays a surprise), with the place and time said once.
  *
@@ -73,15 +73,18 @@ export function Landing({
       {/* ---------- the opening scene, then by itself the home's first screen:
            the question, and the three ways in under it ---------- */}
       <IntroStory kicker={landing.intro.kicker} line={landing.intro.line}>
+        {/* ระบายให้พี่สภาฟัง comes first, the home's main way in: a bar to start
+            writing in, and Enter opens the chat with it sent. */}
+        <div className={styles.taped}>
+          <VentStart />
+        </div>
+
+        {/* The check-up, the other way in. */}
+        <p className={styles.or}>{landing.or}</p>
+
         <div className={styles.taped}>
           <HeartInvite greeting={greeting} copy={landing.hero.check} />
         </div>
-
-        {/* The check-up comes first; VENT is the other way in, said quietly. */}
-        <p className={styles.or}>{landing.or}</p>
-
-        {/* VENT: a bar to start writing in; Enter opens the chat with it sent. */}
-        <VentStart />
 
         <MorePanels mbti={landing.more.mbti} />
       </IntroStory>

@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 
 import { LiveHeart } from '@/components/heart/LiveHeart';
 import palette from '@/components/heart/palette.module.css';
-import { DriftingHints, Plane, SafeLine, Starters, TimeAsk } from '@/components/vent/Invite';
+import { DriftingHints, Plane, SafeLine, Starters } from '@/components/vent/Invite';
 import { vent } from '@/content/th/vent';
 import { prefersReducedMotion } from '@/lib/frame';
 import { FORWARD } from '@/lib/nav';
@@ -17,13 +17,13 @@ import styles from './VentStart.module.css';
 const FLIGHT = 240;
 
 /**
- * VENT on the home, made to be answered rather than filled in, and drawn as a
- * little of the chat it opens: the heart's question comes in as a message, a few
- * quick replies wait on the student's side to be sent with one tap, and the
- * answer goes on a strip of notebook paper (starters drift through it while it
- * is empty). Sending folds the words into a paper airplane and opens the
- * chat with them already on their way (lib/vent/handoff carries them, in memory
- * only). Sending with nothing written just puts the cursor on the paper.
+ * ระบายให้พี่สภาฟัง: the home's first slip and its main way in. It says plainly
+ * what it is and that a person answers, then lets the student start right here:
+ * quick replies to send with one tap, and a strip of notebook paper to write on
+ * (starters drift through it while it is empty). Sending folds the words into a
+ * paper airplane and opens the chat with them already on their way
+ * (lib/vent/handoff carries them, in memory only). Sending with nothing written
+ * just puts the cursor on the paper.
  */
 export function VentStart() {
   const router = useRouter();
@@ -51,18 +51,22 @@ export function VentStart() {
 
   return (
     <form className={`${palette.paper} ${styles.slip}`} onSubmit={submit} data-flying={flying}>
-      {/* A little of the chat itself: the heart's question comes in as a message
-          (a moment of "typing" first), the starters wait on the student's side as
-          quick replies, and the writing bar sits at the foot, as in the chat. */}
-      <label htmlFor="vent-start" className={styles.asks}>
-        <LiveHeart energy={0.45} weight={0.35} colour="rgb(255 143 181)" className={styles.heart} />
-        <span className={styles.bubble}>
-          <span className={styles.typing} aria-hidden="true">
-            <i />
-            <i />
-            <i />
+      <label htmlFor="vent-start" className={styles.head}>
+        <span className={styles.words}>
+          <span className={styles.title}>{vent.invite.title}</span>
+          <span className={styles.sub}>
+            {/* each phrase whole; the line breaks only at the space between them */}
+            {vent.invite.sub.split(' ').map((phrase, i) => (
+              <Fragment key={i}>
+                {i > 0 && ' '}
+                <span className={styles.phrase}>{phrase}</span>
+              </Fragment>
+            ))}
           </span>
-          <TimeAsk className={styles.ask} />
+        </span>
+        {/* The heart in a speech bubble, listening. */}
+        <span className={styles.listen} aria-hidden="true">
+          <LiveHeart energy={0.5} weight={0.3} colour="rgb(255 143 181)" listening className={styles.heart} />
         </span>
       </label>
 

@@ -33,8 +33,13 @@ export const vent = {
    * sent with one tap, and the reassurance sits beside the button.
    */
   invite: {
-    /** What the heart asks, by the sky's mood (lib/sky-time). Each space-separated
-        phrase stays on one line (components/vent/Invite TimeAsk). */
+    /** The home's first slip (components/landing/VentStart): ระบาย is the home's
+        main way in, so it says plainly what it is and who answers. */
+    title: 'ระบายให้พี่สภาฟัง',
+    sub: 'มีอะไรกวนใจอยู่ไหม พิมพ์มาได้เลย',
+    /** What the heart asks at the top of an empty chat, by the sky's mood
+        (lib/sky-time). Each space-separated phrase stays on one line
+        (components/vent/Invite TimeAsk). */
     ask: {
       morning: 'เมื่อคืนนอนพอไหม เช้านี้รู้สึกยังไงบ้าง',
       day: 'เรียนมาทั้งวัน เหนื่อยไหม เล่าให้ฟังหน่อยสิ',
@@ -46,8 +51,8 @@ export const vent = {
     /** One tap: the chat opens with this already sent. On the home they sit
         on the student's side, as quick replies to the heart's question. */
     starters: ['เครียดเรื่องเรียน', 'นอนไม่พอ', 'ทะเลาะกับเพื่อน', 'แค่เหนื่อย ๆ'],
-    /** Says plainly who reads it, and what happens to it. */
-    safe: 'พี่ๆ สภาอ่านเอง · ไม่ต้องใส่ชื่อ · กดจบแล้วลบหมด',
+    /** Under the bar: who reads it, and nothing more (the chat page says the rest). */
+    safe: 'พี่ๆ สภาตอบเอง',
   },
 
   composer: {

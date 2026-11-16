@@ -59,10 +59,8 @@ export const landing = {
     where: (place: string, time: string) => `ทุกรอบ ${place} · ${time}`,
   },
 
-  /** Under the check-up: VENT, then a person (CUD Care), then MBTI. */
-  /** Between the check-up and VENT on the first screen: the check-up comes first,
-      VENT is there if what they need is to say it. */
-  or: 'หรือถ้ามีเรื่องอยากระบายก่อน',
+  /** Between ระบาย (the home's first slip) and the check-up on the first screen. */
+  or: 'หรือเช็กใจตัวเองก่อนก็ได้',
   onward: 'อยากไปต่อ',
   more: {
     mbti: {
