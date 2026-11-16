@@ -1,6 +1,13 @@
 /**
  * Telling the พี่สภา team a student has written, in their Discord channel.
  *
+ * Every student message pings, with one short summary of the whole queue (how
+ * many wait, how many are urgent, the longest and the average wait). A burst is
+ * merged: within a minute of a ping, it is edited to count the new messages
+ * instead of a new ping being posted. sweepQueue (student polling, and
+ * app/api/cron/sapa-queue) tags @everyone, at most every 30 minutes, while anyone
+ * has waited 30 minutes or more.
+ *
  * Two ways to set it up (environment variables on the server; see docs/sapa.md):
  *   DISCORD_WEBHOOK_URL                       a ping with a link to the inbox
  *   DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID    a ping with an "อ่านและตอบ" button,
@@ -13,6 +20,8 @@
  * A failed ping never stops the student's message being saved: it is logged by
  * name only and the inbox still shows it.
  */
+
+import { getMarks, queueStats, setMarks, waitText, type QueueStats } from './queue.ts';
 
 const API = 'https://discord.com/api/v10';
 
@@ -44,55 +53,126 @@ async function call(url: string, init: RequestInit): Promise<Response | null> {
 
 const botHeaders = () => ({ Authorization: `Bot ${setting(process.env.DISCORD_BOT_TOKEN)}`, 'Content-Type': 'application/json' });
 
-function headline(urgent: boolean, isNew: boolean) {
-  const role = roleId() ? `<@&${roleId()}> ` : '';
-  if (urgent) return `${role}⚠️ **ด่วน** มีข้อความที่อาจต้องการความช่วยเหลือ ช่วยดูเร็ว ๆ นะ`;
-  return `${role}💬 ${isNew ? 'มีน้องเพิ่งระบายมา' : 'น้องเขียนเพิ่มในแชทเดิม'}`;
+const mention = () => (roleId() ? `<@&${roleId()}> ` : '');
+
+/** The second line of every ping: the queue at a glance. */
+function summary(q: QueueStats): string {
+  const urgent = q.urgent ? ` (ด่วน ${q.urgent})` : '';
+  return `รอตอบ ${q.waiting} แชท${urgent} · รอนานสุด ${waitText(q.oldestMin)} · เฉลี่ย ${waitText(q.avgMin)}`;
+}
+
+function buttons(origin: string, ref: string | null, urgent: boolean) {
+  const inbox = `${origin}/sapa`;
+  return [
+    {
+      type: 1,
+      components: ref
+        ? [
+            { type: 2, style: urgent ? 4 : 1, label: 'อ่านและตอบ', custom_id: `read:${ref}` },
+            { type: 2, style: 5, label: 'เปิดในเว็บ', url: `${inbox}?t=${ref}` },
+          ]
+        : [{ type: 2, style: 5, label: 'เปิดกล่องข้อความ', url: inbox }],
+    },
+  ];
 }
 
 /**
- * Pings the channel. `origin` is this site (for the inbox link). Returns the
- * Discord message id in bot mode, so the ping can be marked when the chat ends.
+ * Posts a ping, or (with `edit`) rewrites an earlier one in place. A ping for one
+ * chat links to it (with its "อ่านและตอบ" button in bot mode); otherwise to the
+ * inbox. Returns the Discord message id, so the ping can be edited or marked later.
+ */
+async function send(
+  content: string,
+  o: { origin: string; ref: string | null; urgent?: boolean; everyone?: boolean; edit?: string },
+): Promise<string | null> {
+  const mode = discordMode();
+  const link = o.ref ? `${o.origin}/sapa?t=${o.ref}` : `${o.origin}/sapa`;
+  const allowed_mentions = { roles: roleId() ? [roleId()] : [], parse: o.everyone ? ['everyone'] : [] };
+  let res: Response | null = null;
+  if (mode === 'bot') {
+    const base = `${API}/channels/${channelId()}/messages`;
+    res = await call(o.edit ? `${base}/${o.edit}` : base, {
+      method: o.edit ? 'PATCH' : 'POST',
+      headers: botHeaders(),
+      body: JSON.stringify({ content, allowed_mentions, components: buttons(o.origin, o.ref, !!o.urgent) }),
+    });
+  } else if (mode === 'webhook') {
+    const url = webhookUrl();
+    res = await call(o.edit ? `${url}/messages/${o.edit}` : `${url}${url.includes('?') ? '&' : '?'}wait=true`, {
+      method: o.edit ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: `${content}\n${link}`, allowed_mentions }),
+    });
+  }
+  if (!res?.ok) return null;
+  try {
+    return String(((await res.json()) as { id: string }).id);
+  } catch {
+    return o.edit ?? null;
+  }
+}
+
+/** Messages within this long of a ping are merged into it (the ping is edited, not repeated). */
+const MERGE_MS = 60_000;
+
+/**
+ * A student wrote. Every message pings, with the queue's summary; but a burst is
+ * merged: within a minute of the last ping, that ping is edited to count the new
+ * messages instead of a new one being posted. Urgent always posts a fresh ping.
+ * Returns the ping's id for a fresh ping for this chat (so it can be marked when
+ * the chat ends). Never throws.
  */
 export async function notifySapa(p: { ref: string; urgent: boolean; isNew: boolean; origin: string }): Promise<string | null> {
-  const mode = discordMode();
-  const link = `${p.origin}/sapa?t=${p.ref}`;
-  const allowed_mentions = { roles: roleId() ? [roleId()] : [] };
-
-  if (mode === 'bot') {
-    const res = await call(`${API}/channels/${channelId()}/messages`, {
-      method: 'POST',
-      headers: botHeaders(),
-      body: JSON.stringify({
-        content: headline(p.urgent, p.isNew),
-        allowed_mentions,
-        components: [
-          {
-            type: 1,
-            components: [
-              { type: 2, style: p.urgent ? 4 : 1, label: 'อ่านและตอบ', custom_id: `read:${p.ref}` },
-              { type: 2, style: 5, label: 'เปิดในเว็บ', url: link },
-            ],
-          },
-        ],
-      }),
-    });
-    if (!res?.ok) return null;
-    try {
-      return String(((await res.json()) as { id: string }).id);
-    } catch {
+  if (!discordMode()) return null;
+  try {
+    const now = Date.now();
+    const [q, m] = await Promise.all([queueStats(now), getMarks()]);
+    if (!p.urgent && m.pingId && now - m.pingAt < MERGE_MS) {
+      const n = m.pingCount + 1;
+      const ref = m.pingRef === p.ref ? p.ref : null;
+      const head = ref ? `💬 น้องพิมพ์มา ${n} ข้อความ` : `💬 ข้อความใหม่ ${n} ข้อความ`;
+      const edited = await send(`${mention()}${head}\n${summary(q)}`, { origin: p.origin, ref, edit: m.pingId });
+      if (edited) await setMarks({ pingCount: n, pingRef: ref ?? '' });
       return null;
     }
+    const head = p.urgent
+      ? '🚨 **ด่วน** มีข้อความที่อาจต้องการความช่วยเหลือ'
+      : p.isNew
+        ? '💬 มีน้องเพิ่งทักมา'
+        : '💬 น้องพิมพ์เพิ่ม';
+    const id = await send(`${mention()}${head}\n${summary(q)}`, { origin: p.origin, ref: p.ref, urgent: p.urgent });
+    // An urgent ping stays as it is: the next message starts its own.
+    await setMarks({ pingAt: now, pingId: p.urgent ? '' : (id ?? ''), pingCount: 1, pingRef: p.ref });
+    return id;
+  } catch (error) {
+    console.error('discord: notify failed', error instanceof Error ? error.name : 'unknown');
+    return null;
   }
+}
 
-  if (mode === 'webhook') {
-    await call(webhookUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: `${headline(p.urgent, p.isNew)}\n${link}`, allowed_mentions }),
-    });
+let lastSweep = 0;
+const OVERDUE_MS = 30 * 60_000;
+
+/**
+ * The 30-minute check: while anyone has waited 30 minutes or more, tags @everyone
+ * with the queue (again at most every 30 minutes). Cheap to call often: on its own
+ * it runs at most once a minute per server instance.
+ */
+export async function sweepQueue(origin: string, force = false): Promise<'off' | 'idle' | 'overdue'> {
+  if (!discordMode()) return 'off';
+  const now = Date.now();
+  if (!force && now - lastSweep < 60_000) return 'idle';
+  lastSweep = now;
+  try {
+    const [q, m] = await Promise.all([queueStats(now), getMarks()]);
+    if (q.waiting === 0 || q.oldestMin < 30 || now - m.overdueAt < OVERDUE_MS) return 'idle';
+    await send(`@everyone ⏰ **มีน้องรอเกิน 30 นาทีแล้ว** ช่วยกันตอบหน่อยนะ\n${summary(q)}`, { origin, ref: null, everyone: true });
+    await setMarks({ overdueAt: now, pingId: '' });
+    return 'overdue';
+  } catch (error) {
+    console.error('discord: sweep failed', error instanceof Error ? error.name : 'unknown');
+    return 'idle';
   }
-  return null;
 }
 
 /** The student ended the chat: say so on its ping and take the buttons away. */

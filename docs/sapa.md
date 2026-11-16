@@ -57,6 +57,21 @@ answer goes straight to the student.
 8. Optional: `DISCORD_ROLE_ID` (right-click a role → Copy Role ID) mentions that role
    on each ping, so its members get a phone notification.
 
+**How the pings behave.** Every student message pings, with one short summary of the
+queue: how many chats wait (and how many are urgent), the longest wait and the
+average. A burst is merged: messages within a minute of a ping edit that ping
+("ข้อความใหม่ 4 ข้อความ") instead of posting new ones. An urgent message always posts
+its own ping. When anyone has waited 30 minutes, the ping tags
+**@everyone** (at most once every 30 minutes). For the bot, give it the *Mention
+@everyone* permission in the staff channel, or that tag stays plain text.
+
+**The 30-minute check when the site is quiet.** The check also runs while a waiting
+student has the chat open. To cover everything, set `CRON_SECRET` in Vercel (any long
+random string) and have a scheduler call `GET https://<your site>/api/cron/sapa-queue`
+every 10 minutes with the header `Authorization: Bearer <CRON_SECRET>`. Vercel Cron
+can do this on the Pro plan; on Hobby (daily only), use a free scheduler such as
+cron-job.org.
+
 **Keep the staff channel to the team only.** Anyone who can see the channel can press
 the buttons.
 

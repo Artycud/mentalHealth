@@ -120,6 +120,55 @@ try {
   delete process.env.DISCORD_WEBHOOK_URL;
   check('  and when nothing is set up at all', (await testDiscord('http://x')).reason === 'not_set');
 
+  // ---- Pings: every message, a burst merged into one, the queue in each
+  {
+    const { notifySapa, sweepQueue } = await import('../lib/vent/discord.ts');
+    const calls = [];
+    let nextId = 100;
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async (url, init) => {
+      const body = JSON.parse(init.body);
+      calls.push({ url: String(url), method: init.method, body });
+      return Response.json({ id: init.method === 'PATCH' ? String(url).split('/').pop() : String(nextId++) });
+    };
+    const posts = () => calls.filter((x) => x.method === 'POST');
+    const last = () => calls.at(-1);
+    process.env.DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1/x';
+    const c = await db();
+    await c.execute("DELETE FROM setting WHERE key LIKE 'discord_%'");
+    const start = async (text, urgent = false) => {
+      const th = await threads.startThread(text, { urgent });
+      await notifySapa({ ref: th.ref, urgent, isNew: true, origin: 'http://x' });
+      return th;
+    };
+    const a = await start('ข้อความลับหนึ่ง');
+    check('a new chat pings, with the queue size, longest and average wait', posts().length === 1 && /รอตอบ 1 แชท · รอนานสุด .+ · เฉลี่ย /.test(posts()[0].body.content), posts()[0]?.body.content);
+    for (let i = 0; i < 4; i++) await start('ข้อความลับอีก');
+    check('  four more within a minute: merged into that one ping (edited, not posted)', posts().length === 1 && last().method === 'PATCH' && last().url.endsWith('/messages/100'));
+    check('  which now counts them and the queue', last().body.content.includes('ข้อความใหม่ 5 ข้อความ') && last().body.content.includes('รอตอบ 5 แชท'), last().body.content);
+    await start('ข้อความลับสาม', true);
+    check('an urgent one posts its own ping at once, marked ด่วน', posts().length === 2 && last().body.content.includes('**ด่วน**') && last().body.content.includes('(ด่วน 1)'), last().body.content);
+    await c.execute({ sql: "UPDATE setting SET value = ? WHERE key = 'discord_ping_at'", args: [String(Date.now() - 61_000)] });
+    await threads.addMessage({ id: a.id }, 'student', 'ข้อความลับสี่');
+    await notifySapa({ ref: a.ref, urgent: false, isNew: false, origin: 'http://x' });
+    check('a message a minute after the last ping posts a new one', posts().length === 3 && last().body.content.includes('น้องพิมพ์เพิ่ม'));
+    await notifySapa({ ref: a.ref, urgent: false, isNew: false, origin: 'http://x' });
+    check('  the same chat again: "น้องพิมพ์มา 2 ข้อความ", still pointing at that chat', last().method === 'PATCH' && last().body.content.includes('น้องพิมพ์มา 2 ข้อความ') && last().body.content.includes(`t=${a.ref}`), last().body.content);
+    check('  no check while nobody has waited 30 minutes', (await sweepQueue('http://x', true)) === 'idle');
+    await c.execute({ sql: 'UPDATE vent_message SET created_at = ? WHERE thread_id = ?', args: [new Date(Date.now() - 31 * 60_000).toISOString(), a.id] });
+    const before = posts().length;
+    check(
+      'a chat waiting 30+ minutes tags @everyone, saying how long',
+      (await sweepQueue('http://x', true)) === 'overdue' && posts().length === before + 1 && last().body.content.startsWith('@everyone') && last().body.allowed_mentions.parse.includes('everyone') && /รอนานสุด 3\d นาที/.test(last().body.content),
+      last()?.body.content,
+    );
+    check('  once per 30 minutes, not on every check', (await sweepQueue('http://x', true)) === 'idle' && posts().length === before + 1);
+    check('  everyday pings never tag everyone', calls.slice(0, -1).every((x) => !x.body.allowed_mentions.parse.includes('everyone')));
+    check('  no ping carries what a student wrote', !calls.some((x) => x.body.content.includes('ข้อความลับ')));
+    globalThis.fetch = realFetch;
+    delete process.env.DISCORD_WEBHOOK_URL;
+  }
+
   process.env.DISCORD_PUBLIC_KEY = '0'.repeat(64);
   const { POST } = await import('../app/api/discord/route.ts').catch(() => ({ POST: null }));
   if (POST) {

@@ -1,7 +1,8 @@
+import { after } from 'next/server';
 import { z } from 'zod';
 
 import { takeVentSlot } from '@/lib/vent/cap';
-import { markEnded, notifySapa } from '@/lib/vent/discord';
+import { markEnded, notifySapa, sweepQueue } from '@/lib/vent/discord';
 import { failed, json, smallJson, Text } from '@/lib/vent/http';
 import { needsCare } from '@/lib/vent/safety';
 import { addMessage, endThread, readThread, setDiscordId } from '@/lib/vent/threads';
@@ -21,8 +22,14 @@ export async function GET(request: Request, { params }: Ctx) {
   try {
     const { key } = await params;
     if (!valid(key)) return json({ error: 'gone' }, 404);
-    const after = Number(new URL(request.url).searchParams.get('after') ?? 0) || 0;
-    const thread = await readThread(key, after);
+    const afterId = Number(new URL(request.url).searchParams.get('after') ?? 0) || 0;
+    const thread = await readThread(key, afterId);
+    // A student is waiting on this page: after answering, see whether the team
+    // needs a nudge (lib/vent/discord.ts sweepQueue; at most once a minute).
+    if (thread?.waiting) {
+      const origin = new URL(request.url).origin;
+      after(() => sweepQueue(origin));
+    }
     return thread ? json(thread) : json({ error: 'gone' }, 404);
   } catch (error) {
     return failed('read', error);
@@ -44,12 +51,9 @@ export async function POST(request: Request, { params }: Ctx) {
     if (!saved) return json({ error: 'gone' }, 404);
     if (saved.full) return json({ error: 'full' }, 409);
 
-    // Ping only when a พี่ had answered (or it just turned urgent): one ping per
-    // turn, not one per message while they are still writing.
-    if (!saved.wasWaiting || care) {
-      const discordId = await notifySapa({ ref: saved.ref, urgent: saved.urgent, isNew: false, origin: new URL(request.url).origin });
-      if (discordId) await setDiscordId(saved.ref, discordId);
-    }
+    // Every message pings; a burst within a minute is merged into one ping (lib/vent/discord.ts).
+    const discordId = await notifySapa({ ref: saved.ref, urgent: care, isNew: false, origin: new URL(request.url).origin });
+    if (discordId) await setDiscordId(saved.ref, discordId);
     return json({ ok: true, care });
   } catch (error) {
     return failed('add', error);
