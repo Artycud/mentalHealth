@@ -6,7 +6,7 @@ import { festivals } from '@/content/th/booth';
 import { recap as t } from '@/content/th/recap';
 import { formatDateRange, parseIsoDate } from '@/lib/thai-date';
 import { requireAdminPage } from '@/lib/guard';
-import { demoRecap, getRecap, RECAP_OKAY_MIN, RECAP_TOPIC_MIN, RECAP_VENT_MIN } from '@/lib/recap';
+import { demoRecap, getRecap, RECAP_TOPIC_MIN, RECAP_VENT_MIN } from '@/lib/recap';
 import { getActiveFestival } from '@/lib/settings';
 import { siteUrl } from '@/lib/site-url';
 import type { FestivalId } from '@/lib/types';
@@ -96,7 +96,6 @@ export default async function RecapPage(props: PageProps<'/admin/recap'>) {
             )}
           </nav>
         )}
-        {data.players > 0 && !data.okay && <p className={styles.hint}>{t.okayHidden(RECAP_OKAY_MIN)}</p>}
         {data.players > 0 && !data.topic && <p className={styles.hint}>{t.topicHidden(RECAP_TOPIC_MIN)}</p>}
         {data.players > 0 && !data.vent && <p className={styles.hint}>{t.ventHidden(RECAP_VENT_MIN)}</p>}
       </section>

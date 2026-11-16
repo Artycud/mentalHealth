@@ -3,8 +3,8 @@
  * on the admin's recap page (app/admin/recap). DRAFT copy, for council review.
  *
  * Every number on a card is computed (lib/recap.ts); nothing here states a fact of
- * its own. The honest-question card is about mental health and goes out in public,
- * so it normalises ("ไม่ได้มีแค่คุณคนเดียว") and carries the CUD Care line (§12).
+ * its own. Card 2 is about mental health and goes out in public, so it normalises
+ * ("ไม่ได้มีแค่คุณคนเดียว") and carries the CUD Care line (§12).
  * Kept short on purpose: one idea per block, no explaining.
  */
 
@@ -19,30 +19,35 @@ export const recap = {
   save: 'บันทึกรูป',
   loading: 'กำลังวาด…',
   noData: 'ยังไม่มีคนเล่นบูธจนจบในวันนี้ ยังทำสรุปไม่ได้',
-  okayHidden: (min: number) => `ตัวเลข "โอเคไหม" จะขึ้นเมื่อมีคนตอบอย่างน้อย ${min} คน เพื่อไม่ให้ชี้ไปถึงใครได้`,
-  topicHidden: (min: number) => `"เรื่องที่อยู่ในหัวมากสุด" จะขึ้นเมื่อมีคนเช็กใจบนเว็บแล้วเลือกเรื่องอย่างน้อย ${min} คน`,
+  topicHidden: (min: number) =>
+    `"เรื่องที่อยู่ในหัวมากสุด" จะขึ้นเมื่อมีคนเช็กใจบนเว็บแล้วเลือกเรื่องอย่างน้อย ${min} คน (เริ่มนับ 16 พ.ย.)`,
   ventHidden: (min: number) => `ตัวเลขของระบายจะขึ้นเมื่อมีอย่างน้อย ${min} แชทในวันนั้น`,
   sticker: 'กรอบประในการ์ดที่ 2 คือที่วางสติกเกอร์ลิงก์ของ IG (กรอบไม่ติดไปในรูป)',
   sample: 'ตัวอย่าง: ตัวเลขสมมติ ห้ามโพสต์',
   noBooth: 'ยังไม่มีบูธที่เปิดอยู่',
-  cards: ['ใจวันนี้', 'โอเคไหม + ลิงก์'],
+  cards: ['ใจวันนี้', 'ใจที่แบกอยู่ + ระบาย'],
 
   // ---- on the cards ----
   brand: 'CUD Mental Health Week',
   day: (festival: string, date: string) => `สรุปบูธ${festival} · ${date}`,
   today: {
-    players: 'คนมาเล่นที่บูธ',
-    feelings: 'ใจของคนส่วนใหญ่ตอนนี้',
-    topic: 'เรื่องที่อยู่ในหัวมากสุด',
+    players: (oneDay: boolean) => (oneDay ? 'คน แวะมาเช็กใจที่บูธวันนี้' : 'คน แวะมาเช็กใจที่บูธ'),
+    feelings: 'ใจส่วนใหญ่ตอนนี้',
+    share: (pct: number) => `${pct}% ของคนที่มาเล่น`,
+    quotes: { q1: 'อยากฝากลอยไปกับกระทง', q4: 'ถ้าพรุ่งนี้เปลี่ยนได้หนึ่งอย่าง' } as Record<string, string>,
+    topic: (name: string) => `เรื่องที่อยู่ในหัวมากสุดบนเว็บ · ${name}`,
   },
-  okay: {
-    question: 'ถ้ามีคนถามว่า “โอเคไหม”',
+  heavy: {
     stat: (n: number) => `${n} ใน 10 คน`,
-    statLine: 'บอกว่าโอเค ทั้งที่ไม่ค่อยโอเค',
+    line: 'ใจกำลังแบกอะไรบางอย่างอยู่',
+    which: 'ได้ดอกไม้ของความกังวล ความเศร้า หรือความโกรธ',
     tail: 'ไม่โอเคก็ได้นะ ไม่ได้มีแค่คุณคนเดียว',
-    vent: 'ระบายให้พี่สภาฟังได้นะ',
+  },
+  vent: {
+    title: 'ระบายให้พี่สภาฟัง',
+    sub: 'มีอะไรกวนใจอยู่ไหม พิมพ์มาได้เลย',
     chats: (n: number, oneDay: boolean) => `${oneDay ? 'วันนี้' : 'ช่วงบูธ'}ทักมาระบาย ${n} แชท`,
-    fast: 'ส่วนใหญ่ได้คำตอบใน 3 นาที',
+    reply: (min: number) => (min < 1 ? 'ได้คำตอบในไม่ถึงนาที' : `ได้คำตอบภายในราว ${min} นาที`),
     promise: 'พี่ๆ สภาตอบเอง · ตอบไวสุด 3 นาที',
     scan: 'สแกนเข้าเว็บ',
     scanSub: 'เช็กใจ หรือระบายก็ได้',

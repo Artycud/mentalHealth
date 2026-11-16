@@ -134,6 +134,7 @@ try {
     const posts = () => calls.filter((x) => x.method === 'POST');
     const last = () => calls.at(-1);
     process.env.DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1/x';
+    process.env.DISCORD_OVERDUE_USER_IDS = ' 111111111111111111, 222222222222222222 ';
     const c = await db();
     await c.execute("DELETE FROM setting WHERE key LIKE 'discord_%'");
     const start = async (text, urgent = false) => {
@@ -158,15 +159,20 @@ try {
     await c.execute({ sql: 'UPDATE vent_message SET created_at = ? WHERE thread_id = ?', args: [new Date(Date.now() - 31 * 60_000).toISOString(), a.id] });
     const before = posts().length;
     check(
-      'a chat waiting 30+ minutes tags @everyone, saying how long',
-      (await sweepQueue('http://x', true)) === 'overdue' && posts().length === before + 1 && last().body.content.startsWith('@everyone') && last().body.allowed_mentions.parse.includes('everyone') && /รอนานสุด 3\d นาที/.test(last().body.content),
+      'a chat waiting 30+ minutes tags the two named people (not @everyone), saying how long',
+      (await sweepQueue('http://x', true)) === 'overdue' &&
+        posts().length === before + 1 &&
+        last().body.content.startsWith('<@111111111111111111> <@222222222222222222> ') &&
+        JSON.stringify(last().body.allowed_mentions.users) === '["111111111111111111","222222222222222222"]' &&
+        /รอนานสุด 3\d นาที/.test(last().body.content),
       last()?.body.content,
     );
     check('  once per 30 minutes, not on every check', (await sweepQueue('http://x', true)) === 'idle' && posts().length === before + 1);
-    check('  everyday pings never tag everyone', calls.slice(0, -1).every((x) => !x.body.allowed_mentions.parse.includes('everyone')));
+    check('  no ping ever tags everyone', calls.every((x) => x.body.allowed_mentions.parse.length === 0 && !x.body.content.includes('@everyone')));
     check('  no ping carries what a student wrote', !calls.some((x) => x.body.content.includes('ข้อความลับ')));
     globalThis.fetch = realFetch;
     delete process.env.DISCORD_WEBHOOK_URL;
+    delete process.env.DISCORD_OVERDUE_USER_IDS;
   }
 
   process.env.DISCORD_PUBLIC_KEY = '0'.repeat(64);

@@ -42,10 +42,11 @@ const eq = (label, got, want) => {
   eq('and is then whole tenths', R.okayTenths({ real: 8, hide: 9, depends: 3 }), { answered: 20, hide: 5, depends: 2, real: 4 });
 
   const m = (o) => new Map(Object.entries(o));
-  eq('the top topic needs 10 check-ups that picked one', R.topTopic(m({ 'checkup:topics': 9, 'topic:เรื่องเรียน': 9 })), null);
+  eq('the top topic needs 5 check-ups that picked one', R.topTopic(m({ 'checkup:topics': 4, 'topic:เรื่องเรียน': 4 })), null);
   eq('and is then the most picked, as a share of them', R.topTopic(m({ 'checkup:topics': 20, 'topic:เรื่องเรียน': 13, 'topic:เพื่อน': 6 })), { name: 'เรื่องเรียน', pct: 65, base: 20 });
-  eq('ระบาย needs 5 chats before its numbers show', R.ventCounts(m({ 'vent:chats': 4, 'vent:replied': 4 })), null);
-  eq('and then shows chats, answered and answered fast', R.ventCounts(m({ 'vent:chats': 7, 'vent:replied': 6, 'vent:within3': 4 })), { chats: 7, replied: 6, within3: 4 });
+  eq('ระบาย needs 3 chats before its numbers show', R.ventCounts(m({ 'vent:chats': 2, 'vent:replied': 2 })), null);
+  eq('and then shows chats, answered and answered fast', R.ventCounts(m({ 'vent:chats': 7, 'vent:replied': 6, 'vent:within3': 4 })), { chats: 7, replied: 6, within3: 4, medianMin: null });
+  eq('open chats count too (from before the counters began), with their median reply time', R.ventCounts(m({ 'vent:chats': 1 }), [{ replyMin: 1 }, { replyMin: 2.2 }, { replyMin: 9 }, { replyMin: null }]), { chats: 4, replied: 3, within3: 2, medianMin: 2 });
 }
 
 // ---- 2. from the database ----
@@ -88,12 +89,20 @@ for (let i = 0; i < 12; i += 1) await bump(['checkup:topics', 'topic:เรื�
 for (let i = 0; i < 6; i += 1) await bump(['vent:chats'], '2026-11-18T23:30:00Z');
 await bump(['vent:replied', 'vent:within3'], '2026-11-19T03:00:00Z');
 await bump(['vent:chats'], '2026-11-20T03:00:00Z');
+// Four chats still open from the 20th (Thailand: 19.00Z on the 19th is 02.00 on the 20th), three answered in 2 minutes.
+for (let i = 0; i < 4; i += 1) {
+  const at = new Date(Date.parse('2026-11-19T19:00:00Z') + i * 60_000);
+  await c.execute({ sql: "INSERT INTO vent_thread (id, code, ref, created_at, updated_at) VALUES (?, ?, ?, ?, ?)", args: [`k${i}`, `C${i}`, `r${i}`, at.toISOString(), at.toISOString()] });
+  if (i < 3) await c.execute({ sql: "INSERT INTO vent_message (thread_id, sender, body, created_at) VALUES (?, 'sapa', 'x', ?)", args: [`k${i}`, new Date(at.getTime() + 120_000).toISOString()] });
+}
 
 {
   const d1 = await R.getRecap('loykrathong', '2026-11-19');
   eq('the top three feelings, as the flowers people got', d1.feelings.map((f) => [f.word, f.pct]), [['ความสุข', 64], ['ความเศร้า', 36]]);
   eq('the check-up topic of the day', d1.topic, { name: 'เรื่องเรียน', pct: 100, base: 12 });
-  eq('ระบาย on the Thailand day', d1.vent, { chats: 6, replied: 1, within3: 1 });
+  eq('ระบาย on the Thailand day', d1.vent, { chats: 6, replied: 1, within3: 1, medianMin: null });
+  eq('4 in 10 carry something heavy (8 of 22 got the sad flower)', d1.heavy, { tenths: 4, count: 8 });
+  eq('the quoted answers: what they would float away, and change', d1.quotes.map((q) => [q.id, q.pct]), [['q1', 50]]);
   eq('the days with a finished booth session', d1.days, ['2026-11-19', '2026-11-20']);
   eq('one day counts only its finished booth sessions', d1.players, 22);
   eq('the date label is that day', d1.dateLabel, '19 พ.ย. 2569');
@@ -110,7 +119,8 @@ await bump(['vent:chats'], '2026-11-20T03:00:00Z');
   const d2 = await R.getRecap('loykrathong', '2026-11-20');
   eq('the second day on its own', d2.players, 3);
   eq('with too few answers, the honest question is not shown', d2.okay, null);
-  eq('and too few chats or check-ups show nothing', [d2.vent, d2.topic], [null, null]);
+  eq('too few check-ups show no topic', d2.topic, null);
+  eq('chats still open count on their Thailand day, with the median first answer', d2.vent, { chats: 4, replied: 3, within3: 3, medianMin: 2 });
   eq('three finishing in one slot is just enough to name it', d2.peak, { from: '11.00', to: '11.10', count: 3 });
 
   const all = await R.getRecap('loykrathong', null);

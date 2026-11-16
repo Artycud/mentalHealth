@@ -28,9 +28,13 @@ export const RECAP_OKAY_MIN = 20;
 /** The busiest slot is worth naming only with this many in it. */
 const PEAK_MIN = 3;
 /** The check-up's top topic is named only from this many check-ups that picked one. */
-export const RECAP_TOPIC_MIN = 10;
+export const RECAP_TOPIC_MIN = 5;
 /** ระบาย's numbers go on a card only from this many chats. */
-export const RECAP_VENT_MIN = 5;
+export const RECAP_VENT_MIN = 3;
+/** The feelings that weigh: a flower for these says the heart is carrying something. */
+const HEAVY = new Set(['sad', 'worried', 'angry']);
+/** The booth questions whose top answer the card quotes. */
+const QUOTED = ['q1', 'q4'];
 
 export interface RecapFlower {
   id: string;
@@ -80,7 +84,11 @@ export interface Recap {
   /** The heart check-up's most picked topic, or null below RECAP_TOPIC_MIN. */
   topic: { name: string; pct: number; base: number } | null;
   /** ระบาย in the same days, or null below RECAP_VENT_MIN chats. */
-  vent: { chats: number; replied: number; within3: number } | null;
+  vent: { chats: number; replied: number; within3: number; medianMin: number | null } | null;
+  /** Players whose flower is sadness, worry or anger, as whole tenths (0–10), or null with no players. */
+  heavy: { tenths: number; count: number } | null;
+  /** The top answer to the quoted booth questions (QUOTED), when anyone answered. */
+  quotes: { id: string; label: string; pct: number }[];
   /** The three flower questions, in order. */
   questions: RecapQuestion[];
   /** The honest question, as whole tenths, or null below RECAP_OKAY_MIN answers. */
@@ -139,11 +147,35 @@ export function topTopic(counts: Map<string, number>): Recap['topic'] {
   return best ? { name: best[0], pct: Math.round((best[1] / base) * 100), base } : null;
 }
 
-/** ระบาย's counts (lib/tally.ts), or null below RECAP_VENT_MIN chats. */
-export function ventCounts(counts: Map<string, number>): Recap['vent'] {
-  const chats = counts.get('vent:chats') ?? 0;
+/**
+ * ระบาย's numbers: the larger of the day's counters (lib/tally.ts, which outlive
+ * an ended chat but only began on 16 Nov 2026) and the chats still open (which
+ * also say how fast they were first answered). Null below RECAP_VENT_MIN chats.
+ */
+export function ventCounts(counts: Map<string, number>, open: { replyMin: number | null }[] = []): Recap['vent'] {
+  const answered = open.map((o) => o.replyMin).filter((m): m is number => m !== null).sort((a, b) => a - b);
+  const chats = Math.max(counts.get('vent:chats') ?? 0, open.length);
   if (chats < RECAP_VENT_MIN) return null;
-  return { chats, replied: counts.get('vent:replied') ?? 0, within3: counts.get('vent:within3') ?? 0 };
+  const replied = Math.max(counts.get('vent:replied') ?? 0, answered.length);
+  const within3 = Math.max(counts.get('vent:within3') ?? 0, answered.filter((m) => m <= 3).length);
+  const medianMin = answered.length >= 3 ? Math.round(answered[Math.floor((answered.length - 1) / 2)]) : null;
+  return { chats, replied, within3, medianMin };
+}
+
+/** The ระบาย chats still open that started on these Thailand days, with minutes to their first answer. */
+async function openChats(days: string[]): Promise<{ replyMin: number | null }[]> {
+  if (days.length === 0) return [];
+  const c = await db();
+  const r = await c.execute({
+    sql: `SELECT t.created_at,
+            (SELECT MIN(m.created_at) FROM vent_message m WHERE m.thread_id = t.id AND m.sender = 'sapa') AS first
+          FROM vent_thread t
+          WHERE date(t.created_at, '+7 hours') IN (${days.map(() => '?').join(', ')})`,
+    args: days,
+  });
+  return r.rows.map((row) => ({
+    replyMin: row.first ? Math.max(0, (Date.parse(String(row.first)) - Date.parse(String(row.created_at))) / 60_000) : null,
+  }));
 }
 
 /** Every day from `from` to `to`, inclusive. */
@@ -175,7 +207,7 @@ async function nextBooth(festival: FestivalId, after: string): Promise<Recap['ne
 }
 
 function shape(
-  base: Omit<Recap, 'flowers' | 'feelings' | 'questions' | 'okay' | 'dateLabel' | 'next'>,
+  base: Omit<Recap, 'flowers' | 'feelings' | 'questions' | 'okay' | 'dateLabel' | 'next' | 'heavy' | 'quotes'>,
   flowerCounts: Map<string, number>,
   questions: RecapQuestion[],
   okayCounts: { real: number; hide: number; depends: number },
@@ -191,7 +223,15 @@ function shape(
     .filter((f) => f.count > 0)
     .slice(0, 3)
     .map((f) => ({ id: f.id, word: loykrathongFlowers.find((x) => x.id === f.id)!.emotionWord, tint: f.tint, count: f.count, pct: f.pct }));
-  return { ...base, flowers, feelings, questions, okay: okayTenths(okayCounts) };
+  const heavyCount = loykrathongFlowers.filter((f) => HEAVY.has(f.emotion)).reduce((n, f) => n + (flowerCounts.get(f.id) ?? 0), 0);
+  const heavy = total ? { tenths: Math.round((heavyCount / total) * 10), count: heavyCount } : null;
+  const quotes = QUOTED.flatMap((id) => {
+    const q = questions.find((x) => x.id === id);
+    if (!q || q.answered === 0) return [];
+    const top = [...q.choices].sort((a, b) => b.count - a.count)[0];
+    return [{ id, label: top.label, pct: top.pct }];
+  });
+  return { ...base, flowers, feelings, questions, okay: okayTenths(okayCounts), heavy, quotes };
 }
 
 /** The recap for one Thailand day, or (day null) for every day of the booth. */
@@ -238,7 +278,7 @@ export async function getRecap(festival: FestivalId, day: string | null): Promis
   // The check-up and ระบาย are not the booth's: counted over the same days.
   const span = day ? [day] : daysFrom(event.start, event.end);
   const counts = await tallies(span, '');
-  return { ...shaped, topic: topTopic(counts), vent: ventCounts(counts), dateLabel, next: await nextBooth(festival, day ?? event.end) };
+  return { ...shaped, topic: topTopic(counts), vent: ventCounts(counts, await openChats(span)), dateLabel, next: await nextBooth(festival, day ?? event.end) };
 }
 
 /** Invented numbers, so the cards can be designed before the booth. Never in production. */
@@ -273,7 +313,7 @@ export async function demoRecap(festival: FestivalId): Promise<Recap> {
       medianSeconds: 74,
       peak: { from: '12.10', to: '12.20', count: 23 },
       topic: { name: 'เรื่องเรียน', pct: 62, base: 84 },
-      vent: { chats: 23, replied: 21, within3: 15 },
+      vent: { chats: 23, replied: 21, within3: 15, medianMin: 2 },
       sample: true,
     },
     flowerCounts,

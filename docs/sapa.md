@@ -61,9 +61,11 @@ answer goes straight to the student.
 queue: how many chats wait (and how many are urgent), the longest wait and the
 average. A burst is merged: messages within a minute of a ping edit that ping
 ("ข้อความใหม่ 4 ข้อความ") instead of posting new ones. An urgent message always posts
-its own ping. When anyone has waited 30 minutes, the ping tags
-**@everyone** (at most once every 30 minutes). For the bot, give it the *Mention
-@everyone* permission in the staff channel, or that tag stays plain text.
+its own ping. When anyone has waited 30 minutes, the ping tags the people in
+`DISCORD_OVERDUE_USER_IDS` (at most once every 30 minutes; never @everyone). Set it in
+Vercel to their Discord user IDs, comma separated: with Developer Mode on (step 5),
+right-click the person → **Copy User ID**. A typed name like "@arty" would not notify
+anyone; Discord needs the ID. Unset, it mentions `DISCORD_ROLE_ID` instead.
 
 **The 30-minute check when the site is quiet.** The check also runs while a waiting
 student has the chat open. To cover everything, set `CRON_SECRET` in Vercel (any long

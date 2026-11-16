@@ -5,8 +5,8 @@
  * many wait, how many are urgent, the longest and the average wait). A burst is
  * merged: within a minute of a ping, it is edited to count the new messages
  * instead of a new ping being posted. sweepQueue (student polling, and
- * app/api/cron/sapa-queue) tags @everyone, at most every 30 minutes, while anyone
- * has waited 30 minutes or more.
+ * app/api/cron/sapa-queue) tags the people in DISCORD_OVERDUE_USER_IDS (never
+ * @everyone), at most every 30 minutes, while anyone has waited 30 minutes or more.
  *
  * Two ways to set it up (environment variables on the server; see docs/sapa.md):
  *   DISCORD_WEBHOOK_URL                       a ping with a link to the inbox
@@ -39,6 +39,11 @@ export function discordMode(env = process.env): DiscordMode {
 const webhookUrl = () => setting(process.env.DISCORD_WEBHOOK_URL);
 const channelId = () => setting(process.env.DISCORD_CHANNEL_ID);
 const roleId = () => setting(process.env.DISCORD_ROLE_ID);
+/** Who is tagged when someone has waited 30 minutes: Discord user IDs, comma separated. */
+const overdueUsers = () =>
+  setting(process.env.DISCORD_OVERDUE_USER_IDS)
+    .split(/[\s,]+/)
+    .filter((id) => /^\d{5,25}$/.test(id));
 
 async function call(url: string, init: RequestInit): Promise<Response | null> {
   try {
@@ -83,11 +88,12 @@ function buttons(origin: string, ref: string | null, urgent: boolean) {
  */
 async function send(
   content: string,
-  o: { origin: string; ref: string | null; urgent?: boolean; everyone?: boolean; edit?: string },
+  o: { origin: string; ref: string | null; urgent?: boolean; users?: string[]; edit?: string },
 ): Promise<string | null> {
   const mode = discordMode();
   const link = o.ref ? `${o.origin}/sapa?t=${o.ref}` : `${o.origin}/sapa`;
-  const allowed_mentions = { roles: roleId() ? [roleId()] : [], parse: o.everyone ? ['everyone'] : [] };
+  // Only the role and the named people can ever be notified: never @everyone or @here.
+  const allowed_mentions = { roles: roleId() ? [roleId()] : [], users: o.users ?? [], parse: [] as string[] };
   let res: Response | null = null;
   if (mode === 'bot') {
     const base = `${API}/channels/${channelId()}/messages`;
@@ -154,8 +160,8 @@ let lastSweep = 0;
 const OVERDUE_MS = 30 * 60_000;
 
 /**
- * The 30-minute check: while anyone has waited 30 minutes or more, tags @everyone
- * with the queue (again at most every 30 minutes). Cheap to call often: on its own
+ * The 30-minute check: while anyone has waited 30 minutes or more, tags the people
+ * in DISCORD_OVERDUE_USER_IDS (or the role, if none are set) with the queue (again at most every 30 minutes). Cheap to call often: on its own
  * it runs at most once a minute per server instance.
  */
 export async function sweepQueue(origin: string, force = false): Promise<'off' | 'idle' | 'overdue'> {
@@ -166,7 +172,9 @@ export async function sweepQueue(origin: string, force = false): Promise<'off' |
   try {
     const [q, m] = await Promise.all([queueStats(now), getMarks()]);
     if (q.waiting === 0 || q.oldestMin < 30 || now - m.overdueAt < OVERDUE_MS) return 'idle';
-    await send(`@everyone ⏰ **มีน้องรอเกิน 30 นาทีแล้ว** ช่วยกันตอบหน่อยนะ\n${summary(q)}`, { origin, ref: null, everyone: true });
+    const users = overdueUsers();
+    const tags = users.length ? `${users.map((id) => `<@${id}>`).join(' ')} ` : mention();
+    await send(`${tags}⏰ **มีน้องรอเกิน 30 นาทีแล้ว** ช่วยกันตอบหน่อยนะ\n${summary(q)}`, { origin, ref: null, users });
     await setMarks({ overdueAt: now, pingId: '' });
     return 'overdue';
   } catch (error) {
