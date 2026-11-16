@@ -741,10 +741,10 @@
   }
 }
 
-/* A พี่'s answer: a person writing, so it looks like one. Their face (an initial
-   in their own colour), their name and the time, and the words on a paper bubble
-   that reads the same on every sky. (Before this it sat bare on the sky, which
-   read like a machine's answer.) */
+/* A พี่'s answer: a person writing, so it looks like one. "พี่สภา" with its pink
+   dot and the time, and the words on a paper bubble that reads the same on every
+   sky. (Before this it sat bare on the sky, which read like a machine's answer.)
+   Always the team, never one พี่'s name: students see "พี่สภา" only. */
 .them {
   display: flex;
   align-items: flex-end;
@@ -752,21 +752,6 @@
   align-self: flex-start;
   max-width: 88%;
   animation: rise 360ms var(--ease) both;
-}
-
-.face {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  font-family: var(--font-heading);
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1;
-  color: #1b2b5e;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
 }
 
 .themBody {
@@ -778,13 +763,24 @@
 
 .themName {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 7px;
   padding-left: 4px;
   font-family: var(--font-heading);
   font-size: 14px;
   font-weight: 500;
   color: var(--ink-soft);
+}
+
+/* "พี่สภา" with the small pink dot it has always had: the team, not one person. */
+.themName::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--riso-pink);
+  box-shadow: 0 0 0 3px rgba(255, 72, 176, 0.2);
 }
 
 .themName span {
@@ -797,7 +793,7 @@
 .themText {
   margin: 0;
   padding: 11px 15px;
-  border-radius: 18px 18px 18px 5px;
+  border-radius: 5px 18px 18px 18px;
   background: #fcf1e6;
   box-shadow: 0 6px 18px -10px rgba(10, 20, 50, 0.45);
   font-family: var(--font-body);

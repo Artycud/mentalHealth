@@ -23,15 +23,6 @@ type Chat = { key: string; code: string };
 const TYPING_EVERY = 3000;
 const clock = (iso?: string) =>
   iso ? new Date(iso).toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) : '';
-/** A soft colour per พี่ (the same as the team's inbox), so each one is someone. */
-
-function Face() {
-  return (
-    <span className={styles.face} style={{ background: 'var(--riso-pink)' }} aria-hidden="true">
-      พ
-    </span>
-  );
-}
 
 /* ---- the student's chat, remembered on this phone (localStorage) ----
    Only their own key and code: the words live on the server until they end it.
@@ -394,7 +385,6 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
             </figure>
           ) : (
             <div key={m.id} className={styles.them}>
-              <Face />
               <div className={styles.themBody}>
                 <p className={styles.themName}>
                   {vent.sapa}
@@ -409,7 +399,6 @@ export function Vent({ feel, careHref }: { feel?: string; careHref: string }) {
         {/* A พี่ is typing: a person, right now. */}
         {chat && typing && (
           <div className={styles.them} role="status">
-            <Face />
             <div className={styles.themBody}>
               <p className={styles.themName}>{vent.typing}</p>
               <p className={`${styles.themText} ${styles.typingBubble}`}>
