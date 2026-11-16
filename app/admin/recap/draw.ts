@@ -1,17 +1,20 @@
+import { TINTS } from '@/components/booth/flower-marks';
 import { cudCare } from '@/content/th/common';
 import { recap as t } from '@/content/th/recap';
 import type { QrMatrix } from '@/lib/qr';
 import type { Recap } from '@/lib/recap';
+import type { Tint } from '@/lib/types';
 
 /**
  * The recap's two story cards, drawn on a canvas at Instagram's story size, so
  * what the admin sees is exactly the image that is saved or shared. The browser
  * shapes the Thai, so vowels and tone marks sit right.
  *
- * The look is the website's: the night with its stars and the moon in the
- * corner, the river only at the foot, and everything to read on taped, slightly
- * tilted slips in ink (marigold for the check-up, paper, pink for ระบาย), as on
- * the home page. The art is the site's own (RecapStudio loads it).
+ * The look is the booth TV's (app/booth/display): its night with the glitter
+ * ribbons and lanterns, the count on the moon, the flower bars in each flower's
+ * own ink, dark glass cards, and the river along the foot with the flowers
+ * floating on it. Every flower is the TV's mark (components/booth/WallFlower),
+ * drawn here from the same tints.
  *
  * Instagram covers the top ~200px (the profile line) and the bottom ~250px (the
  * reply bar) of a story, so nothing to read sits there.
@@ -21,22 +24,27 @@ export const W = 1080;
 export const H = 1920;
 
 /** Where the admin puts Instagram's link sticker on card 2 (outlined on the page only). */
-export const STICKER = { x: 150, y: 1150, w: 780, h: 200 };
+export const STICKER = { x: 150, y: 1090, w: 780, h: 180 };
+
+/** Nothing to read below this: Instagram's reply bar. */
+const SAFE_BOTTOM = 1600;
+const RIVER_TOP = 1705;
+const PAD = 70;
 
 const C = {
   ink: '#1B2B5E',
-  inkSoft: 'rgba(27, 43, 94, 0.72)',
+  paper: '#FCF1E6',
+  plate: '#FEF9F5',
+  soft: 'rgba(252, 241, 230, 0.8)',
+  line: 'rgba(252, 241, 230, 0.2)',
+  glass: 'rgba(252, 241, 230, 0.08)',
+  track: 'rgba(252, 241, 230, 0.16)',
+  note: '#FFB8DE',
   pink: '#FF48B0',
-  pinkInk: '#6b2a4a',
   blue: '#0078BF',
   sun: '#FFB511',
-  paper: '#FCF1E6',
-  pinkTint: '#FFE3F0',
-  note: '#FFB8DE',
-  soft: 'rgba(252, 241, 230, 0.78)',
   far: '#7f97cf',
   near: '#0e335f',
-  live: '#1fae6a',
 };
 
 const STACK = '"Noto Sans Thai", "Leelawadee UI", Thonburi, sans-serif';
@@ -61,8 +69,8 @@ export async function loadFonts(): Promise<void> {
 export interface Art {
   moon: HTMLImageElement | null;
   wat: HTMLImageElement | null;
-  /** The booth's flower drawings (components/booth/FlowerPortrait), by flower id. */
-  flowers: Record<string, HTMLImageElement>;
+  /** The print's ink flecks, laid over a bar's fill as on the TV. */
+  speckle: HTMLImageElement | null;
 }
 
 // ---- small tools ----
@@ -86,21 +94,28 @@ function line(
   str: string,
   x: number,
   y: number,
-  o: { font: Face; size: number; color: string; max?: number; align?: CanvasTextAlign },
+  o: { font: Face; size: number; color: string; max?: number; align?: CanvasTextAlign; shadow?: boolean },
 ): number {
   let size = o.size;
   ctx.font = o.font(size);
-  const max = o.max ?? W - 160;
+  const max = o.max ?? W - PAD * 2;
   let width = ctx.measureText(str).width;
   if (width > max) {
     size = Math.floor((size * max) / width);
     ctx.font = o.font(size);
     width = ctx.measureText(str).width;
   }
+  ctx.save();
+  if (o.shadow) {
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 8;
+  }
   ctx.fillStyle = o.color;
-  ctx.textAlign = o.align ?? 'center';
+  ctx.textAlign = o.align ?? 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(str, x, y);
+  ctx.restore();
   return width;
 }
 
@@ -113,125 +128,205 @@ function glow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, st
   ctx.fill();
 }
 
-/** A booth flower on a disc (cream on the night, white on a slip) with the dotted ring. */
-function plated(ctx: CanvasRenderingContext2D, art: Art, id: string, x: number, y: number, r: number, o: { lit?: boolean; plate?: string } = {}) {
-  if (o.lit) glow(ctx, x, y, r * 2, [[0, 'rgba(255, 181, 17, 0.4)'], [0.5, 'rgba(255, 181, 17, 0.12)'], [1, 'rgba(255, 181, 17, 0)']]);
-  ctx.save();
-  ctx.shadowColor = 'rgba(4, 14, 40, 0.3)';
-  ctx.shadowBlur = r * 0.2;
-  ctx.shadowOffsetY = r * 0.05;
-  ctx.fillStyle = o.plate ?? C.paper;
+/** The TV's dark glass: a faint paper wash with a thin paper edge. */
+function glass(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r = 40) {
+  ctx.fillStyle = C.glass;
   ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.roundRect(x, y, w, h, r);
   ctx.fill();
-  ctx.restore();
-  const img = art.flowers[id];
-  if (img) ctx.drawImage(img, x - r * 0.98, y - r * 0.98, r * 1.96, r * 1.96);
-  ctx.save();
-  ctx.setLineDash([Math.max(2, r * 0.035), Math.max(4, r * 0.075)]);
-  ctx.lineCap = 'round';
-  ctx.lineWidth = Math.max(2, r * 0.03);
-  ctx.strokeStyle = C.ink;
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.93, 0, Math.PI * 2);
+  ctx.strokeStyle = C.line;
+  ctx.lineWidth = 3;
   ctx.stroke();
-  ctx.restore();
-}
-
-/** The poster's moon in its halo (components/festival/loykrathong/Halo.tsx). */
-function moon(ctx: CanvasRenderingContext2D, art: Art, x: number, y: number, r: number) {
-  glow(ctx, x, y, r * 3.4, [[0, 'rgba(214, 228, 255, 0.24)'], [0.4, 'rgba(170, 196, 240, 0.11)'], [1, 'rgba(140, 170, 225, 0)']]);
-  glow(ctx, x, y, r * 1.8, [[0, 'rgba(255, 244, 210, 0.4)'], [1, 'rgba(255, 228, 170, 0)']]);
-  if (!art.moon) return;
-  const s = r * 2 * 1.26;
-  ctx.drawImage(art.moon, x - s / 2, y - s / 2, s, s);
 }
 
 /**
- * A slip like the home's: a soft shadow, a tilt, a strip of tape, and whatever
- * `draw` puts on it in the slip's own coordinates (0,0 at its top left).
+ * The TV's flower mark (components/booth/WallFlower) on its cream plate: eight
+ * petals and six inner ones multiplied onto the plate, the dotted ring, three dots.
  */
-function slip(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  o: { fill: string; tilt: number; tape?: boolean; radii?: number[] },
-  draw: () => void,
-) {
+function flower(ctx: CanvasRenderingContext2D, tint: Tint, x: number, y: number, size: number, lit = false) {
+  const { outer, inner } = TINTS[tint] ?? TINTS[0];
+  if (lit) glow(ctx, x, y, size * 0.95, [[0, 'rgba(255, 181, 17, 0.42)'], [0.55, 'rgba(255, 181, 17, 0.12)'], [1, 'rgba(255, 181, 17, 0)']]);
+  const s = size / 100;
   ctx.save();
-  ctx.translate(x + w / 2, y + h / 2);
-  ctx.rotate(o.tilt);
-  ctx.translate(-w / 2, -h / 2);
+  ctx.translate(x - size / 2, y - size / 2);
+  ctx.scale(s, s);
   ctx.save();
-  ctx.shadowColor = 'rgba(2, 10, 30, 0.55)';
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 18;
-  ctx.fillStyle = o.fill;
+  ctx.shadowColor = 'rgba(4, 14, 40, 0.35)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 2;
+  ctx.fillStyle = C.plate;
   ctx.beginPath();
-  ctx.roundRect(0, 0, w, h, o.radii ?? [26]);
+  ctx.arc(50, 50, 47, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
-  draw();
-  if (o.tape !== false) {
-    ctx.save();
-    ctx.translate(w / 2, 0);
-    ctx.rotate(-0.04);
-    ctx.fillStyle = 'rgba(252, 241, 230, 0.78)';
-    ctx.fillRect(-80, -22, 160, 44);
-    ctx.restore();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = outer;
+  for (let i = 0; i < 8; i += 1) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(50 + Math.cos(a) * 26, 50 + Math.sin(a) * 26, 17, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = inner;
+  for (let i = 0; i < 6; i += 1) {
+    const a = (i / 6) * Math.PI * 2 + 0.4;
+    ctx.beginPath();
+    ctx.arc(50 + Math.cos(a) * 14, 50 + Math.sin(a) * 14, 14, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = C.ink;
+  ctx.lineCap = 'round';
+  const px = Math.max(1.6, size * 0.024) / s;
+  ctx.lineWidth = px;
+  ctx.globalAlpha = 0.5;
+  ctx.setLineDash([px * 0.5, px * 3.5]);
+  ctx.beginPath();
+  ctx.arc(50, 50, 44, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = px * 1.3;
+  for (const [dx, dy] of [[46, 48], [52, 53], [54, 45]]) {
+    ctx.beginPath();
+    ctx.moveTo(dx, dy);
+    ctx.lineTo(dx + 0.1, dy);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** The TV's moon (display.module.css .moon) with the poster's moon over it, and its light. */
+function moon(ctx: CanvasRenderingContext2D, art: Art, x: number, y: number, r: number) {
+  glow(ctx, x, y, r * 2.1, [[0, 'rgba(246, 230, 168, 0.36)'], [0.55, 'rgba(246, 230, 168, 0.12)'], [1, 'rgba(246, 230, 168, 0)']]);
+  const g = ctx.createRadialGradient(x - r * 0.24, y - r * 0.28, 0, x, y, r);
+  g.addColorStop(0, '#fffbe6');
+  g.addColorStop(0.6, '#f6e6a8');
+  g.addColorStop(1, '#e8cf86');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  if (art.moon) {
+    const s = r * 2 * 1.26;
+    ctx.drawImage(art.moon, x - s / 2, y - s / 2, s, s);
+  }
+}
+
+/** A khom loi, as in the festival sky (components/festival/loykrathong/Sky.tsx). */
+function lantern(ctx: CanvasRenderingContext2D, x: number, y: number, h: number) {
+  glow(ctx, x, y, h * 1.3, [[0, 'rgba(255, 196, 110, 0.4)'], [1, 'rgba(255, 196, 110, 0)']]);
+  const s = h / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  const g = ctx.createLinearGradient(0, -16, 0, 16);
+  g.addColorStop(0, '#fffbe4');
+  g.addColorStop(0.55, '#fbe2a0');
+  g.addColorStop(1, '#f0a04a');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-9, -13);
+  ctx.quadraticCurveTo(0, -16.5, 9, -13);
+  ctx.quadraticCurveTo(11.5, 0, 7, 12.5);
+  ctx.quadraticCurveTo(0, 14.5, -7, 12.5);
+  ctx.quadraticCurveTo(-11.5, 0, -9, -13);
+  ctx.fill();
+  ctx.fillStyle = '#d9772c';
+  ctx.beginPath();
+  ctx.ellipse(0, 12.6, 6, 1.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** A bar as on the TV: the track, and the fill in the flower's ink with the print's flecks, ends round. */
+function bar(ctx: CanvasRenderingContext2D, art: Art, x: number, y: number, w: number, h: number, share: number, ink: string) {
+  ctx.fillStyle = C.track;
+  ctx.beginPath();
+  ctx.roundRect(x, y - h / 2, w, h, h / 2);
+  ctx.fill();
+  const fw = Math.max(h, w * share);
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x, y - h / 2, fw, h, h / 2);
+  ctx.clip();
+  ctx.fillStyle = ink;
+  ctx.fillRect(x, y - h / 2, fw, h);
+  if (art.speckle) {
+    const p = ctx.createPattern(art.speckle, 'repeat');
+    if (p) {
+      ctx.fillStyle = p;
+      ctx.fillRect(x, y - h / 2, fw, h);
+    }
   }
   ctx.restore();
 }
 
 // ---- the night ----
 
-/** The sky and stars, the moon in the corner, the river at the foot, and the header. */
-function scene(ctx: CanvasRenderingContext2D, r: Recap, art: Art, seed: number, riverTop: number) {
-  // The booth's sky (app/festivals/loykrathong.css --fest-sky), a step darker like the kiosk.
+/**
+ * The TV's night: the sky with its glitter ribbons and stars, lanterns, the river
+ * along the foot with the far bank's Wat and the day's flowers floating, lit, and
+ * the TV's header (the wordmark left, which booth and day right).
+ */
+function scene(ctx: CanvasRenderingContext2D, r: Recap, art: Art, seed: number, lanterns: [number, number, number][]) {
   const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, '#12345f');
-  sky.addColorStop(0.35, '#0e2e59');
-  sky.addColorStop(0.7, '#0a2853');
-  sky.addColorStop(1, '#0d2d59');
+  sky.addColorStop(0, '#163e74');
+  sky.addColorStop(0.2, '#10366a');
+  sky.addColorStop(0.5, '#0d3162');
+  sky.addColorStop(0.8, '#0f3466');
+  sky.addColorStop(1, '#163e74');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H);
 
   const rand = seeded(seed);
-  // One soft glitter ribbon across the top (Sky.tsx), and stars.
-  {
-    const at = (x: number) => 330 + 60 * Math.sin((x / W) * Math.PI * 1.4 + 0.4);
-    const g = ctx.createLinearGradient(0, 160, 0, 500);
+  // Two glitter ribbons swept across the sky, with fine dust thick along them.
+  for (const { y0, amp, phase, thick, dust } of [
+    { y0: 300, amp: 90, phase: 0.4, thick: 260, dust: 520 },
+    { y0: 1180, amp: 80, phase: 2.6, thick: 220, dust: 340 },
+  ]) {
+    const at = (x: number) => y0 + amp * Math.sin((x / W) * Math.PI * 1.4 + phase);
+    const g = ctx.createLinearGradient(0, y0 - thick, 0, y0 + thick);
     g.addColorStop(0, 'rgba(159, 182, 230, 0)');
-    g.addColorStop(0.5, 'rgba(159, 182, 230, 0.1)');
+    g.addColorStop(0.5, 'rgba(159, 182, 230, 0.13)');
     g.addColorStop(1, 'rgba(159, 182, 230, 0)');
     ctx.fillStyle = g;
     ctx.beginPath();
-    for (let x = 0; x <= W; x += 30) ctx.lineTo(x, at(x) - 110);
-    for (let x = W; x >= 0; x -= 30) ctx.lineTo(x, at(x) + 110);
+    for (let x = 0; x <= W; x += 30) ctx.lineTo(x, at(x) - thick / 2);
+    for (let x = W; x >= 0; x -= 30) ctx.lineTo(x, at(x) + thick / 2);
     ctx.closePath();
     ctx.fill();
+    ctx.fillStyle = 'rgba(255, 246, 220, 0.5)';
+    for (let i = 0; i < dust; i += 1) {
+      const x = rand() * W;
+      const spread = (rand() + rand() + rand() - 1.5) / 1.5;
+      ctx.globalAlpha = 0.15 + rand() * 0.45;
+      ctx.beginPath();
+      ctx.arc(x, at(x) + spread * thick * 0.5, 0.6 + rand() * 1.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
   }
-  for (let i = 0; i < 130; i += 1) {
+  for (let i = 0; i < 150; i += 1) {
     const x = rand() * W;
-    const y = rand() * riverTop * 0.97;
-    const big = rand() < 0.07;
+    const y = rand() * RIVER_TOP * 0.97;
+    const big = rand() < 0.08;
     if (big) glow(ctx, x, y, 12, [[0, 'rgba(255, 246, 220, 0.5)'], [1, 'rgba(255, 246, 220, 0)']]);
-    ctx.fillStyle = `rgba(255, 246, 220, ${0.35 + rand() * 0.55})`;
+    ctx.fillStyle = `rgba(255, 246, 220, ${0.4 + rand() * 0.6})`;
     ctx.beginPath();
-    ctx.arc(x, y, big ? 3 : 0.9 + rand() * 1.6, 0, Math.PI * 2);
+    ctx.arc(x, y, big ? 3 : 0.9 + rand() * 1.5, 0, Math.PI * 2);
     ctx.fill();
   }
+  for (const [x, y, h] of lanterns) lantern(ctx, x, y, h);
 
-  // The moon in the top corner, as on the home page.
-  moon(ctx, art, W - 120, 300, 62);
-
-  // Wat Arun on the far bank, then the river (River.tsx) with a few lit flowers.
+  // The far bank's Wat, the water, and the day's flowers floating on it, nearest biggest.
   if (art.wat) {
-    const h = 170;
+    // Low enough that it stands under the cards, never behind them.
+    const h = 150;
     const w = (art.wat.width / art.wat.height) * h;
-    ctx.drawImage(art.wat, W - w + 70, riverTop - h + 38, w, h);
+    ctx.drawImage(art.wat, W - w + 40, RIVER_TOP - h + 50, w, h);
   }
   const wave = (base: number, amp: number, k: number, phase: number, fill: string) => {
     ctx.fillStyle = fill;
@@ -245,36 +340,39 @@ function scene(ctx: CanvasRenderingContext2D, r: Recap, art: Art, seed: number, 
     ctx.closePath();
     ctx.fill();
   };
-  wave(riverTop, 10, 2, 0.6, C.far);
-  wave(riverTop + 44, 12, 2.5, 2.1, C.near);
-  const ids = r.flowers.filter((f) => f.count > 0).map((f) => f.id);
-  const pick = ids.length ? ids : r.flowers.map((f) => f.id);
-  for (let i = 0; i < 4; i += 1) {
-    const x = (W / 4) * (i + 0.5) + (rand() - 0.5) * 40;
-    plated(ctx, art, pick[i % pick.length], x, riverTop + 110 + (i % 2) * 28, 38, { lit: true });
-  }
+  wave(RIVER_TOP, 10, 2, 0.6, C.far);
+  wave(RIVER_TOP + 40, 12, 2.5, 2.1, C.near);
+  // Each flower as often as it was given, so the river is the day.
+  const given = r.flowers.filter((f) => f.count > 0).sort((a, b) => b.count - a.count);
+  const pool = given.length ? given : r.flowers;
+  const floats = [
+    { x: 80, y: 1770, s: 60 },
+    { x: 250, y: 1755, s: 52 },
+    { x: 420, y: 1800, s: 104 },
+    { x: 600, y: 1765, s: 56 },
+    { x: 760, y: 1815, s: 112 },
+    { x: 930, y: 1775, s: 66 },
+    { x: 1040, y: 1830, s: 84 },
+  ];
+  floats.forEach((f, i) => {
+    const pick = pool[(i + seed) % pool.length];
+    if (pick) flower(ctx, pick.tint, f.x, f.y, f.s, true);
+  });
 
-  // The wordmark on a paper tag, as at the top of the home page; then which booth and day.
-  ctx.font = font.heading(500, 34);
-  const tw = ctx.measureText(t.brand).width;
-  const pw = tw + 120;
-  const px = (W - pw) / 2;
-  ctx.fillStyle = 'rgba(252, 241, 230, 0.94)';
-  ctx.beginPath();
-  ctx.roundRect(px, 196, pw, 68, 14);
-  ctx.fill();
-  ctx.globalCompositeOperation = 'multiply';
+  // The TV's header: the wordmark (its inks add light on the night) and the day.
+  const hy = 238;
+  ctx.globalCompositeOperation = 'screen';
   ctx.fillStyle = C.pink;
   ctx.beginPath();
-  ctx.arc(px + 40, 230, 15, 0, Math.PI * 2);
+  ctx.arc(PAD + 18, hy, 18, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = C.blue;
   ctx.beginPath();
-  ctx.arc(px + 60, 230, 15, 0, Math.PI * 2);
+  ctx.arc(PAD + 40, hy, 18, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
-  line(ctx, t.brand, px + 90, 231, { font: heading(500), size: 34, color: C.ink, align: 'left' });
-  line(ctx, t.day(r.festivalName, r.dateLabel), W / 2, 312, { font: note, size: 38, color: C.note });
+  const bw = line(ctx, t.brand, PAD + 74, hy + 1, { font: heading(500), size: 32, color: C.paper, max: 420 });
+  line(ctx, t.day(r.festivalName, r.dateLabel), W - PAD, hy + 1, { font: heading(500), size: 30, color: C.soft, align: 'right', max: W - PAD * 2 - bw - 120 });
 
   if (r.sample) {
     ctx.save();
@@ -291,99 +389,72 @@ function scene(ctx: CanvasRenderingContext2D, r: Recap, art: Art, seed: number, 
 // ---- card 1: how hearts are today ----
 
 function today(ctx: CanvasRenderingContext2D, r: Recap, art: Art) {
-  scene(ctx, r, art, 3, 1720);
+  scene(ctx, r, art, 3, [
+    [1000, 330, 46],
+    [880, 380, 30],
+    [960, 700, 36],
+    [1010, 790, 24],
+  ]);
   const oneDay = r.day !== null;
 
-  const [top, ...rest] = r.feelings;
-  // On a quiet day there is less to show: keep what there is centred between the header and the water.
-  const tall =
-    300 + (top ? 290 + rest.length * 78 + 70 : 0) + (r.quotes.length ? 40 + r.quotes.length * 160 + 50 : 0) + (r.topic ? 60 : 0);
-  const dy = Math.min(140, Math.max(0, (1320 - tall) / 2));
+  // The count on the moon, as on the TV.
+  const mx = PAD + 170;
+  const my = 520;
+  moon(ctx, art, mx, my, 170);
+  line(ctx, String(r.players), mx, my + 8, { font: heading(600), size: r.players > 999 ? 120 : 150, color: C.ink, align: 'center', max: 300 });
+  line(ctx, t.today.players(oneDay), mx, my + 230, { font: heading(500), size: 38, color: C.paper, align: 'center', max: 400 });
 
-  // The count, big, as the home's headline.
-  const digits = String(r.players);
-  line(ctx, digits, W / 2, 440 + dy, { font: heading(600), size: 190, color: C.sun, max: 600 });
-  line(ctx, t.today.players(oneDay), W / 2, 570 + dy, { font: heading(500), size: 48, color: C.paper });
-
-  // The marigold slip: how most hearts are, the top one with its flower, the next two as bars.
-  let y = 660 + dy;
+  // Beside it, the hook: how most hearts are.
+  const top = r.feelings[0];
+  const tx = 470;
   if (top) {
-    const h = 290 + rest.length * 78;
-    slip(ctx, 70, y, 940, h, { fill: C.sun, tilt: -0.012 }, () => {
-      line(ctx, t.today.feelings, 60, 70, { font: heading(500), size: 34, color: C.inkSoft, align: 'left' });
-      line(ctx, top.word, 60, 148, { font: heading(600), size: 82, color: C.ink, align: 'left', max: 560 });
-      line(ctx, t.today.share(top.pct), 60, 226, { font: heading(500), size: 36, color: C.ink, align: 'left' });
-      plated(ctx, art, top.id, 940 - 170, 158, 118, { plate: '#ffffff' });
-      rest.forEach((f, i) => {
-        const ry = 318 + i * 78;
-        plated(ctx, art, f.id, 88, ry, 28, { plate: '#ffffff' });
-        line(ctx, f.word, 134, ry + 1, { font: heading(500), size: 34, color: C.ink, align: 'left', max: 250 });
-        const bx = 400;
-        const bw = 400;
-        ctx.fillStyle = 'rgba(27, 43, 94, 0.16)';
-        ctx.beginPath();
-        ctx.roundRect(bx, ry - 9, bw, 18, 9);
-        ctx.fill();
-        ctx.fillStyle = C.ink;
-        ctx.beginPath();
-        ctx.roundRect(bx, ry - 9, Math.max(18, (bw * f.pct) / Math.max(1, top.pct)), 18, 9);
-        ctx.fill();
-        line(ctx, `${f.pct}%`, 880, ry + 1, { font: heading(600), size: 34, color: C.ink, align: 'right' });
-      });
-    });
-    y += h + 70;
+    const fl = r.flowers.find((f) => f.id === top.id);
+    line(ctx, t.today.feelings, tx, 400, { font: heading(500), size: 38, color: C.note });
+    line(ctx, top.word, tx, 494, { font: heading(600), size: 92, color: C.paper, max: W - PAD - tx, shadow: true });
+    const pw = line(ctx, `${top.pct}%`, tx, 616, { font: heading(600), size: 120, color: C.sun, shadow: true });
+    line(ctx, t.today.of, tx + pw + 18, 640, { font: heading(500), size: 32, color: C.soft, max: W - PAD - tx - pw - 18 });
+    if (fl) line(ctx, t.today.flower(fl.name), tx, 712, { font: body(400), size: 30, color: C.soft, max: W - PAD - tx });
   }
 
-  // The paper slip: what they would float away, and what they would change.
-  if (r.quotes.length) {
-    const block = 160;
-    const h = 40 + r.quotes.length * block;
-    slip(ctx, 90, y, 900, h, { fill: C.paper, tilt: 0.01 }, () => {
-      r.quotes.forEach((q, i) => {
-        const by = 40 + i * block;
-        if (i > 0) {
-          ctx.save();
-          ctx.setLineDash([6, 10]);
-          ctx.strokeStyle = 'rgba(27, 43, 94, 0.25)';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(60, by - 4);
-          ctx.lineTo(840, by - 4);
-          ctx.stroke();
-          ctx.restore();
-        }
-        line(ctx, t.today.quotes[q.id] ?? '', 60, by + 40, { font: heading(400), size: 32, color: C.inkSoft, align: 'left', max: 600 });
-        line(ctx, `${q.pct}%`, 840, by + 40, { font: heading(600), size: 40, color: C.pink, align: 'right' });
-        line(ctx, `“${q.label}”`, 60, by + 106, { font: heading(600), size: 54, color: C.ink, align: 'left', max: 780 });
-      });
-    });
-    y += h + 50;
-  }
+  // Every flower of the day, as the TV's bars.
+  const quotes = r.quotes;
+  const cardH = quotes.length || r.topic ? 56 + quotes.length * 128 + (r.topic ? 76 : 0) : 0;
+  const barsTop = 836;
+  const rows = r.flowers.length || 1;
+  const room = SAFE_BOTTOM - barsTop - (cardH ? cardH + 40 : 0);
+  const rowH = Math.min(96, room / rows);
+  const max = Math.max(1, ...r.flowers.map((f) => f.count));
+  const nameEnd = 352;
+  r.flowers.forEach((f, i) => {
+    const y = barsTop + rowH * (i + 0.5);
+    line(ctx, f.name, nameEnd, y, { font: heading(600), size: 34, color: C.paper, align: 'right', max: nameEnd - PAD + 10 });
+    flower(ctx, f.tint, nameEnd + 46, y, Math.min(64, rowH * 0.78));
+    bar(ctx, art, nameEnd + 94, y, 920 - nameEnd - 94, Math.min(40, rowH * 0.44), f.count / max, TINTS[f.tint]?.outer ?? C.paper);
+    line(ctx, String(f.count), W - PAD, y + 2, { font: heading(600), size: 46, color: C.paper, align: 'right', max: 120 });
+  });
 
-  // From the check-up on the web, when there are enough: one quiet line.
-  if (r.topic && y < 1640) line(ctx, t.today.topic(r.topic.name), W / 2, y + 10, { font: heading(400), size: 34, color: C.soft });
+  // What they would float away and what they would change, then the web's topic, on glass.
+  if (cardH) {
+    const y0 = SAFE_BOTTOM - cardH;
+    glass(ctx, PAD - 10, y0, W - (PAD - 10) * 2, cardH);
+    let y = y0 + 28;
+    quotes.forEach((q) => {
+      line(ctx, t.today.quotes[q.id] ?? '', PAD + 34, y + 30, { font: note, size: 32, color: C.note, max: 640 });
+      line(ctx, `${q.pct}%`, W - PAD - 34, y + 30, { font: heading(600), size: 38, color: C.sun, align: 'right' });
+      line(ctx, `“${q.label}”`, PAD + 34, y + 88, { font: heading(600), size: 48, color: C.paper, max: W - PAD * 2 - 68 });
+      y += 128;
+    });
+    if (r.topic) {
+      if (quotes.length) {
+        ctx.fillStyle = C.line;
+        ctx.fillRect(PAD + 34, y + 4, W - PAD * 2 - 68, 2);
+      }
+      line(ctx, t.today.topic(r.topic.name), PAD + 34, y + 42, { font: heading(500), size: 34, color: C.soft, max: W - PAD * 2 - 68 });
+    }
+  }
 }
 
 // ---- card 2: hearts carrying something, and ระบาย ----
-
-function figure(ctx: CanvasRenderingContext2D, x: number, y: number, on: boolean) {
-  if (on) glow(ctx, x, y + 26, 58, [[0, 'rgba(255, 72, 176, 0.32)'], [1, 'rgba(255, 72, 176, 0)']]);
-  ctx.beginPath();
-  ctx.arc(x, y, 15, 0, Math.PI * 2);
-  ctx.moveTo(x - 25, y + 58);
-  ctx.lineTo(x - 25, y + 45);
-  ctx.arc(x, y + 45, 25, Math.PI, 0);
-  ctx.lineTo(x + 25, y + 58);
-  ctx.closePath();
-  if (on) {
-    ctx.fillStyle = C.pink;
-    ctx.fill();
-  } else {
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = 'rgba(252, 241, 230, 0.7)';
-    ctx.stroke();
-  }
-}
 
 /** The home's heart in its white speech bubble, small. */
 function heartBubble(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
@@ -406,10 +477,10 @@ function heartBubble(ctx: CanvasRenderingContext2D, x: number, y: number, r: num
 function qrBox(ctx: CanvasRenderingContext2D, qr: QrMatrix, x: number, y: number, box: number) {
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.roundRect(x, y, box, box, 20);
+  ctx.roundRect(x, y, box, box, 24);
   ctx.fill();
   const n = qr.length;
-  const cell = Math.floor((box - 24) / n);
+  const cell = Math.floor((box - 28) / n);
   const ox = Math.round(x + (box - cell * n) / 2);
   const oy = Math.round(y + (box - cell * n) / 2);
   ctx.fillStyle = C.ink;
@@ -421,83 +492,102 @@ function qrBox(ctx: CanvasRenderingContext2D, qr: QrMatrix, x: number, y: number
 }
 
 function carrying(ctx: CanvasRenderingContext2D, r: Recap, art: Art, qr: QrMatrix | null) {
-  scene(ctx, r, art, 7, 1740);
+  scene(ctx, r, art, 7, [
+    [990, 330, 44],
+    [900, 560, 28],
+    [1000, 700, 34],
+  ]);
   const hv = r.heavy;
 
+  // The TV's "n in 10": ten people as ten rings, the ones carrying something filled.
+  let y = 360;
+  line(ctx, t.heavy.note, PAD, y, { font: note, size: 40, color: C.note });
   if (hv) {
-    // Ten people: the pink ones got a flower of worry, sadness or anger.
-    const step = 86;
-    const left = W / 2 - step * 4.5;
-    for (let i = 0; i < 10; i += 1) figure(ctx, left + i * step, 400, i < hv.tenths);
-    line(ctx, t.heavy.stat(hv.tenths), W / 2, 560, { font: heading(600), size: 120, color: C.sun });
-    line(ctx, t.heavy.line, W / 2, 666, { font: heading(500), size: 48, color: C.paper });
-    line(ctx, t.heavy.which, W / 2, 726, { font: body(400), size: 30, color: C.soft });
-  }
-  line(ctx, t.heavy.tail, W / 2, 806, { font: note, size: 44, color: C.note });
-
-  // The pink slip, as the home's ระบาย slip: the way in, the sticker, the QR.
-  const sx = 60;
-  const sy = 880;
-  const sw = 960;
-  const sh = 790;
-  slip(ctx, sx, sy, sw, sh, { fill: C.pinkTint, tilt: 0.006, radii: [26, 26, 8, 26] }, () => {
-    line(ctx, t.vent.title, 56, 82, { font: heading(600), size: 62, color: C.ink, align: 'left', max: 700 });
-    line(ctx, t.vent.sub, 56, 150, { font: body(400), size: 32, color: C.pinkInk, align: 'left', max: 700 });
-    heartBubble(ctx, sw - 110, 110, 62);
-
-    // The numbers, with the live dot.
-    const v = r.vent;
-    const words = v
-      ? [t.vent.chats(v.chats, r.day !== null), v.medianMin !== null ? t.vent.reply(v.medianMin) : ''].filter(Boolean).join(' · ')
-      : t.vent.promise;
-    glow(ctx, 70, 222, 22, [[0, 'rgba(31, 174, 106, 0.55)'], [1, 'rgba(31, 174, 106, 0)']]);
-    ctx.fillStyle = C.live;
-    ctx.beginPath();
-    ctx.arc(70, 222, 9, 0, Math.PI * 2);
-    ctx.fill();
-    line(ctx, words, 96, 223, { font: body(500), size: 32, color: C.ink, align: 'left', max: sw - 150 });
-
-    // The home's message bar. Instagram's link sticker goes over it (STICKER);
-    // without one it still says "write here".
-    const by = 300;
-    const bh = 124;
-    ctx.save();
-    ctx.shadowColor = 'rgba(255, 72, 176, 0.35)';
-    ctx.shadowBlur = 26;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(56, by, sw - 112, bh, bh / 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.strokeStyle = 'rgba(255, 72, 176, 0.35)';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.roundRect(56, by, sw - 112, bh, bh / 2);
-    ctx.stroke();
-    line(ctx, 'เรื่องเรียน… เพื่อน… ที่บ้าน…', 110, by + bh / 2 + 1, { font: body(400), size: 34, color: 'rgba(107, 42, 74, 0.5)', align: 'left', max: 560 });
-    const bx = sw - 56 - bh / 2;
-    ctx.fillStyle = C.ink;
-    ctx.beginPath();
-    ctx.arc(bx, by + bh / 2, 44, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = C.paper;
-    ctx.beginPath();
-    ctx.moveTo(bx - 18, by + bh / 2 - 16);
-    ctx.lineTo(bx + 22, by + bh / 2);
-    ctx.lineTo(bx - 18, by + bh / 2 + 16);
-    ctx.lineTo(bx - 10, by + bh / 2);
-    ctx.closePath();
-    ctx.fill();
-
-    if (qr) {
-      const box = 180;
-      const qy = 500;
-      qrBox(ctx, qr, 56, qy, box);
-      line(ctx, t.vent.scan, 56 + box + 36, qy + 60, { font: heading(600), size: 46, color: C.ink, align: 'left', max: 560 });
-      line(ctx, t.vent.scanSub, 56 + box + 36, qy + 120, { font: body(400), size: 32, color: C.pinkInk, align: 'left', max: 560 });
+    y += 82;
+    const d = 62;
+    const gap = 22;
+    for (let i = 0; i < 10; i += 1) {
+      const cx = PAD + d / 2 + i * (d + gap);
+      ctx.beginPath();
+      ctx.arc(cx, y, d / 2 - 4, 0, Math.PI * 2);
+      if (i < hv.tenths) {
+        ctx.fillStyle = C.pink;
+        ctx.fill();
+      }
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = i < hv.tenths ? C.pink : C.paper;
+      ctx.stroke();
     }
-    line(ctx, cudCare.result.body, sw / 2, sh - 44, { font: body(400), size: 27, color: C.pinkInk, max: sw - 100 });
-  });
+    y += 132;
+    line(ctx, t.heavy.stat(hv.tenths), PAD, y, { font: heading(600), size: 120, color: C.sun, shadow: true });
+    y += 104;
+    line(ctx, t.heavy.line, PAD, y, { font: heading(500), size: 52, color: C.paper });
+    y += 58;
+    line(ctx, t.heavy.which, PAD, y, { font: body(400), size: 30, color: C.soft });
+  }
+  y += 70;
+  line(ctx, t.heavy.tail, PAD, y, { font: note, size: 44, color: C.paper });
+
+  // ระบาย on the TV's glass: the way in, the sticker's place, and the QR.
+  const gx = PAD - 10;
+  const gy = 850;
+  const gw = W - gx * 2;
+  const gh = SAFE_BOTTOM - gy;
+  glass(ctx, gx, gy, gw, gh);
+  const ix = gx + 44;
+  line(ctx, t.vent.title, ix, gy + 80, { font: heading(600), size: 62, color: C.paper, max: 680, shadow: true });
+  line(ctx, t.vent.sub, ix, gy + 146, { font: body(400), size: 32, color: C.soft, max: 680 });
+  heartBubble(ctx, gx + gw - 100, gy + 96, 58);
+
+  // The numbers, after the pink dot of the TV's "สด".
+  const v = r.vent;
+  const words = v
+    ? [t.vent.chats(v.chats, r.day !== null), v.medianMin !== null ? t.vent.reply(v.medianMin) : ''].filter(Boolean).join(' · ')
+    : t.vent.promise;
+  glow(ctx, ix + 10, gy + 206, 24, [[0, 'rgba(255, 72, 176, 0.5)'], [1, 'rgba(255, 72, 176, 0)']]);
+  ctx.fillStyle = C.pink;
+  ctx.beginPath();
+  ctx.arc(ix + 10, gy + 206, 10, 0, Math.PI * 2);
+  ctx.fill();
+  line(ctx, words, ix + 36, gy + 207, { font: heading(500), size: 32, color: C.paper, max: gw - 120 });
+
+  // The home's message bar, where Instagram's link sticker goes (STICKER); without
+  // one it still says "write here".
+  const bh = 120;
+  const by = STICKER.y + (STICKER.h - bh) / 2;
+  const bx0 = ix;
+  const bw = gw - 88;
+  ctx.save();
+  ctx.shadowColor = 'rgba(255, 72, 176, 0.4)';
+  ctx.shadowBlur = 30;
+  ctx.fillStyle = C.paper;
+  ctx.beginPath();
+  ctx.roundRect(bx0, by, bw, bh, bh / 2);
+  ctx.fill();
+  ctx.restore();
+  line(ctx, 'เรื่องเรียน… เพื่อน… ที่บ้าน…', bx0 + 54, by + bh / 2 + 1, { font: body(400), size: 34, color: 'rgba(27, 43, 94, 0.5)', max: 560 });
+  const sx = bx0 + bw - bh / 2;
+  ctx.fillStyle = C.ink;
+  ctx.beginPath();
+  ctx.arc(sx, by + bh / 2, 42, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = C.paper;
+  ctx.beginPath();
+  ctx.moveTo(sx - 17, by + bh / 2 - 15);
+  ctx.lineTo(sx + 21, by + bh / 2);
+  ctx.lineTo(sx - 17, by + bh / 2 + 15);
+  ctx.lineTo(sx - 9, by + bh / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  if (qr) {
+    const box = 180;
+    const qy = STICKER.y + STICKER.h + 24;
+    qrBox(ctx, qr, ix, qy, box);
+    line(ctx, t.vent.scan, ix + box + 40, qy + 58, { font: heading(600), size: 50, color: C.paper, max: gw - box - 130 });
+    line(ctx, t.vent.scanSub, ix + box + 40, qy + 122, { font: body(400), size: 32, color: C.soft, max: gw - box - 130 });
+  }
+  line(ctx, cudCare.result.body, W / 2, gy + gh - 40, { font: body(400), size: 27, color: C.soft, align: 'center', max: gw - 80 });
 }
 
 // ---- the cards ----

@@ -31,13 +31,15 @@ export const recap = {
   brand: 'CUD Mental Health Week',
   day: (festival: string, date: string) => `สรุปบูธ${festival} · ${date}`,
   today: {
-    players: (oneDay: boolean) => (oneDay ? 'คน แวะมาเช็กใจที่บูธวันนี้' : 'คน แวะมาเช็กใจที่บูธ'),
+    players: (oneDay: boolean) => (oneDay ? 'คนเล่นแล้ววันนี้' : 'คนเล่นที่บูธ'),
     feelings: 'ใจส่วนใหญ่ตอนนี้',
-    share: (pct: number) => `${pct}% ของคนที่มาเล่น`,
+    of: 'ของคนที่มาเล่น',
+    flower: (name: string) => `ได้${name}`,
     quotes: { q1: 'อยากฝากลอยไปกับกระทง', q4: 'ถ้าพรุ่งนี้เปลี่ยนได้หนึ่งอย่าง' } as Record<string, string>,
     topic: (name: string) => `เรื่องที่อยู่ในหัวมากสุดบนเว็บ · ${name}`,
   },
   heavy: {
+    note: 'เรื่องใจ',
     stat: (n: number) => `${n} ใน 10 คน`,
     line: 'ใจกำลังแบกอะไรบางอย่างอยู่',
     which: 'ได้ดอกไม้ของความกังวล ความเศร้า หรือความโกรธ',

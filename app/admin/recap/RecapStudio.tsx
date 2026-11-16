@@ -1,12 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 
-import { FlowerPortrait } from '@/components/booth/FlowerPortrait';
 import moonArt from '@/components/festival/loykrathong/art/moon.webp';
 import watArt from '@/components/festival/loykrathong/art/wat.webp';
-import { loykrathongFlowers } from '@/content/th/booth';
 import { recap as t } from '@/content/th/recap';
 import { encodeQr } from '@/lib/qr';
 import type { Recap } from '@/lib/recap';
@@ -22,38 +19,10 @@ const image = (src: string) =>
     img.src = src;
   });
 
-/**
- * The booth's art for the canvas: the moon and Wat Arun as they are, and each
- * flower's drawing turned into an image. The flowers are drawn into a detached
- * element in the browser only (never server-rendered: their decimals round
- * differently on the server, which would not hydrate).
- */
+/** The booth's art for the canvas: the moon, Wat Arun, and the print's ink flecks for the bars. */
 async function loadArt(): Promise<Art> {
-  const flowers: Record<string, HTMLImageElement> = {};
-  const host = document.createElement('div');
-  const root = createRoot(host);
-  root.render(
-    loykrathongFlowers.map((f) => (
-      <span key={f.id} data-flower={f.id}>
-        <FlowerPortrait id={f.id} size={320} />
-      </span>
-    )),
-  );
-  // A root renders on its own schedule: wait for it (a few frames at most).
-  for (let i = 0; i < 20 && !host.querySelector('svg'); i += 1) await new Promise((r) => setTimeout(r, 16));
-  const svgs = [...host.querySelectorAll<SVGSVGElement>('[data-flower] svg')];
-  const [moon, wat, ...drawn] = await Promise.all([
-    image(moonArt.src),
-    image(watArt.src),
-    ...svgs.map((svg) => image(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`)),
-  ]);
-  svgs.forEach((svg, i) => {
-    const id = svg.parentElement?.dataset.flower;
-    const img = drawn[i];
-    if (id && img) flowers[id] = img;
-  });
-  root.unmount();
-  return { moon, wat, flowers };
+  const [moon, wat, speckle] = await Promise.all([image(moonArt.src), image(watArt.src), image('/textures/ink-speckle.png')]);
+  return { moon, wat, speckle };
 }
 
 /**
