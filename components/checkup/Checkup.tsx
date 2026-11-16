@@ -30,6 +30,27 @@ const TOPIC_INKS = ['#6FD7B8', '#FFC94D', '#9BAAFF', '#FF9A85', '#F0588A', '#8FD
 const third = (v: number) => (v < 0.34 ? 0 : v < 0.67 ? 1 : 2);
 
 /**
+ * The topics picked, counted once a day per phone for the booth recap (lib/tally.ts):
+ * only which topics, never who or the rest of the check-up. Fire and forget.
+ */
+function countTopics(topics: string[]) {
+  if (topics.length === 0) return;
+  const today = new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem('cud-topics-day') === today) return;
+    localStorage.setItem('cud-topics-day', today);
+  } catch {
+    /* private mode: count anyway, once for this visit */
+  }
+  fetch('/api/checkup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topics }),
+    keepalive: true,
+  }).catch(() => {});
+}
+
+/**
  * The guided check-up (/checkup). One persistent heart; the words and the
  * controls around it change step by step. The heart's size, wobble and colour
  * are written straight to the DOM from one animation loop, so React only
@@ -143,6 +164,7 @@ export function Checkup({ careHref, start = 'meet' }: { careHref: string; start?
     setDir(ORDER.indexOf(next) < ORDER.indexOf(step) ? 'back' : 'forward');
     setStep(next);
     haptic(next === 'result' ? 'done' : 'step');
+    if (next === 'result') countTopics(topics);
   };
   const back = () => {
     if (step !== 'meet') goTo(PREV[step]);

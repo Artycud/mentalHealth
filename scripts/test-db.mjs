@@ -41,7 +41,7 @@ const one = async (sql, args = []) => (await c.execute({ sql, args })).rows[0];
 // ---- 1. Schema and seed ----
 {
   const tables = (await c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")).rows.map((r) => r.name).sort();
-  eq('the eight tables exist', tables.filter((t) => t !== 'sqlite_sequence'), ['answer', 'auth_lock', 'event', 'session', 'setting', 'vent_message', 'vent_thread', 'vent_tick']);
+  eq('the nine tables exist', tables.filter((t) => t !== 'sqlite_sequence'), ['answer', 'auth_lock', 'event', 'session', 'setting', 'tally', 'vent_message', 'vent_thread', 'vent_tick']);
   eq('the live festival is seeded as Loy Krathong', await getActiveFestival(), 'loykrathong');
 
   // Privacy by construction (BRIEF sections 3 and 12): no column could hold a
@@ -62,6 +62,8 @@ const one = async (sql, args = []) => (await c.execute({ sql, args })).rows[0];
     'vent_thread.discord_id', 'vent_thread.created_at', 'vent_thread.updated_at',
     'vent_message.id', 'vent_message.thread_id', 'vent_message.sender', 'vent_message.body', 'vent_message.created_at',
   ].sort());
+  // The recap's daily counts: a day, a key and a number, nothing that could point at anyone.
+  eq('tally keeps only a day, a key and a count', columns.filter((x) => x.startsWith('tally.')).sort(), ['tally.count', 'tally.day', 'tally.key']);
 }
 
 // ---- 2. A check-in, end to end on the server ----

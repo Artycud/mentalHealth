@@ -19,6 +19,7 @@
 import { randomBytes, randomInt } from 'node:crypto';
 
 import { db } from '../db.ts';
+import { bump } from '../tally.ts';
 
 export type Sender = 'student' | 'sapa';
 
@@ -109,6 +110,7 @@ export async function startThread(body: string, opts: { feel?: string; urgent: b
         ],
         'write',
       );
+      await bump(['vent:chats'], at);
       return { id, code, ref };
     } catch (error) {
       if (!String(error).includes('UNIQUE') || attempt === 4) throw error;
@@ -125,7 +127,9 @@ export async function startThread(body: string, opts: { feel?: string; urgent: b
 export async function addMessage(where: { id: string } | { ref: string }, sender: Sender, body: string, urgent = false) {
   const c = await db();
   const found = await c.execute({
-    sql: `SELECT id, ref, waiting, urgent, discord_id, (SELECT COUNT(*) FROM vent_message m WHERE m.thread_id = t.id) AS n
+    sql: `SELECT id, ref, waiting, urgent, discord_id, created_at,
+                 (SELECT COUNT(*) FROM vent_message m WHERE m.thread_id = t.id) AS n,
+                 (SELECT COUNT(*) FROM vent_message m WHERE m.thread_id = t.id AND m.sender = 'sapa') AS answered
           FROM vent_thread t WHERE ${'id' in where ? 'id' : 'ref'} = ?`,
     args: ['id' in where ? where.id : where.ref],
   });
@@ -143,6 +147,12 @@ export async function addMessage(where: { id: string } | { ref: string }, sender
     ],
     'write',
   );
+  // The first answer to a conversation, counted on the day it started (lib/tally.ts).
+  if (sender === 'sapa' && Number(t.answered) === 0) {
+    const started = String(t.created_at);
+    const fast = Date.parse(at) - Date.parse(started) <= 3 * 60_000;
+    await bump(fast ? ['vent:replied', 'vent:within3'] : ['vent:replied'], started);
+  }
   return {
     full: false as const,
     ref: String(t.ref),

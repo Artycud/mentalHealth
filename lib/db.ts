@@ -125,6 +125,16 @@ CREATE TABLE IF NOT EXISTS vent_message (
   created_at TEXT NOT NULL
 );
 
+-- Daily counts for the recap (lib/tally.ts): a Thailand day, what was counted
+-- ("vent:chats", "topic:เรื่องเรียน") and how many. Nothing else: no session,
+-- time of day, person or text, so a count can never be traced back to anyone.
+CREATE TABLE IF NOT EXISTS tally (
+  day   TEXT NOT NULL,
+  key   TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  PRIMARY KEY (day, key)
+);
+
 CREATE INDEX IF NOT EXISTS idx_vent_message_thread ON vent_message (thread_id, id);
 CREATE INDEX IF NOT EXISTS idx_vent_thread_updated ON vent_thread (updated_at);
 

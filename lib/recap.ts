@@ -3,6 +3,7 @@ import { festivalOrder, festivals, loykrathongFlowers, loykrathongQuiz, okayQues
 import { getAdminData, thaiDay } from './admin-data.ts';
 import { db } from './db.ts';
 import { getEvent } from './events.ts';
+import { tallies } from './tally.ts';
 import { formatDateRange } from './thai-date.ts';
 import type { FestivalId, Tint } from './types';
 
@@ -26,6 +27,10 @@ const SLOT_MIN = 10;
 export const RECAP_OKAY_MIN = 20;
 /** The busiest slot is worth naming only with this many in it. */
 const PEAK_MIN = 3;
+/** The check-up's top topic is named only from this many check-ups that picked one. */
+export const RECAP_TOPIC_MIN = 10;
+/** ระบาย's numbers go on a card only from this many chats. */
+export const RECAP_VENT_MIN = 5;
 
 export interface RecapFlower {
   id: string;
@@ -33,6 +38,16 @@ export interface RecapFlower {
   tint: Tint;
   count: number;
   /** Of finished booth sessions, 0–100. */
+  pct: number;
+}
+
+/** A feeling, as the flower the booth gives it. */
+export interface RecapFeeling {
+  id: string;
+  /** The council's word for it: "ความกังวล". */
+  word: string;
+  tint: Tint;
+  count: number;
   pct: number;
 }
 
@@ -60,6 +75,12 @@ export interface Recap {
   peak: { from: string; to: string; count: number } | null;
   /** Most chosen first. */
   flowers: RecapFlower[];
+  /** The top three feelings (flowers anyone got), most first. */
+  feelings: RecapFeeling[];
+  /** The heart check-up's most picked topic, or null below RECAP_TOPIC_MIN. */
+  topic: { name: string; pct: number; base: number } | null;
+  /** ระบาย in the same days, or null below RECAP_VENT_MIN chats. */
+  vent: { chats: number; replied: number; within3: number } | null;
   /** The three flower questions, in order. */
   questions: RecapQuestion[];
   /** The honest question, as whole tenths, or null below RECAP_OKAY_MIN answers. */
@@ -106,6 +127,34 @@ export function okayTenths(counts: { real: number; hide: number; depends: number
   return { answered, hide: tenth(counts.hide), depends: tenth(counts.depends), real: tenth(counts.real) };
 }
 
+/** The most picked topic from the check-up's counts (lib/tally.ts), or null below RECAP_TOPIC_MIN. */
+export function topTopic(counts: Map<string, number>): Recap['topic'] {
+  const base = counts.get('checkup:topics') ?? 0;
+  if (base < RECAP_TOPIC_MIN) return null;
+  let best: [string, number] | null = null;
+  for (const [key, n] of counts) {
+    if (!key.startsWith('topic:')) continue;
+    if (!best || n > best[1]) best = [key.slice('topic:'.length), n];
+  }
+  return best ? { name: best[0], pct: Math.round((best[1] / base) * 100), base } : null;
+}
+
+/** ระบาย's counts (lib/tally.ts), or null below RECAP_VENT_MIN chats. */
+export function ventCounts(counts: Map<string, number>): Recap['vent'] {
+  const chats = counts.get('vent:chats') ?? 0;
+  if (chats < RECAP_VENT_MIN) return null;
+  return { chats, replied: counts.get('vent:replied') ?? 0, within3: counts.get('vent:within3') ?? 0 };
+}
+
+/** Every day from `from` to `to`, inclusive. */
+function daysFrom(from: string, to: string): string[] {
+  const out: string[] = [];
+  for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`) && out.length < 400; t += 86_400_000) {
+    out.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return out;
+}
+
 /** Thailand days with a finished booth session for this festival. */
 async function boothDays(festival: FestivalId): Promise<string[]> {
   const c = await db();
@@ -126,7 +175,7 @@ async function nextBooth(festival: FestivalId, after: string): Promise<Recap['ne
 }
 
 function shape(
-  base: Omit<Recap, 'flowers' | 'questions' | 'okay' | 'dateLabel' | 'next'>,
+  base: Omit<Recap, 'flowers' | 'feelings' | 'questions' | 'okay' | 'dateLabel' | 'next'>,
   flowerCounts: Map<string, number>,
   questions: RecapQuestion[],
   okayCounts: { real: number; hide: number; depends: number },
@@ -138,7 +187,11 @@ function shape(
       return { id: f.id, name: f.name, tint: f.tint, count, pct: total ? Math.round((count / total) * 100) : 0 };
     })
     .sort((a, b) => b.count - a.count);
-  return { ...base, flowers, questions, okay: okayTenths(okayCounts) };
+  const feelings = flowers
+    .filter((f) => f.count > 0)
+    .slice(0, 3)
+    .map((f) => ({ id: f.id, word: loykrathongFlowers.find((x) => x.id === f.id)!.emotionWord, tint: f.tint, count: f.count, pct: f.pct }));
+  return { ...base, flowers, feelings, questions, okay: okayTenths(okayCounts) };
 }
 
 /** The recap for one Thailand day, or (day null) for every day of the booth. */
@@ -171,6 +224,8 @@ export async function getRecap(festival: FestivalId, day: string | null): Promis
       players: data.summary.completed,
       medianSeconds: data.summary.medianSeconds,
       peak: peakSlot(finished),
+      topic: null,
+      vent: null,
       sample: false,
     },
     new Map(data.flowers.map((fl) => [fl.id, fl.count])),
@@ -180,12 +235,17 @@ export async function getRecap(festival: FestivalId, day: string | null): Promis
 
   const event = await getEvent(festival);
   const dateLabel = day ? formatDateRange(day, day) : formatDateRange(event.start, event.end);
-  return { ...shaped, dateLabel, next: await nextBooth(festival, day ?? event.end) };
+  // The check-up and ระบาย are not the booth's: counted over the same days.
+  const span = day ? [day] : daysFrom(event.start, event.end);
+  const counts = await tallies(span, '');
+  return { ...shaped, topic: topTopic(counts), vent: ventCounts(counts), dateLabel, next: await nextBooth(festival, day ?? event.end) };
 }
 
 /** Invented numbers, so the cards can be designed before the booth. Never in production. */
 export async function demoRecap(festival: FestivalId): Promise<Recap> {
-  const flowerCounts = new Map(loykrathongFlowers.map((f, i) => [f.id, [31, 26, 22, 19, 14, 9][i] ?? 0]));
+  // Shaped like the council's guess: most are worried, and school is on their minds.
+  const counts: Record<string, number> = { lavender: 38, sunflower: 27, hydrangea: 21, 'pink-tulip': 17, gerbera: 12, 'red-rose': 9 };
+  const flowerCounts = new Map(loykrathongFlowers.map((f) => [f.id, counts[f.id] ?? 0]));
   const players = [...flowerCounts.values()].reduce((s, n) => s + n, 0);
   const split = (shares: number[]) => (q: (typeof loykrathongQuiz)[number]): RecapQuestion => {
     const choices = q.choices.map((ch, i) => {
@@ -212,6 +272,8 @@ export async function demoRecap(festival: FestivalId): Promise<Recap> {
       players,
       medianSeconds: 74,
       peak: { from: '12.10', to: '12.20', count: 23 },
+      topic: { name: 'เรื่องเรียน', pct: 62, base: 84 },
+      vent: { chats: 23, replied: 21, within3: 15 },
       sample: true,
     },
     flowerCounts,

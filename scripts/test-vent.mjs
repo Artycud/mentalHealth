@@ -75,6 +75,10 @@ try {
   check('  writing again before an answer: no second ping due', again?.wasWaiting === true);
   check('  a worrying message marks the chat urgent', again?.urgent === true && (await threads.inbox())[0].urgent === true);
 
+  await threads.addMessage({ ref: t.ref }, 'sapa', 'อีกข้อความ');
+  const counts = Object.fromEntries((await (await db()).execute('SELECT key, SUM(count) AS n FROM tally GROUP BY key')).rows.map((r) => [r.key, Number(r.n)]));
+  check('the recap counts the chat and its first answer (fast), once each', counts['vent:chats'] === 1 && counts['vent:replied'] === 1 && counts['vent:within3'] === 1, JSON.stringify(counts));
+
   // ---- ending it
   const ended = await threads.endThread(t.id);
   check('ending returns the ref and Discord notice to tidy up', ended?.ref === t.ref);

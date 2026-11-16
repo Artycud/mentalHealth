@@ -20,6 +20,7 @@ wipeFiles();
 
 const { db, closeDb } = await import('../lib/db.ts');
 const R = await import('../lib/recap.ts');
+const { bump } = await import('../lib/tally.ts');
 
 let fail = 0;
 const eq = (label, got, want) => {
@@ -39,6 +40,12 @@ const eq = (label, got, want) => {
 
   eq('the honest question needs 20 answers before it is shown', R.okayTenths({ real: 10, hide: 6, depends: 3 }), null);
   eq('and is then whole tenths', R.okayTenths({ real: 8, hide: 9, depends: 3 }), { answered: 20, hide: 5, depends: 2, real: 4 });
+
+  const m = (o) => new Map(Object.entries(o));
+  eq('the top topic needs 10 check-ups that picked one', R.topTopic(m({ 'checkup:topics': 9, 'topic:เรื่องเรียน': 9 })), null);
+  eq('and is then the most picked, as a share of them', R.topTopic(m({ 'checkup:topics': 20, 'topic:เรื่องเรียน': 13, 'topic:เพื่อน': 6 })), { name: 'เรื่องเรียน', pct: 65, base: 20 });
+  eq('ระบาย needs 5 chats before its numbers show', R.ventCounts(m({ 'vent:chats': 4, 'vent:replied': 4 })), null);
+  eq('and then shows chats, answered and answered fast', R.ventCounts(m({ 'vent:chats': 7, 'vent:replied': 6, 'vent:within3': 4 })), { chats: 7, replied: 6, within3: 4 });
 }
 
 // ---- 2. from the database ----
@@ -76,8 +83,17 @@ for (let i = 0; i < 3; i += 1) {
 // A check-in on day 1, which is not the booth's.
 await add({ start: '2026-11-19T05:10:00Z', end: '2026-11-19T05:12:00Z', mode: 'checkin', festival: 'loykrathong' });
 
+// The check-up's topics and ระบาย, counted by day (lib/tally.ts). 23.30Z on the 18th is the 19th in Thailand.
+for (let i = 0; i < 12; i += 1) await bump(['checkup:topics', 'topic:เรื่องเรียน', ...(i < 5 ? ['topic:การนอน'] : [])], '2026-11-19T03:00:00Z');
+for (let i = 0; i < 6; i += 1) await bump(['vent:chats'], '2026-11-18T23:30:00Z');
+await bump(['vent:replied', 'vent:within3'], '2026-11-19T03:00:00Z');
+await bump(['vent:chats'], '2026-11-20T03:00:00Z');
+
 {
   const d1 = await R.getRecap('loykrathong', '2026-11-19');
+  eq('the top three feelings, as the flowers people got', d1.feelings.map((f) => [f.word, f.pct]), [['ความสุข', 64], ['ความเศร้า', 36]]);
+  eq('the check-up topic of the day', d1.topic, { name: 'เรื่องเรียน', pct: 100, base: 12 });
+  eq('ระบาย on the Thailand day', d1.vent, { chats: 6, replied: 1, within3: 1 });
   eq('the days with a finished booth session', d1.days, ['2026-11-19', '2026-11-20']);
   eq('one day counts only its finished booth sessions', d1.players, 22);
   eq('the date label is that day', d1.dateLabel, '19 พ.ย. 2569');
@@ -94,6 +110,7 @@ await add({ start: '2026-11-19T05:10:00Z', end: '2026-11-19T05:12:00Z', mode: 'c
   const d2 = await R.getRecap('loykrathong', '2026-11-20');
   eq('the second day on its own', d2.players, 3);
   eq('with too few answers, the honest question is not shown', d2.okay, null);
+  eq('and too few chats or check-ups show nothing', [d2.vent, d2.topic], [null, null]);
   eq('three finishing in one slot is just enough to name it', d2.peak, { from: '11.00', to: '11.10', count: 3 });
 
   const all = await R.getRecap('loykrathong', null);

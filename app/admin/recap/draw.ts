@@ -2,24 +2,26 @@ import { cudCare } from '@/content/th/common';
 import { recap as t } from '@/content/th/recap';
 import type { QrMatrix } from '@/lib/qr';
 import type { Recap } from '@/lib/recap';
-import type { Tint } from '@/lib/types';
 
 /**
- * The recap cards, drawn on a canvas at Instagram's own sizes, so what the admin
- * sees is exactly the image that is saved or shared (no screenshot, no library).
- * The browser shapes the Thai, so vowels and tone marks sit right.
+ * The recap's two story cards, drawn on a canvas at Instagram's story size, so
+ * what the admin sees is exactly the image that is saved or shared. The browser
+ * shapes the Thai, so vowels and tone marks sit right.
  *
- * The look is the booth TV's: the Loy Krathong night sky, paper and marigold text,
- * a river with lit flowers along the bottom. Each card lays itself out top to bottom
- * twice: once to measure, once to draw, centred in the space between the header and
- * the water (and scaled down a touch if it would not fit).
+ * The look is the booth's own (the kiosk and the TV): the Loy Krathong night with
+ * its glitter ribbons and stars, the poster's moon in its halo of moonlight,
+ * lanterns, Wat Arun on the far bank, and the river with lit flowers on cream
+ * plates. The art is the site's (RecapStudio loads it), not redrawn here.
+ *
+ * Instagram covers the top ~220px (the profile line) and the bottom ~250px (the
+ * reply bar) of a story, so nothing to read sits there.
  */
 
-export type Format = 'story' | 'post';
-export const SIZES: Record<Format, { w: number; h: number }> = {
-  story: { w: 1080, h: 1920 },
-  post: { w: 1080, h: 1350 },
-};
+export const W = 1080;
+export const H = 1920;
+
+/** Where the admin puts Instagram's link sticker on card 2 (outlined on the page only). */
+export const STICKER = { x: 190, y: 1030, w: 700, h: 210 };
 
 const C = {
   ink: '#1B2B5E',
@@ -28,19 +30,12 @@ const C = {
   sun: '#FFB511',
   paper: '#FCF1E6',
   note: '#FFB8DE',
-  soft: 'rgba(252, 241, 230, 0.8)',
-  faint: 'rgba(252, 241, 230, 0.16)',
+  soft: 'rgba(252, 241, 230, 0.78)',
+  faint: 'rgba(252, 241, 230, 0.13)',
+  far: '#7f97cf',
+  near: '#0e335f',
+  live: '#1fae6a',
 };
-
-/** The six flower inks, in the same order as components/booth/WallFlower.tsx. */
-const TINTS: { outer: string; inner: string }[] = [
-  { outer: C.sun, inner: C.pink },
-  { outer: C.pink, inner: C.blue },
-  { outer: C.blue, inner: C.sun },
-  { outer: C.pink, inner: C.sun },
-  { outer: C.sun, inner: C.blue },
-  { outer: C.blue, inner: C.pink },
-];
 
 const STACK = '"Noto Sans Thai", "Leelawadee UI", Thonburi, sans-serif';
 const font = {
@@ -52,14 +47,7 @@ const font = {
 /** Wait for the site's fonts (their Thai and Latin halves), so the canvas uses them. */
 export async function loadFonts(): Promise<void> {
   const sample = 'กขคูปอง ABC 123';
-  const faces = [
-    font.heading(400, 40),
-    font.heading(500, 40),
-    font.heading(600, 40),
-    font.body(400, 40),
-    font.body(500, 40),
-    font.note(40),
-  ];
+  const faces = [font.heading(400, 40), font.heading(500, 40), font.heading(600, 40), font.body(400, 40), font.body(500, 40), font.note(40)];
   try {
     await Promise.all(faces.map((f) => document.fonts.load(f, sample)));
   } catch {
@@ -67,142 +55,15 @@ export async function loadFonts(): Promise<void> {
   }
 }
 
-// ---- layout ----
-
-interface Pen {
-  ctx: CanvasRenderingContext2D;
-  w: number;
-  /** Measuring only: nothing is painted. */
-  dry: boolean;
-  y: number;
-  /** Side margin. */
-  m: number;
+/** The site's art, loaded by RecapStudio. Anything missing is simply left out. */
+export interface Art {
+  moon: HTMLImageElement | null;
+  wat: HTMLImageElement | null;
+  /** The booth's flower drawings (components/booth/FlowerPortrait), by flower id. */
+  flowers: Record<string, HTMLImageElement>;
 }
 
-const segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl ? new Intl.Segmenter('th', { granularity: 'word' }) : null;
-
-/** Thai has no spaces between words: break at word boundaries the browser knows. */
-function wrap(ctx: CanvasRenderingContext2D, text: string, max: number): string[] {
-  const parts = segmenter ? [...segmenter.segment(text)].map((s) => s.segment) : text.split(/(?<= )/);
-  const lines: string[] = [];
-  let line = '';
-  for (const part of parts) {
-    const next = line + part;
-    // Never start a line with punctuation or ๆ: "เป็นยังไง?" stays whole.
-    const clings = /^\s*[?!.,:;"”’)…ๆ%]+\s*$/.test(part);
-    if (line && !clings && ctx.measureText(next).width > max) {
-      lines.push(line.trimEnd());
-      line = part.trimStart();
-    } else {
-      line = next;
-    }
-  }
-  if (line.trim()) lines.push(line.trimEnd());
-  return lines;
-}
-
-function text(
-  p: Pen,
-  str: string,
-  o: { font: string; color: string; size: number; lh?: number; max?: number; align?: CanvasTextAlign; x?: number },
-) {
-  const { ctx } = p;
-  ctx.font = o.font;
-  const max = o.max ?? p.w - p.m * 2;
-  const lines = wrap(ctx, str, max);
-  const lh = o.size * (o.lh ?? 1.45);
-  const align = o.align ?? 'center';
-  const x = o.x ?? (align === 'center' ? p.w / 2 : align === 'left' ? p.m : p.w - p.m);
-  for (const line of lines) {
-    if (!p.dry) {
-      ctx.fillStyle = o.color;
-      ctx.textAlign = align;
-      ctx.textBaseline = 'middle';
-      ctx.fillText(line, x, p.y + lh / 2);
-    }
-    p.y += lh;
-  }
-}
-
-const gap = (p: Pen, n: number) => {
-  p.y += n;
-};
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-}
-
-/** A soft pill behind a line of text. */
-function pill(p: Pen, str: string, o: { font: string; size: number; color: string; fill: string }) {
-  const { ctx } = p;
-  ctx.font = o.font;
-  const h = o.size * 1.9;
-  const w = Math.min(ctx.measureText(str).width + o.size * 1.6, p.w - p.m * 2);
-  if (!p.dry) {
-    ctx.fillStyle = o.fill;
-    roundRect(ctx, (p.w - w) / 2, p.y, w, h, h / 2);
-    ctx.fill();
-    ctx.fillStyle = o.color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(str, p.w / 2, p.y + h / 2);
-  }
-  p.y += h;
-}
-
-// ---- pictures ----
-
-/** A lit flower on a cream plate, like the TV's river and bars. */
-function flower(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, tint: Tint, glow = true) {
-  const { outer, inner } = TINTS[tint];
-  ctx.save();
-  if (glow) {
-    const g = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 2.2);
-    g.addColorStop(0, 'rgba(255, 181, 17, 0.45)');
-    g.addColorStop(1, 'rgba(255, 181, 17, 0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, r * 2.2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = C.paper;
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fill();
-  // Petals multiply onto the plate, so where they overlap they make a third colour.
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = outer;
-  for (let i = 0; i < 8; i += 1) {
-    const a = (i / 8) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.arc(x + Math.cos(a) * r * 0.42, y + Math.sin(a) * r * 0.42, r * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = inner;
-  for (let i = 0; i < 6; i += 1) {
-    const a = (i / 6) * Math.PI * 2 + 0.4;
-    ctx.beginPath();
-    ctx.arc(x + Math.cos(a) * r * 0.2, y + Math.sin(a) * r * 0.2, r * 0.17, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = C.ink;
-  for (const [dx, dy] of [[-0.05, -0.04], [0.06, -0.02], [0, 0.06]]) {
-    ctx.beginPath();
-    ctx.arc(x + dx * r, y + dy * r, r * 0.045, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.setLineDash([r * 0.03, r * 0.07]);
-  ctx.lineWidth = Math.max(1.5, r * 0.03);
-  ctx.strokeStyle = C.ink;
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.86, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
-}
+// ---- small tools ----
 
 /** A small seeded random, so every card's stars and river are the same each time. */
 function seeded(seed: number) {
@@ -213,89 +74,255 @@ function seeded(seed: number) {
   };
 }
 
-/** The sky, the stars, the river with its flowers, and the header and footer. */
-function scene(ctx: CanvasRenderingContext2D, w: number, h: number, format: Format, r: Recap, seed: number) {
-  const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, '#0b1536');
-  sky.addColorStop(0.45, '#26307f');
-  sky.addColorStop(0.74, '#b8358f');
-  sky.addColorStop(0.86, '#ff8a4d');
-  sky.addColorStop(0.9, '#ffc36b');
+/**
+ * One line of text, centred on x (or aligned), shrunk to fit `max` if it would not.
+ * Returns the width it took.
+ */
+function line(
+  ctx: CanvasRenderingContext2D,
+  str: string,
+  x: number,
+  y: number,
+  o: { font: (px: number) => string; size: number; color: string; max?: number; align?: CanvasTextAlign },
+): number {
+  let size = o.size;
+  ctx.font = o.font(size);
+  const max = o.max ?? W - 160;
+  const width = ctx.measureText(str).width;
+  if (width > max) {
+    size = Math.floor((size * max) / width);
+    ctx.font = o.font(size);
+  }
+  ctx.fillStyle = o.color;
+  ctx.textAlign = o.align ?? 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(str, x, y);
+  return Math.min(width, max);
+}
+
+const heading = (weight: number) => (px: number) => font.heading(weight, px);
+const body = (weight: number) => (px: number) => font.body(weight, px);
+const note = (px: number) => font.note(px);
+
+function glow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, stops: [number, string][]) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  for (const [at, colour] of stops) g.addColorStop(at, colour);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** A booth flower on its cream plate with the dotted ring, as on the TV. */
+function plated(ctx: CanvasRenderingContext2D, art: Art, id: string, x: number, y: number, r: number, lit = true) {
+  if (lit) glow(ctx, x, y, r * 2, [[0, 'rgba(255, 181, 17, 0.42)'], [0.5, 'rgba(255, 181, 17, 0.14)'], [1, 'rgba(255, 181, 17, 0)']]);
+  ctx.save();
+  ctx.shadowColor = 'rgba(4, 14, 40, 0.45)';
+  ctx.shadowBlur = r * 0.25;
+  ctx.shadowOffsetY = r * 0.06;
+  ctx.fillStyle = C.paper;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  const img = art.flowers[id];
+  if (img) ctx.drawImage(img, x - r * 0.98, y - r * 0.98, r * 1.96, r * 1.96);
+  ctx.save();
+  ctx.setLineDash([Math.max(2, r * 0.035), Math.max(4, r * 0.075)]);
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(2, r * 0.035);
+  ctx.strokeStyle = C.ink;
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.93, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A lantern (khom loi) with its warm light, as in the booth's sky. */
+function lantern(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  glow(ctx, x, y, s * 2.6, [[0, 'rgba(255, 214, 140, 0.38)'], [1, 'rgba(255, 214, 140, 0)']]);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s / 16, s / 16);
+  const g = ctx.createLinearGradient(0, -16, 0, 16);
+  g.addColorStop(0, '#fffbe4');
+  g.addColorStop(0.55, '#fbe2a0');
+  g.addColorStop(1, '#f0a04a');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-9, -13);
+  ctx.quadraticCurveTo(0, -16.5, 9, -13);
+  ctx.quadraticCurveTo(11.5, 0, 7, 12.5);
+  ctx.quadraticCurveTo(0, 14.5, -7, 12.5);
+  ctx.quadraticCurveTo(-11.5, 0, -9, -13);
+  ctx.fill();
+  ctx.fillStyle = '#d9772c';
+  ctx.beginPath();
+  ctx.ellipse(0, 12.6, 6, 1.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** The poster's moon in its halo (components/festival/loykrathong/Halo.tsx), with words on it. */
+function moon(ctx: CanvasRenderingContext2D, art: Art, x: number, y: number, r: number) {
+  // The wide cool wash, then the warm light close to the disc.
+  glow(ctx, x, y, r * 3.6, [[0, 'rgba(214, 228, 255, 0.26)'], [0.38, 'rgba(170, 196, 240, 0.13)'], [0.66, 'rgba(140, 170, 225, 0.05)'], [1, 'rgba(140, 170, 225, 0)']]);
+  glow(ctx, x, y, r * 1.9, [[0, 'rgba(255, 244, 210, 0.42)'], [0.5, 'rgba(255, 228, 170, 0.14)'], [1, 'rgba(255, 228, 170, 0)']]);
+  if (art.moon) {
+    // The disc is 79% of the art; the rest is its soft edge.
+    const s = r * 2 * 1.26;
+    ctx.drawImage(art.moon, x - s / 2, y - s / 2, s, s);
+  } else {
+    const g = ctx.createRadialGradient(x - r * 0.25, y - r * 0.3, r * 0.1, x, y, r);
+    g.addColorStop(0, '#fffbe6');
+    g.addColorStop(1, '#ecd796');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/** A cream paper slip with a strip of tape, like the home's slips. */
+function slip(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, tilt: number) {
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.rotate(tilt);
+  ctx.shadowColor = 'rgba(4, 14, 40, 0.5)';
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetY = 12;
+  ctx.fillStyle = C.paper;
+  ctx.beginPath();
+  ctx.roundRect(-w / 2, -h / 2, w, h, 22);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  // The tape: translucent marigold across the top edge.
+  ctx.rotate(-0.06);
+  ctx.fillStyle = 'rgba(255, 181, 17, 0.72)';
+  ctx.fillRect(-70, -h / 2 - 30, 140, 38);
+  ctx.restore();
+}
+
+// ---- the night ----
+
+/** The sky, ribbons, stars, lanterns, the far bank and the river with its flowers. */
+function scene(ctx: CanvasRenderingContext2D, r: Recap, art: Art, seed: number, riverTop: number) {
+  // The booth's sky (app/festivals/loykrathong.css --fest-sky), a step darker like the kiosk.
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#12345f');
+  sky.addColorStop(0.3, '#0e2e59');
+  sky.addColorStop(0.65, '#0a2853');
+  sky.addColorStop(1, '#0d2d59');
   ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, W, H);
 
   const rand = seeded(seed);
-  for (let i = 0; i < 46; i += 1) {
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.35 + rand() * 0.55})`;
+
+  // Two glitter ribbons swept across the sky (Sky.tsx): a soft band and fine dust.
+  for (const [y0, amp, phase, thick] of [[300, 70, 0.4, 230], [1080, 60, 2.6, 190]]) {
+    const at = (x: number) => y0 + amp * Math.sin((x / W) * Math.PI * 1.4 + phase);
+    const g = ctx.createLinearGradient(0, y0 - thick / 2 - amp, 0, y0 + thick / 2 + amp);
+    g.addColorStop(0, 'rgba(159, 182, 230, 0)');
+    g.addColorStop(0.5, 'rgba(159, 182, 230, 0.12)');
+    g.addColorStop(1, 'rgba(159, 182, 230, 0)');
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(rand() * w, rand() * h * 0.5, 1.2 + rand() * 2, 0, Math.PI * 2);
+    for (let x = 0; x <= W; x += 30) ctx.lineTo(x, at(x) - thick / 2);
+    for (let x = W; x >= 0; x -= 30) ctx.lineTo(x, at(x) + thick / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff6dc';
+    for (let i = 0; i < 260; i += 1) {
+      const x = rand() * W;
+      ctx.globalAlpha = 0.18 + rand() * 0.45;
+      ctx.beginPath();
+      ctx.arc(x, at(x) + (rand() - 0.5) * thick * 0.8 * (0.4 + rand()), 0.7 + rand() * 1.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Stars, a few big ones with a little light of their own.
+  for (let i = 0; i < 120; i += 1) {
+    const x = rand() * W;
+    const y = rand() * riverTop * 0.95;
+    const big = rand() < 0.08;
+    if (big) glow(ctx, x, y, 14, [[0, 'rgba(255, 246, 220, 0.5)'], [1, 'rgba(255, 246, 220, 0)']]);
+    ctx.fillStyle = `rgba(255, 246, 220, ${0.4 + rand() * 0.6})`;
+    ctx.beginPath();
+    ctx.arc(x, y, big ? 3.2 : 1 + rand() * 1.8, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // The river: a far layer and a near one, each a hand-cut wave.
-  const top = h - (format === 'story' ? 330 : 230);
+  // Lanterns at the sides, clear of the words.
+  for (const [x, y, s] of [[70, 640, 22], [1000, 560, 18], [1012, 820, 14], [50, 1000, 13], [985, 1330, 11]]) {
+    lantern(ctx, x, y, s);
+  }
+
+  // Wat Arun on the far bank, its foot behind the far water.
+  if (art.wat) {
+    const h = 180;
+    const w = (art.wat.width / art.wat.height) * h;
+    ctx.drawImage(art.wat, W - w + 70, riverTop - h + 40, w, h);
+  }
+
+  // The river: the moonlit far water, then the near water (River.tsx).
   const wave = (base: number, amp: number, k: number, phase: number, fill: string) => {
     ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.moveTo(0, h);
-    for (let x = 0; x <= w; x += 12) {
-      const y = base + amp * Math.sin((x / w) * Math.PI * 2 * k + phase) + (amp / 2) * Math.sin((x / w) * Math.PI * 2 * k * 2.3 + phase * 2);
-      ctx.lineTo(x, y);
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 12) {
+      const tt = (x / W) * Math.PI * 2;
+      ctx.lineTo(x, base + amp * Math.sin(k * tt + phase) + (amp / 2.2) * Math.sin(k * 2.3 * tt + phase * 2.3));
     }
-    ctx.lineTo(w, h);
+    ctx.lineTo(W, H);
     ctx.closePath();
     ctx.fill();
   };
-  wave(top, 12, 2, seed, C.blue);
-  wave(top + 70, 14, 2.5, seed * 1.7, C.ink);
-  ctx.strokeStyle = 'rgba(252, 241, 230, 0.18)';
+  wave(riverTop, 10, 2, 0.6, C.far);
+  wave(riverTop + 46, 12, 2.5, 2.1, C.near);
+  ctx.strokeStyle = 'rgba(252, 241, 230, 0.16)';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
-  for (let i = 0; i < 7; i += 1) {
-    const x = rand() * (w - 160);
-    const y = top + 110 + rand() * (h - top - 150);
+  for (let i = 0; i < 8; i += 1) {
+    const x = rand() * (W - 160);
+    const y = riverTop + 150 + rand() * (H - riverTop - 170);
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.quadraticCurveTo(x + 60, y - 10, x + 120, y);
     ctx.stroke();
   }
-  // A few lit flowers floating, in the day's own mix of colours.
-  const tints = r.flowers.filter((f) => f.count > 0).map((f) => f.tint);
-  const pick = tints.length ? tints : ([0, 1, 2, 3, 4, 5] as Tint[]);
+  // The day's flowers floating, in its own mix.
+  const ids = r.flowers.filter((f) => f.count > 0).map((f) => f.id);
+  const pick = ids.length ? ids : r.flowers.map((f) => f.id);
   const n = 5;
   for (let i = 0; i < n; i += 1) {
-    const x = (w / n) * (i + 0.5) + (rand() - 0.5) * 60;
-    const y = top + 60 + rand() * 40;
-    flower(ctx, x, y, 34 + rand() * 18, pick[i % pick.length]);
+    const x = (W / n) * (i + 0.5) + (rand() - 0.5) * 50;
+    const y = riverTop + 105 + (i % 2) * 34 + rand() * 16;
+    plated(ctx, art, pick[i % pick.length], x, y, 40 + rand() * 12);
   }
 
-  // Header: the wordmark. The inks add light on the night sky.
-  const hy = format === 'story' ? 170 : 86;
+  // The wordmark, and which booth and day. The inks add light on the night.
+  const hy = 238;
+  ctx.font = font.heading(500, 36);
+  const tw = ctx.measureText(t.brand).width;
+  const left = (W - (tw + 74)) / 2;
   ctx.globalCompositeOperation = 'screen';
   ctx.fillStyle = C.pink;
   ctx.beginPath();
-  ctx.arc(w / 2 - 238, hy, 20, 0, Math.PI * 2);
+  ctx.arc(left + 18, hy, 18, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = C.blue;
   ctx.beginPath();
-  ctx.arc(w / 2 - 214, hy, 20, 0, Math.PI * 2);
+  ctx.arc(left + 40, hy, 18, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
-  ctx.font = font.heading(500, 38);
-  ctx.fillStyle = C.paper;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(t.brand, w / 2 - 180, hy);
-
-  // Footer on the water: which booth, which day.
-  ctx.font = font.heading(500, 32);
-  ctx.textAlign = 'center';
-  ctx.fillStyle = C.paper;
-  ctx.fillText(`บูธ${r.festivalName} · ${r.dateLabel}`, w / 2, h - (format === 'story' ? 150 : 70));
+  line(ctx, t.brand, left + 74, hy, { font: heading(500), size: 36, color: C.paper, align: 'left' });
+  line(ctx, t.day(r.festivalName, r.dateLabel), W / 2, hy + 62, { font: note, size: 38, color: C.note });
 
   if (r.sample) {
     ctx.save();
-    ctx.translate(w / 2, h / 2);
+    ctx.translate(W / 2, H / 2);
     ctx.rotate(-Math.PI / 7);
     ctx.font = font.heading(600, 150);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
@@ -305,267 +332,187 @@ function scene(ctx: CanvasRenderingContext2D, w: number, h: number, format: Form
   }
 }
 
-// ---- the cards ----
+// ---- card 1: today's hearts ----
 
-type Body = (p: Pen, r: Recap, qr: QrMatrix | null) => void;
+function today(ctx: CanvasRenderingContext2D, r: Recap, art: Art) {
+  // Without the topic slip, everything sits a little lower, to stay centred.
+  const dy = r.topic ? 0 : 70;
+  scene(ctx, r, art, 3, 1640);
 
-const note = (p: Pen, str: string) => text(p, str, { font: font.note(46), color: C.note, size: 46 });
+  // The count on the full moon.
+  const my = 560 + dy;
+  moon(ctx, art, W / 2, my, 170);
+  const digits = String(r.players);
+  line(ctx, digits, W / 2, my + 10, { font: heading(600), size: digits.length > 3 ? 150 : 190, color: C.ink, max: 290 });
+  line(ctx, t.today.players, W / 2, my + 245, { font: heading(500), size: 54, color: C.paper });
 
-const cover: Body = (p, r) => {
-  note(p, t.cover.note(r.festivalName));
-  text(p, r.dateLabel, { font: font.heading(500, 42), color: C.paper, size: 42 });
-  gap(p, 40);
-  // The count on a full moon.
-  const d = 440;
-  if (!p.dry) {
-    const { ctx } = p;
-    const cx = p.w / 2;
-    const cy = p.y + d / 2;
-    const halo = ctx.createRadialGradient(cx, cy, d * 0.4, cx, cy, d * 0.85);
-    halo.addColorStop(0, 'rgba(246, 230, 168, 0.4)');
-    halo.addColorStop(1, 'rgba(246, 230, 168, 0)');
-    ctx.fillStyle = halo;
-    ctx.beginPath();
-    ctx.arc(cx, cy, d * 0.85, 0, Math.PI * 2);
+  // How most people feel: the top three, as their flowers.
+  line(ctx, t.today.feelings, W / 2, 935 + dy, { font: note, size: 46, color: C.note });
+  const top = r.feelings;
+  const spots =
+    top.length === 1
+      ? [{ x: W / 2, big: true }]
+      : top.length === 2
+        ? [{ x: 380, big: true }, { x: 760, big: false }]
+        : [{ x: W / 2, big: true }, { x: 215, big: false }, { x: 865, big: false }];
+  top.forEach((f, i) => {
+    const { x, big } = spots[i];
+    const fy = (big ? 1110 : 1140) + dy;
+    plated(ctx, art, f.id, x, fy, big ? 128 : 86);
+    line(ctx, f.word, x, 1295 + dy, { font: heading(big ? 600 : 500), size: big ? 60 : 38, color: C.paper, max: big ? 420 : 290 });
+    line(ctx, `${f.pct}%`, x, (big ? 1365 : 1352) + dy, { font: heading(600), size: big ? 54 : 40, color: C.sun });
+  });
+
+  // What is on their minds, from the check-up on the web, on a taped slip.
+  if (r.topic) {
+    const w = 620;
+    const h = 150;
+    const x = (W - w) / 2;
+    const y = 1462;
+    slip(ctx, x, y, w, h, -0.025);
+    ctx.save();
+    ctx.translate(W / 2, y + h / 2);
+    ctx.rotate(-0.025);
+    line(ctx, t.today.topic, 0, -26, { font: heading(400), size: 30, color: '#5a6386' });
+    line(ctx, r.topic.name, 0, 30, { font: heading(600), size: 62, color: C.ink, max: w - 60 });
+    ctx.restore();
+  }
+}
+
+// ---- card 2: "are you okay?", and the way in ----
+
+function figure(ctx: CanvasRenderingContext2D, x: number, y: number, on: boolean) {
+  if (on) glow(ctx, x, y + 26, 62, [[0, 'rgba(255, 72, 176, 0.35)'], [1, 'rgba(255, 72, 176, 0)']]);
+  ctx.beginPath();
+  ctx.arc(x, y, 16, 0, Math.PI * 2);
+  ctx.moveTo(x - 26, y + 62);
+  ctx.lineTo(x - 26, y + 48);
+  ctx.arc(x, y + 48, 26, Math.PI, 0);
+  ctx.lineTo(x + 26, y + 62);
+  ctx.closePath();
+  if (on) {
+    ctx.fillStyle = C.pink;
     ctx.fill();
-    const moon = ctx.createRadialGradient(cx - d * 0.12, cy - d * 0.14, d * 0.05, cx, cy, d / 2);
-    moon.addColorStop(0, '#fffbe6');
-    moon.addColorStop(0.6, '#f6e6a8');
-    moon.addColorStop(1, '#e8cf86');
-    ctx.fillStyle = moon;
-    ctx.beginPath();
-    ctx.arc(cx, cy, d / 2, 0, Math.PI * 2);
-    ctx.fill();
-    const digits = String(r.players);
-    ctx.font = font.heading(600, digits.length > 3 ? 160 : 210);
-    ctx.fillStyle = C.ink;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(digits, cx, cy + 8);
+  } else {
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(252, 241, 230, 0.75)';
+    ctx.stroke();
   }
-  p.y += d;
-  gap(p, 34);
-  text(p, t.cover.players, { font: font.heading(600, 68), color: C.paper, size: 68 });
-  gap(p, 30);
-  const chip = { font: font.body(500, 36), size: 36, color: C.paper, fill: C.faint };
-  if (r.medianSeconds !== null) {
-    pill(p, t.cover.time(r.medianSeconds), chip);
-    gap(p, 18);
-  }
-  if (r.peak) {
-    pill(p, t.cover.peak(r.peak.from, r.peak.to), chip);
-    gap(p, 18);
-  }
-  gap(p, 16);
-  text(p, t.cover.thanks, { font: font.note(42), color: C.note, size: 42 });
-};
+}
 
-const flowers: Body = (p, r) => {
-  const top = r.flowers[0];
-  note(p, t.flowers.note);
-  gap(p, 8);
-  text(p, t.flowers.top, { font: font.heading(500, 40), color: C.soft, size: 40 });
-  gap(p, 30);
-  const big = 150;
-  if (!p.dry) flower(p.ctx, p.w / 2, p.y + big, big, top.tint);
-  p.y += big * 2;
-  gap(p, 26);
-  text(p, top.name, { font: font.heading(600, 104), color: C.paper, size: 104, lh: 1.25 });
-  text(p, t.flowers.share(top.pct), { font: font.heading(600, 46), color: C.sun, size: 46 });
-  gap(p, 44);
-  // Every flower, as bars.
-  const { ctx } = p;
-  const max = Math.max(1, ...r.flowers.map((f) => f.count));
-  const nameW = 290;
-  const row = 64;
-  for (const f of r.flowers) {
-    if (!p.dry) {
-      const y = p.y + row / 2;
-      ctx.font = font.heading(500, 34);
-      ctx.fillStyle = C.paper;
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(f.name, p.m + nameW, y);
-      flower(ctx, p.m + nameW + 44, y, 24, f.tint, false);
-      const tx = p.m + nameW + 86;
-      const tw = p.w - p.m - tx - 90;
-      ctx.fillStyle = C.faint;
-      roundRect(ctx, tx, y - 15, tw, 30, 15);
-      ctx.fill();
-      ctx.fillStyle = TINTS[f.tint].outer;
-      roundRect(ctx, tx, y - 15, Math.max(30, (tw * f.count) / max), 30, 15);
-      ctx.fill();
-      ctx.font = font.heading(600, 38);
-      ctx.fillStyle = C.paper;
-      ctx.textAlign = 'left';
-      ctx.fillText(String(f.count), tx + tw + 20, y);
-    }
-    p.y += row;
+function qrBox(ctx: CanvasRenderingContext2D, qr: QrMatrix, x: number, y: number, box: number) {
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.roundRect(x, y, box, box, 26);
+  ctx.fill();
+  const n = qr.length;
+  // A quiet zone inside the white box; whole pixels, so no hairline shows.
+  const cell = Math.floor((box - 28) / n);
+  const ox = Math.round(x + (box - cell * n) / 2);
+  const oy = Math.round(y + (box - cell * n) / 2);
+  ctx.fillStyle = C.ink;
+  ctx.beginPath();
+  for (let yy = 0; yy < n; yy += 1) {
+    for (let xx = 0; xx < n; xx += 1) if (qr[yy][xx]) ctx.rect(ox + xx * cell, oy + yy * cell, cell, cell);
   }
-};
+  ctx.fill('nonzero');
+}
 
-const answers: Body = (p, r) => {
-  note(p, t.answers.note);
-  gap(p, 30);
-  const segColors = [C.sun, C.pink, C.blue];
-  for (const q of r.questions) {
-    if (q.answered === 0) continue;
-    const topChoice = [...q.choices].sort((a, b) => b.count - a.count)[0];
-    text(p, q.headline, { font: font.body(500, 34), color: C.soft, size: 34 });
-    gap(p, 6);
-    text(p, `“${topChoice.label}”`, { font: font.heading(600, 58), color: C.paper, size: 58, lh: 1.3 });
-    text(p, `${topChoice.pct}%`, { font: font.heading(600, 64), color: C.sun, size: 64, lh: 1.2 });
-    gap(p, 14);
-    // All the answers as one bar; the winner at full strength.
-    const bw = p.w - p.m * 2;
-    if (!p.dry) {
-      const { ctx } = p;
-      let x = p.m;
-      ctx.save();
-      roundRect(ctx, p.m, p.y, bw, 22, 11);
-      ctx.clip();
-      ctx.fillStyle = C.faint;
-      ctx.fillRect(p.m, p.y, bw, 22);
-      q.choices.forEach((ch, i) => {
-        const cw = (bw * ch.count) / Math.max(1, q.answered);
-        ctx.globalAlpha = ch.id === topChoice.id ? 1 : 0.45;
-        ctx.fillStyle = segColors[i % segColors.length];
-        ctx.fillRect(x, p.y, cw, 22);
-        x += cw;
-      });
-      ctx.restore();
-    }
-    p.y += 22;
-    gap(p, 54);
-  }
-};
-
-const okay: Body = (p, r) => {
+function okay(ctx: CanvasRenderingContext2D, r: Recap, art: Art, qr: QrMatrix | null) {
+  scene(ctx, r, art, 7, 1730);
   const o = r.okay;
-  if (!o) return;
-  note(p, t.okay.note);
-  gap(p, 10);
-  text(p, t.okay.question, { font: font.heading(500, 58), color: C.paper, size: 58 });
-  gap(p, 40);
-  // Ten people as ten dots: the filled ones said "okay" while not okay.
-  const dot = 70;
-  const g = 18;
-  const total = dot * 10 + g * 9;
-  if (!p.dry) {
-    const { ctx } = p;
-    for (let i = 0; i < 10; i += 1) {
-      const cx = (p.w - total) / 2 + i * (dot + g) + dot / 2;
-      const cy = p.y + dot / 2;
-      ctx.beginPath();
-      ctx.arc(cx, cy, dot / 2 - 4, 0, Math.PI * 2);
-      if (i < o.hide) {
-        ctx.fillStyle = C.pink;
-        ctx.fill();
-      } else {
-        ctx.lineWidth = 6;
-        ctx.strokeStyle = C.paper;
-        ctx.stroke();
-      }
-    }
-  }
-  p.y += dot;
-  gap(p, 40);
-  text(p, t.okay.stat(o.hide), { font: font.heading(600, 112), color: C.sun, size: 112, lh: 1.25 });
-  text(p, t.okay.statLine, { font: font.heading(500, 54), color: C.paper, size: 54, lh: 1.35 });
-  if (o.depends > 0) {
-    gap(p, 22);
-    text(p, t.okay.depends(o.depends), { font: font.body(500, 36), color: C.soft, size: 36 });
-  }
-  gap(p, 40);
-  text(p, t.okay.tail, { font: font.note(50), color: C.note, size: 50 });
-  gap(p, 30);
-  pill(p, cudCare.result.body, { font: font.body(500, 32), size: 32, color: C.paper, fill: C.faint });
-  gap(p, 22);
-  text(p, t.okay.base(o.answered), { font: font.body(400, 26), color: C.soft, size: 26 });
-};
 
-const invite: Body = (p, r, qr) => {
-  note(p, t.invite.note);
-  gap(p, 10);
-  text(p, t.invite.title, { font: font.heading(600, 76), color: C.paper, size: 76, lh: 1.3 });
-  gap(p, 40);
+  if (o) {
+    line(ctx, t.okay.question, W / 2, 400, { font: heading(500), size: 54, color: C.paper });
+    // Ten people: the pink ones said "okay" while not okay.
+    const step = 88;
+    const left = W / 2 - step * 4.5;
+    for (let i = 0; i < 10; i += 1) figure(ctx, left + i * step, 482, i < o.hide);
+    line(ctx, t.okay.stat(o.hide), W / 2, 680, { font: heading(600), size: 124, color: C.sun });
+    line(ctx, t.okay.statLine, W / 2, 790, { font: heading(500), size: 52, color: C.paper });
+    line(ctx, t.okay.tail, W / 2, 870, { font: note, size: 44, color: C.note });
+  } else {
+    const [head, tail] = t.okay.tail.split(' ');
+    line(ctx, head, W / 2, 640, { font: heading(600), size: 96, color: C.paper });
+    line(ctx, tail, W / 2, 760, { font: note, size: 56, color: C.note });
+  }
+
+  // The way in: Instagram's link sticker goes in the space below this line.
+  line(ctx, t.okay.vent, W / 2, 975, { font: heading(600), size: 50, color: C.paper });
+  ctx.strokeStyle = C.sun;
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(W / 2 - 16, 1004);
+  ctx.lineTo(W / 2, 1018);
+  ctx.lineTo(W / 2 + 16, 1004);
+  ctx.stroke();
+
+  // ระบาย, in numbers, with the live dot; under it, how fast, when it is true.
+  const v = r.vent;
+  const fast = v && v.replied >= 5 && v.within3 / v.replied >= 0.5;
+  const words = v ? t.okay.chats(v.chats, r.day !== null) : t.okay.promise;
+  const py = 1290;
+  let size = 38;
+  ctx.font = font.heading(500, size);
+  let tw = ctx.measureText(words).width;
+  if (tw > W - 280) {
+    size = Math.floor((size * (W - 280)) / tw);
+    ctx.font = font.heading(500, size);
+    tw = ctx.measureText(words).width;
+  }
+  const pw = tw + 112;
+  const px = (W - pw) / 2;
+  ctx.fillStyle = C.faint;
+  ctx.beginPath();
+  ctx.roundRect(px, py - 38, pw, 76, 38);
+  ctx.fill();
+  const dotX = px + 42;
+  glow(ctx, dotX, py, 24, [[0, 'rgba(31, 174, 106, 0.6)'], [1, 'rgba(31, 174, 106, 0)']]);
+  ctx.fillStyle = C.live;
+  ctx.beginPath();
+  ctx.arc(dotX, py, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = C.paper;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(words, dotX + 30, py + 1);
+  if (fast) line(ctx, t.okay.fast, W / 2, py + 68, { font: body(500), size: 32, color: C.soft });
+
+  // The QR, for anyone not tapping the sticker.
   if (qr) {
-    const box = 470;
-    if (!p.dry) {
-      const { ctx } = p;
-      const x = (p.w - box) / 2;
-      ctx.fillStyle = '#ffffff';
-      roundRect(ctx, x, p.y, box, box, 36);
-      ctx.fill();
-      // A four-module quiet zone, inside the white box.
-      const n = qr.length;
-      const cell = Math.floor((box - 40) / (n + 8));
-      // Whole pixels, so no hairline shows between modules.
-      const off = Math.round(x + (box - cell * n) / 2);
-      const offY = Math.round(p.y + (box - cell * n) / 2);
-      // One path for every module, filled once, so neighbours never show a seam
-      // even when the card is scaled.
-      ctx.fillStyle = C.ink;
-      ctx.beginPath();
-      for (let yy = 0; yy < n; yy += 1) {
-        for (let xx = 0; xx < n; xx += 1) {
-          if (qr[yy][xx]) ctx.rect(off + xx * cell, offY + yy * cell, cell, cell);
-        }
-      }
-      ctx.fill('nonzero');
-    }
-    p.y += box;
-    gap(p, 30);
+    const box = 230;
+    const x = 250;
+    const y = 1408;
+    qrBox(ctx, qr, x, y, box);
+    line(ctx, t.okay.scan, x + box + 40, y + box / 2 - 30, { font: heading(600), size: 48, color: C.paper, align: 'left', max: 380 });
+    line(ctx, t.okay.scanSub, x + box + 40, y + box / 2 + 30, { font: body(400), size: 32, color: C.soft, align: 'left', max: 380 });
   }
-  text(p, t.invite.body, { font: font.body(500, 38), color: C.soft, size: 38 });
-  if (r.next) {
-    gap(p, 40);
-    pill(p, t.invite.next(r.next.name, r.next.date), { font: font.heading(500, 36), size: 36, color: C.ink, fill: C.sun });
-  }
-};
+  line(ctx, cudCare.result.body, W / 2, 1676, { font: body(400), size: 28, color: C.soft });
+}
+
+// ---- the cards ----
 
 export interface CardSpec {
   id: string;
   label: string;
-  body: Body;
+  /** Where the link sticker goes, if this card has a place for one. */
+  sticker?: typeof STICKER;
+  draw: (ctx: CanvasRenderingContext2D, r: Recap, art: Art, qr: QrMatrix | null) => void;
 }
 
-/** The cards for a recap, in posting order. The honest-question card only once its guard allows. */
-export function cardsFor(r: Recap): CardSpec[] {
-  const cards: CardSpec[] = [
-    { id: 'cover', label: 'ภาพรวม', body: cover },
-    { id: 'flowers', label: 'ดอกไม้', body: flowers },
-    { id: 'answers', label: 'คำตอบยอดฮิต', body: answers },
-  ];
-  if (r.okay) cards.push({ id: 'okay', label: 'เรื่องโอเคไหม', body: okay });
-  cards.push({ id: 'invite', label: 'ชวนไปเว็บ', body: invite });
-  return cards;
-}
+/** The two cards, in posting order. */
+export const CARDS: CardSpec[] = [
+  { id: 'today', label: t.cards[0], draw: (ctx, r, art) => today(ctx, r, art) },
+  { id: 'okay', label: t.cards[1], sticker: STICKER, draw: okay },
+];
 
-/** Paint one card onto a canvas of the format's size. */
-export function paint(canvas: HTMLCanvasElement, format: Format, r: Recap, card: CardSpec, qr: QrMatrix | null, seed: number) {
-  const { w, h } = SIZES[format];
-  canvas.width = w;
-  canvas.height = h;
+/** Paint one card onto a canvas at the story's size. */
+export function paint(canvas: HTMLCanvasElement, r: Recap, card: CardSpec, art: Art, qr: QrMatrix | null) {
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  scene(ctx, w, h, format, r, seed);
-
-  // The space between the header and the water.
-  const areaTop = format === 'story' ? 250 : 140;
-  const areaBottom = h - (format === 'story' ? 360 : 250);
-  const area = areaBottom - areaTop;
-
-  const measure: Pen = { ctx, w, dry: true, y: 0, m: 88 };
-  card.body(measure, r, qr);
-  const height = measure.y;
-  const scale = height > area ? area / height : 1;
-
-  ctx.save();
-  const top = areaTop + Math.max(0, (area - height * scale) / 2);
-  ctx.translate(w / 2, top);
-  ctx.scale(scale, scale);
-  ctx.translate(-w / 2, 0);
-  card.body({ ctx, w, dry: false, y: 0, m: 88 }, r, qr);
-  ctx.restore();
+  card.draw(ctx, r, art, qr);
 }
