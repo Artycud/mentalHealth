@@ -101,34 +101,36 @@
   }
 }
 
-/* The heart in a white speech bubble, its tail toward the words: listening. */
+/* The heart in a glass speech bubble, its tail toward the words: listening. */
 .listen {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 3px 0 rgba(176, 21, 95, 0.16);
-}
-
-.listen::before {
-  content: '';
-  position: absolute;
-  left: -2px;
-  bottom: 4px;
-  width: 18px;
-  height: 18px;
-  background: #ffffff;
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
-  rotate: 8deg;
+  display: block;
+  width: 92px;
+  height: 92px;
 }
 
 .heart {
-  position: relative;
-  width: 64px;
-  height: 64px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 4px 6px rgba(176, 21, 95, 0.16));
+}
+
+/* the heart floats a little inside its bubble */
+.bob {
+  animation: bob 3.2s ease-in-out infinite;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bob {
+    animation: none;
+  }
 }
 
 /* ---- quick replies, on the student's side ---- */

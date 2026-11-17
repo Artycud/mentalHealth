@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { Fragment, useRef, useState } from 'react';
 
-import { LiveHeart } from '@/components/heart/LiveHeart';
 import palette from '@/components/heart/palette.module.css';
 import { DriftingHints, Plane, Starters } from '@/components/vent/Invite';
 import { vent } from '@/content/th/vent';
@@ -11,6 +10,7 @@ import { prefersReducedMotion } from '@/lib/frame';
 import { FORWARD } from '@/lib/nav';
 import { handOff } from '@/lib/vent/handoff';
 
+import { GlassHeart } from './GlassHeart';
 import styles from './VentStart.module.css';
 
 /** How long the paper airplane takes to fly off before the chat opens. */
@@ -71,9 +71,9 @@ export function VentStart() {
             ))}
           </span>
         </span>
-        {/* The heart in a speech bubble, listening. */}
+        {/* The heart in a glass speech bubble, listening. */}
         <span className={styles.listen} aria-hidden="true">
-          <LiveHeart energy={0.5} weight={0.3} colour="rgb(255 143 181)" listening className={styles.heart} />
+          <GlassHeart className={styles.heart} />
         </span>
       </label>
 
