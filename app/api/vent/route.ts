@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { siteOrigin } from '@/lib/site-url';
 import { takeVentSlot } from '@/lib/vent/cap';
 import { notifySapa } from '@/lib/vent/discord';
 import { failed, json, smallJson, Text } from '@/lib/vent/http';
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
 
     const care = needsCare(body.data.text);
     const thread = await startThread(body.data.text, { feel: body.data.feel, urgent: care });
-    const discordId = await notifySapa({ ref: thread.ref, urgent: care, isNew: true, origin: new URL(request.url).origin });
+    const discordId = await notifySapa({ ref: thread.ref, urgent: care, isNew: true, origin: await siteOrigin() });
     if (discordId) await setDiscordId(thread.ref, discordId);
 
     return json({ key: thread.id, code: thread.code, care });

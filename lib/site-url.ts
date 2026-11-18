@@ -19,3 +19,12 @@ export async function siteUrl(path = '/'): Promise<string> {
   const proto = (h.get('x-forwarded-proto') ?? (local ? 'http' : 'https')).split(',')[0].trim();
   return `${proto}://${host}${path}`;
 }
+
+/**
+ * The site's origin (no trailing slash), for links sent elsewhere, such as the
+ * Discord pings. Not `new URL(request.url).origin`: behind the school server's
+ * reverse proxy that is the app's own http://localhost:3000.
+ */
+export function siteOrigin(): Promise<string> {
+  return siteUrl('');
+}

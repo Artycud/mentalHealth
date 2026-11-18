@@ -1,3 +1,4 @@
+import { siteOrigin } from '@/lib/site-url';
 import { sweepQueue } from '@/lib/vent/discord';
 import { json } from '@/lib/vent/http';
 
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
   const secret = (process.env.CRON_SECRET ?? '').trim();
   if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) return json({ error: 'unauthorized' }, 401);
   try {
-    return json({ result: await sweepQueue(new URL(request.url).origin, true) });
+    return json({ result: await sweepQueue(await siteOrigin(), true) });
   } catch (error) {
     console.error('cron sapa-queue: failed', error instanceof Error ? error.name : 'unknown');
     return json({ error: 'unavailable' }, 503);

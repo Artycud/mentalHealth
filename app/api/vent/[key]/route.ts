@@ -1,6 +1,7 @@
 import { after } from 'next/server';
 import { z } from 'zod';
 
+import { siteOrigin } from '@/lib/site-url';
 import { takeVentSlot } from '@/lib/vent/cap';
 import { markEnded, notifySapa, sweepQueue } from '@/lib/vent/discord';
 import { failed, json, smallJson, Text } from '@/lib/vent/http';
@@ -27,7 +28,7 @@ export async function GET(request: Request, { params }: Ctx) {
     // A student is waiting on this page: after answering, see whether the team
     // needs a nudge (lib/vent/discord.ts sweepQueue; at most once a minute).
     if (thread?.waiting) {
-      const origin = new URL(request.url).origin;
+      const origin = await siteOrigin();
       after(() => sweepQueue(origin));
     }
     return thread ? json(thread) : json({ error: 'gone' }, 404);
@@ -52,7 +53,7 @@ export async function POST(request: Request, { params }: Ctx) {
     if (saved.full) return json({ error: 'full' }, 409);
 
     // Every message pings; a burst within a minute is merged into one ping (lib/vent/discord.ts).
-    const discordId = await notifySapa({ ref: saved.ref, urgent: care, isNew: false, origin: new URL(request.url).origin });
+    const discordId = await notifySapa({ ref: saved.ref, urgent: care, isNew: false, origin: await siteOrigin() });
     if (discordId) await setDiscordId(saved.ref, discordId);
     return json({ ok: true, care });
   } catch (error) {

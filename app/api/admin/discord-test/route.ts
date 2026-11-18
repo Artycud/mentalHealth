@@ -1,5 +1,6 @@
 import { fail, ok } from '@/lib/api';
 import { assertAdmin } from '@/lib/guard';
+import { siteOrigin } from '@/lib/site-url';
 import { testDiscord } from '@/lib/vent/discord';
 
 /**
@@ -10,7 +11,7 @@ import { testDiscord } from '@/lib/vent/discord';
 export async function POST(request: Request) {
   try {
     await assertAdmin(request);
-    return ok(await testDiscord(new URL(request.url).origin));
+    return ok(await testDiscord(await siteOrigin()));
   } catch (error) {
     return fail(error);
   }
