@@ -10,7 +10,7 @@ import { prefersReducedMotion } from '@/lib/frame';
 import { FORWARD } from '@/lib/nav';
 import { handOff } from '@/lib/vent/handoff';
 
-import { GlassHeart } from './GlassHeart';
+import { PaperHeart } from './PaperHeart';
 import styles from './VentStart.module.css';
 
 /** How long the paper airplane takes to fly off before the chat opens. */
@@ -71,9 +71,9 @@ export function VentStart() {
             ))}
           </span>
         </span>
-        {/* The heart in a glass speech bubble, listening. */}
+        {/* The heart on a paper speech bubble, listening. */}
         <span className={styles.listen} aria-hidden="true">
-          <GlassHeart className={styles.heart} />
+          <PaperHeart className={styles.heart} />
         </span>
       </label>
 
