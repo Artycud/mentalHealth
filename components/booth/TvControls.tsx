@@ -6,14 +6,31 @@ import styles from './TvControls.module.css';
 
 const IDLE_MS = 3000;
 
+/** Safari on iPads before iPadOS 16.4 has the full-screen calls only under a webkit prefix. */
+type WebkitDoc = Document & { webkitFullscreenElement?: Element | null; webkitFullscreenEnabled?: boolean };
+type WebkitEl = HTMLElement & { webkitRequestFullscreen?: () => void };
+
+const isFull = () => !!(document.fullscreenElement ?? (document as WebkitDoc).webkitFullscreenElement);
+const canFull = () => !!(document.fullscreenEnabled || (document as WebkitDoc).webkitFullscreenEnabled);
+
+function goFull() {
+  const root = document.documentElement as WebkitEl;
+  if (root.requestFullscreen) void root.requestFullscreen().catch(() => {});
+  else root.webkitRequestFullscreen?.();
+}
+
 /**
- * For a TV driven by a laptop: the mouse pointer hides itself after a few seconds
- * still, and a small "full screen" button appears only while the mouse moves and
- * the page is not already full screen. (Going full screen needs a click: a browser
- * will not do it on its own.) On a smart TV or an iPad with no mouse, none of this
- * ever shows.
+ * A small "full screen" button. Going full screen needs a click or a tap: a
+ * browser will not do it on its own.
+ *
+ * - On a TV driven by a laptop (the default), the mouse pointer hides itself after
+ *   a few seconds still, and the button appears only while the mouse moves and
+ *   the page is not already full screen. On a smart TV with no mouse it never shows.
+ * - With `touch` (the kiosk iPad), it shows whenever the page is not full screen,
+ *   for staff to tap once. iPad Safari supports it; iPhone Safari does not, so
+ *   there it never shows.
  */
-export function TvControls({ label }: { label: string }) {
+export function TvControls({ label, touch = false }: { label: string; touch?: boolean }) {
   const [moving, setMoving] = useState(false);
   const [full, setFull] = useState(true);
 
@@ -29,27 +46,27 @@ export function TvControls({ label }: { label: string }) {
         root.dataset.cursorIdle = 'true';
       }, IDLE_MS);
     };
-    const onFull = () => setFull(!!document.fullscreenElement);
+    const onFull = () => setFull(isFull());
     onFull();
-    root.dataset.cursorIdle = 'true';
-    window.addEventListener('mousemove', onMove);
+    if (!touch) {
+      root.dataset.cursorIdle = 'true';
+      window.addEventListener('mousemove', onMove);
+    }
     document.addEventListener('fullscreenchange', onFull);
+    document.addEventListener('webkitfullscreenchange', onFull);
     return () => {
       clearTimeout(timer);
       delete root.dataset.cursorIdle;
       window.removeEventListener('mousemove', onMove);
       document.removeEventListener('fullscreenchange', onFull);
+      document.removeEventListener('webkitfullscreenchange', onFull);
     };
-  }, []);
+  }, [touch]);
 
-  if (!moving || full || !document.fullscreenEnabled) return null;
+  if ((!touch && !moving) || full || !canFull()) return null;
 
   return (
-    <button
-      type="button"
-      className={styles.full}
-      onClick={() => void document.documentElement.requestFullscreen().catch(() => {})}
-    >
+    <button type="button" className={touch ? `${styles.full} ${styles.touch}` : styles.full} onClick={goFull}>
       {label}
     </button>
   );

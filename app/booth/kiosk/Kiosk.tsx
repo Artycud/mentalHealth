@@ -9,6 +9,7 @@ import { FlowerArt } from '@/components/booth/FlowerArt';
 import { tintInk, tintText } from '@/components/booth/flower-marks';
 import { KeepAwake } from '@/components/booth/KeepAwake';
 import { QrCode } from '@/components/booth/QrCode';
+import { TvControls } from '@/components/booth/TvControls';
 import { WallFlower } from '@/components/booth/WallFlower';
 import {
   FestivalHero,
@@ -22,6 +23,7 @@ import { BoothMarigold } from '@/components/illustrations/scenes';
 import {
   kiosk,
   loykrathongQuiz,
+  tv,
   qrInvite,
   resultFromChoices,
   withDok,
@@ -223,6 +225,8 @@ export function Kiosk({
     return (
       <main className={`${styles.stage} ${styles.withShore}`} data-festival={theme.id}>
         <KeepAwake />
+        {/* For staff: one tap puts the iPad full screen. Only on this screen, never mid-quiz. */}
+        <TvControls label={tv.fullscreen} touch />
         <div className={styles.sky}>
           <FestivalSky id={theme.id} moon lanterns />
         </div>

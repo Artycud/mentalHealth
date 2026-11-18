@@ -13,6 +13,18 @@
   font-weight: 500;
 }
 
+/* The kiosk iPad: a staff control, so quiet, in the empty top-right corner, but
+   big enough to hit with a finger. */
+.touch {
+  top: max(2vh, env(safe-area-inset-top));
+  right: max(2vw, env(safe-area-inset-right));
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 16px;
+  background: rgba(27, 43, 94, 0.55);
+  border: 1.5px solid rgba(252, 241, 230, 0.4);
+}
+
 :global(html[data-cursor-idle]),
 :global(html[data-cursor-idle] *) {
   cursor: none;

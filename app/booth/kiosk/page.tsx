@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { connection } from 'next/server';
 
 import { festivals } from '@/content/th/booth';
@@ -10,6 +11,15 @@ import { siteUrl } from '@/lib/site-url';
 
 import { Kiosk } from './Kiosk';
 import styles from './kiosk.module.css';
+
+/**
+ * Added to an iPad's home screen (Share → Add to Home Screen), the kiosk opens as an
+ * app: no Safari bars at all. Only here: the student pages keep Safari's back
+ * button (app/layout.tsx); the kiosk has its own back button on every question.
+ */
+export const metadata: Metadata = {
+  appleWebApp: { capable: true, title: 'บูธ', statusBarStyle: 'black-translucent' },
+};
 
 /**
  * The booth's answering device. Paired with /booth/display on the TV.
