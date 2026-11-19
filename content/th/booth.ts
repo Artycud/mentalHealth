@@ -461,6 +461,14 @@ export function emotionsFromChoices(pairs: BoothPick[]): Emotion[] | null {
 export const STRONG_FROM = 3;
 
 /**
+ * A gentle lean, so the flowers come out more evenly at the booth (2026-11-19):
+ * sunflowers were coming out most, so a tie goes to the rose, gerbera or tulip
+ * first, and happy needs a clear lead to win. A real majority always still wins
+ * (2 of 5 beats 1, whatever the lean).
+ */
+const LEAN: Partial<Record<Emotion, number>> = { angry: 1.15, excited: 1.15, love: 1.15, worried: 0.93, happy: 0.85 };
+
+/**
  * The result for a set of answers. Deterministic, so the server can recompute it
  * from what it stored (BRIEF §3) and never has to trust the client.
  *
@@ -470,8 +478,10 @@ export const STRONG_FROM = 3;
 export function resultFromEmotions(picks: Emotion[]): BoothResult {
   const scores = Object.fromEntries(EMOTIONS.map((e) => [e, 0])) as Record<Emotion, number>;
   for (const e of picks) scores[e] += 1;
-  const top = Math.max(...EMOTIONS.map((e) => scores[e]));
-  const winner = [...picks].reverse().find((e) => scores[e] === top) ?? picks[picks.length - 1];
+  const weighed = (e: Emotion) => scores[e] * (LEAN[e] ?? 1);
+  const best = Math.max(...EMOTIONS.map(weighed));
+  const winner = [...picks].reverse().find((e) => weighed(e) === best) ?? picks[picks.length - 1];
+  const top = scores[winner];
   return { flower: flowerFor(winner), level: top >= STRONG_FROM ? 1 : 0, score: top, of: picks.length, scores };
 }
 

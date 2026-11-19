@@ -32,9 +32,12 @@ export default async function HomePage() {
   const today = bangkokToday();
   let nextFound = false;
 
+  // All rounds at once: one wait for the database, not one per round.
+  const events = await Promise.all(festivalOrder.map((id) => getEvent(id)));
+
   const rounds: Round[] = [];
-  for (const id of festivalOrder) {
-    const e = await getEvent(id);
+  for (const [i, id] of festivalOrder.entries()) {
+    const e = events[i];
     let state: Round['state'] = 'later';
     let inDays: number | undefined;
     if (e.end < today) state = 'past';

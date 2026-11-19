@@ -177,6 +177,31 @@ async function addColumns(c: Client): Promise<void> {
   }
 }
 
+/**
+ * A local copy of the hosted database, for a server far from it (the school server
+ * in Bangkok; the Turso database is in another region, about 0.7 s a query away).
+ * Set DATABASE_REPLICA to a file path on a disk that lasts, and reads come from
+ * that file; writes still go to Turso, which stays the one true copy, and land in
+ * the file at once (read-your-writes). Changes made elsewhere (another server)
+ * arrive with the next sync, every few seconds. Unset, nothing changes. Never on
+ * Vercel, which has no lasting disk.
+ */
+const REPLICA_SYNC_SECONDS = 5;
+
+function replicaPath(url: string): string | null {
+  const file = process.env.DATABASE_REPLICA?.trim();
+  if (!file || url.startsWith('file:') || process.env.VERCEL) return null;
+  return path.resolve(file);
+}
+
+async function openReplica(file: string, syncUrl: string, authToken: string | undefined): Promise<Client> {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const c = createClient({ url: `file:${file}`, syncUrl, authToken, syncInterval: REPLICA_SYNC_SECONDS });
+  // Bring the copy up to date before the first page reads from it.
+  await c.sync();
+  return c;
+}
+
 export function db(): Promise<Client> {
   if (!ready) {
     ready = (async () => {
@@ -185,7 +210,9 @@ export function db(): Promise<Client> {
         fs.mkdirSync(path.dirname(path.resolve(url.slice('file:'.length))), { recursive: true });
       }
       const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
-      const c = createClient({ url, authToken });
+      const c = replicaPath(url)
+        ? await openReplica(replicaPath(url)!, url, authToken)
+        : createClient({ url, authToken });
       await c.executeMultiple(SCHEMA);
       await addColumns(c);
       // The festival that is live before anyone has touched the admin panel (§3).
