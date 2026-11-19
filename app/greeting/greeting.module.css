@@ -470,3 +470,135 @@
     transition: none;
   }
 }
+
+/* ---- Scene 3 (and /qr alone): the main site's QR code ---- */
+
+.solo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.qrScene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5vh;
+  height: 100%;
+  /* Room below for the river. */
+  padding: 4vh 4vw 12vh;
+}
+
+.qrScene .brandSmall {
+  font-size: min(4.6vh, 5vw);
+}
+
+.qrBody {
+  display: flex;
+  align-items: center;
+  gap: 5vw;
+}
+
+/* The code on a paper card in a warm candle glow, so the eye lands on it first. */
+.qrCard {
+  flex: none;
+  width: min(56vh, 80vw);
+  padding: 1.4vh;
+  border-radius: 3vh;
+  background: var(--paper);
+  box-shadow:
+    0 0 0 0.6vh rgba(255, 210, 90, 0.85),
+    0 0 12vh 3vh rgba(255, 214, 150, 0.32);
+}
+
+.qrText {
+  max-width: 42vw;
+}
+
+.qrKicker {
+  font-family: var(--font-heading);
+  font-size: 4.4vh;
+  font-weight: 600;
+  color: var(--tv-note);
+}
+
+.qrTitle {
+  margin-top: 1vh;
+  font-family: var(--font-heading);
+  font-size: 7vh;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.qrLine {
+  margin-top: 1.6vh;
+  font-size: 3.6vh;
+  color: var(--tv-soft);
+}
+
+.qrUrl {
+  display: inline-block;
+  margin-top: 3.4vh;
+  padding: 0.8vh 2.2vh;
+  border-radius: 999px;
+  background: rgba(27, 43, 94, 0.55);
+  border: 1.5px solid rgba(252, 241, 230, 0.35);
+  font-size: 2.8vh;
+  letter-spacing: 0.02em;
+}
+
+.qrNote {
+  margin-top: 1.6vh;
+  font-size: 2.4vh;
+  color: var(--tv-soft);
+}
+
+/* A phone or an iPad held upright: the code on top, the words under it. */
+@media (max-aspect-ratio: 1/1) {
+  /* A lower river, so the words keep clear of it. */
+  .stage:has(.qrScene) .river {
+    height: 13vh;
+  }
+
+  .qrScene {
+    gap: 2.6vh;
+    /* Clear of the full-screen button at the top. */
+    padding: calc(max(2vh, env(safe-area-inset-top)) + 52px) 6vw 15vh;
+  }
+
+  .qrBody {
+    flex-direction: column;
+    gap: 3vh;
+    text-align: center;
+  }
+
+  .qrCard {
+    width: min(78vw, 42vh);
+  }
+
+  .qrText {
+    max-width: 90vw;
+  }
+
+  .qrKicker {
+    font-size: min(3.4vh, 6vw);
+  }
+
+  .qrTitle {
+    font-size: min(4.2vh, 7.4vw);
+  }
+
+  .qrLine {
+    font-size: min(2.6vh, 4.6vw);
+  }
+
+  .qrUrl {
+    font-size: min(2.2vh, 3.8vw);
+  }
+
+  .qrNote {
+    font-size: min(2vh, 3.6vw);
+  }
+}

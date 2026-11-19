@@ -18,4 +18,6 @@ export const greeting = {
   },
   /** On the krathong card, only while coupons are still being given (admin's reward switch). */
   sticker: { top: 'คูปองลดไอศกรีม', amount: '10 บาท' },
+  /** The QR scene (and /qr on its own): the main site, to keep for later. */
+  qr: { kicker: 'สแกนเลย', noName: 'ไม่ต้องใส่ชื่อ · เปิดได้ทุกเมื่อ' },
 } as const;

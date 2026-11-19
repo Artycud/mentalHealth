@@ -13,8 +13,10 @@ import { common } from '@/content/th/common';
 import { greeting as g } from '@/content/th/greeting';
 import { getEventText } from '@/lib/events';
 import { getRewardOn } from '@/lib/settings';
+import { siteUrl } from '@/lib/site-url';
 
 import styles from './greeting.module.css';
+import { QrScene } from './QrScene';
 import { SceneRotate } from './SceneRotate';
 
 export const metadata: Metadata = { title: 'ยินดีต้อนรับ', robots: { index: false } };
@@ -23,13 +25,14 @@ export const metadata: Metadata = { title: 'ยินดีต้อนรับ
  * /greeting: the TV at the event's entrance, read in a glance from across the
  * room. Two scenes take turns over one night sky and river (the booth TV's): the
  * poster (the event, its date and place, a krathong on the water) and what is on
- * (karaoke, ice cream, the Loy Krathong booth and its ice-cream coupon). No data
+ * (karaoke, ice cream, the Loy Krathong booth and its ice-cream coupon), and
+ * the main site's QR code (QrScene, also the whole of /qr). No data
  * about anyone, and nothing to touch.
  */
 export default async function GreetingPage() {
   // The date, place and the coupon switch are set in the admin panel at any time.
   await connection();
-  const [event, rewardOn] = await Promise.all([getEventText('loykrathong'), getRewardOn()]);
+  const [event, rewardOn, qrUrl] = await Promise.all([getEventText('loykrathong'), getRewardOn(), siteUrl('/')]);
   const p = g.poster;
 
   const poster = (
@@ -123,7 +126,7 @@ export default async function GreetingPage() {
       <div className={styles.river}>
         <FestivalRiver id="loykrathong" moon={false} />
       </div>
-      <SceneRotate scenes={[poster, offers]} />
+      <SceneRotate scenes={[poster, offers, <QrScene key="qr" url={qrUrl} />]} />
     </main>
   );
 }
